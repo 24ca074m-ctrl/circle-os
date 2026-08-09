@@ -14,7 +14,7 @@
     <div class="flex justify-between items-center mb-2">
       <div>
         <h1 class="text-xl font-bold tracking-wide">RUB Manager</h1>
-        <p class="text-xs text-blue-100">Circle OS v2.6</p>
+        <p class="text-xs text-blue-100">Circle OS v2.7</p>
       </div>
       <span class="bg-blue-800 text-xs px-2.5 py-1 rounded-full border border-blue-400 font-mono">DB Live</span>
     </div>
@@ -50,7 +50,7 @@
         </div>
       </div>
 
-      <!-- AI LINE 連絡文を作成（定型文機能追加） -->
+      <!-- AI LINE 連絡文を作成（日時・時間・場所セレクター改善） -->
       <div class="bg-white p-4 rounded-xl shadow border border-gray-200 space-y-3">
         <h3 class="font-bold text-sm flex items-center gap-2 text-gray-700">
           <i data-lucide="sparkles" class="w-4 h-4 text-amber-500"></i> LINE 連絡文を自動作成
@@ -76,10 +76,39 @@
         </div>
 
         <div class="space-y-2 pt-1">
-          <input type="text" id="notice-date" placeholder="日時 (例: 8/15 18:00-21:00)" class="w-full text-xs p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none">
-          <input type="text" id="notice-loc" placeholder="場所・詳細 (例: 立教大学体育館 / 会費3,000円)" class="w-full text-xs p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none">
-          <input type="text" id="notice-memo" placeholder="備考 (例: ボール各自持参 / 期限8/12まで)" class="w-full text-xs p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none">
-          <button onclick="generateNotice()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2 rounded-lg transition">文章を生成</button>
+          <!-- 日付選択（カレンダー） -->
+          <div>
+            <label class="text-[10px] text-gray-500 font-bold block mb-0.5">日付を選択</label>
+            <input type="date" id="notice-date-picker" onchange="generateNotice()" class="w-full text-xs p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+          </div>
+
+          <!-- 時間選択 (開始~終了) -->
+          <div>
+            <label class="text-[10px] text-gray-500 font-bold block mb-0.5">時間を選択</label>
+            <div class="flex items-center gap-2">
+              <input type="time" id="notice-time-start" value="18:00" onchange="generateNotice()" class="w-full text-xs p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+              <span class="text-xs text-gray-400 font-bold">〜</span>
+              <input type="time" id="notice-time-end" value="21:00" onchange="generateNotice()" class="w-full text-xs p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+            </div>
+          </div>
+
+          <!-- 場所選択（立教大学体育館 / その他） -->
+          <div>
+            <label class="text-[10px] text-gray-500 font-bold block mb-0.5">場所を選択</label>
+            <select id="notice-loc-select" onchange="toggleCustomLoc('notice')" class="w-full text-xs p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none bg-white font-medium">
+              <option value="立教大学体育館">立教大学体育館</option>
+              <option value="その他">その他 (手入力)</option>
+            </select>
+            <input type="text" id="notice-loc-custom" placeholder="場所を入力してください" oninput="generateNotice()" class="hidden w-full text-xs p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none mt-1">
+          </div>
+
+          <!-- 備考 -->
+          <div>
+            <label class="text-[10px] text-gray-500 font-bold block mb-0.5">備考（任意）</label>
+            <input type="text" id="notice-memo" placeholder="例: ボール各自持参 / 期限8/12まで" oninput="generateNotice()" class="w-full text-xs p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none">
+          </div>
+
+          <button onclick="generateNotice()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2 rounded-lg transition">文章を更新</button>
         </div>
         <textarea id="notice-result" readonly placeholder="ここにLINE用の案内文が生成されます" class="w-full h-28 text-xs p-2 bg-gray-50 border rounded focus:outline-none"></textarea>
       </div>
@@ -112,15 +141,37 @@
 
     <!-- TAB 3: 体育館 & スケジュール -->
     <section id="tab-schedule" class="tab-content hidden space-y-4">
+      <!-- 練習スケジュール作成フォームも同様にカレンダー＆選択式に変更 -->
       <div id="court-schedule-form" class="bg-white p-4 rounded-xl shadow border border-gray-200 border-l-4 border-l-green-500">
         <div class="flex items-center justify-between mb-2">
           <h2 class="font-bold text-gray-700 text-sm">練習スケジュール作成</h2>
           <span class="bg-green-100 text-green-700 text-[10px] px-2 py-0.5 rounded font-bold">コート取り専用</span>
         </div>
         <div class="space-y-2 mb-2">
-          <input type="text" id="p-date" placeholder="日程 (例: 8/20 17:00~)" class="w-full text-xs p-2 border rounded outline-none">
-          <input type="text" id="p-loc" placeholder="体育館・場所" class="w-full text-xs p-2 border rounded outline-none">
-          <input type="text" id="p-memo" placeholder="メモ・持ち物" class="w-full text-xs p-2 border rounded outline-none">
+          <div>
+            <label class="text-[10px] text-gray-500 font-bold block mb-0.5">練習日</label>
+            <input type="date" id="p-date-picker" class="w-full text-xs p-2 border rounded outline-none bg-white">
+          </div>
+          <div>
+            <label class="text-[10px] text-gray-500 font-bold block mb-0.5">時間帯</label>
+            <div class="flex items-center gap-2">
+              <input type="time" id="p-time-start" value="18:00" class="w-full text-xs p-2 border rounded outline-none bg-white">
+              <span class="text-xs text-gray-400 font-bold">〜</span>
+              <input type="time" id="p-time-end" value="21:00" class="w-full text-xs p-2 border rounded outline-none bg-white">
+            </div>
+          </div>
+          <div>
+            <label class="text-[10px] text-gray-500 font-bold block mb-0.5">場所</label>
+            <select id="p-loc-select" onchange="toggleCustomLoc('practice')" class="w-full text-xs p-2 border rounded outline-none bg-white">
+              <option value="立教大学体育館">立教大学体育館</option>
+              <option value="その他">その他 (手入力)</option>
+            </select>
+            <input type="text" id="p-loc-custom" placeholder="場所を入力" class="hidden w-full text-xs p-2 border rounded outline-none mt-1">
+          </div>
+          <div>
+            <label class="text-[10px] text-gray-500 font-bold block mb-0.5">メモ・持ち物</label>
+            <input type="text" id="p-memo" placeholder="例: ボール持参" class="w-full text-xs p-2 border rounded outline-none">
+          </div>
         </div>
         <button onclick="addPractice()" class="w-full bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-2 rounded-lg transition">スケジュール作成</button>
       </div>
@@ -188,26 +239,62 @@
     let currentTemplate = 'practice';
     let allMembersCache = [];
 
+    // 今日の日付を初期値にセット
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('notice-date-picker').value = today;
+    document.getElementById('p-date-picker').value = today;
+
+    function toggleCustomLoc(prefix) {
+      const sel = document.getElementById(`${prefix}-loc-select`).value;
+      const customInput = document.getElementById(`${prefix}-loc-custom`);
+      if (sel === 'その他') {
+        customInput.classList.remove('hidden');
+      } else {
+        customInput.classList.add('hidden');
+      }
+      if (prefix === 'notice') generateNotice();
+    }
+
+    function getFormattedDate(dateStr) {
+      if (!dateStr) return '[日時]';
+      const d = new Date(dateStr);
+      const days = ['日', '月', '火', '水', '木', '金', '土'];
+      return `${d.getMonth() + 1}/${d.getDate()}(${days[d.getDay()]})`;
+    }
+
+    function getSelectedLocation(prefix) {
+      const sel = document.getElementById(`${prefix}-loc-select`).value;
+      if (sel === 'その他') {
+        return document.getElementById(`${prefix}-loc-custom`).value || '未定';
+      }
+      return sel;
+    }
+
     function applyTemplate(type) {
       currentTemplate = type;
-      const resBox = document.getElementById('notice-result');
-      const d = document.getElementById('notice-date').value || '[日時]';
-      const l = document.getElementById('notice-loc').value || '[場所・詳細]';
-      const m = document.getElementById('notice-memo').value || '';
-
-      if (type === 'practice') {
-        resBox.value = `【練習のお知らせ 🏀】\n\nお疲れ様です！次回練習の日程です。\n\n📅 日時: ${d}\n📍 場所: ${l}\n${m ? `📝 備考: ${m}\n` : ''}\nアプリから出欠回答をよろしくお願いします！`;
-      } else if (type === 'remind') {
-        resBox.value = `【出欠回答のお願い ⏰】\n\nお疲れ様です！\n${d} の練習/イベントの出欠未回答の方は、アプリより本日中に投票をお願いします！\n\n📍 場所: ${l}\nご協力よろしくお願いします！`;
-      } else if (type === 'money') {
-        resBox.value = `【集金のお知らせ 💴】\n\nお疲れ様です！会計から集金のご連絡です。\n\n📌 内容: ${d}\n💰 金額/詳細: ${l}\n${m ? `⚠️ 期限/備考: ${m}\n` : ''}\n準備をよろしくお願いします！`;
-      } else if (type === 'event') {
-        resBox.value = `【サークルイベント案内 🎉】\n\nお疲れ様です！イベント開催のお知らせです！\n\n🗓 日時: ${d}\n📍 場所: ${l}\n${m ? `💡 備考・会費: ${m}\n` : ''}\nみんなで楽しみましょう！参加回答待ってます！`;
-      }
+      generateNotice();
     }
 
     function generateNotice() {
-      applyTemplate(currentTemplate);
+      const resBox = document.getElementById('notice-result');
+      const dateVal = document.getElementById('notice-date-picker').value;
+      const formattedDate = getFormattedDate(dateVal);
+      const timeStart = document.getElementById('notice-time-start').value;
+      const timeEnd = document.getElementById('notice-time-end').value;
+      const dateTimeStr = `${formattedDate} ${timeStart}~${timeEnd}`;
+      
+      const loc = getSelectedLocation('notice');
+      const m = document.getElementById('notice-memo').value || '';
+
+      if (currentTemplate === 'practice') {
+        resBox.value = `【練習のお知らせ 🏀】\n\nお疲れ様です！次回練習の日程です。\n\n📅 日時: ${dateTimeStr}\n📍 場所: ${loc}\n${m ? `📝 備考: ${m}\n` : ''}\nアプリから出欠回答をよろしくお願いします！`;
+      } else if (currentTemplate === 'remind') {
+        resBox.value = `【出欠回答のお願い ⏰】\n\nお疲れ様です！\n${dateTimeStr} の練習/イベントの出欠未回答の方は、アプリより本日中に投票をお願いします！\n\n📍 場所: ${loc}\nご協力よろしくお願いします！`;
+      } else if (currentTemplate === 'money') {
+        resBox.value = `【集金のお知らせ 💴】\n\nお疲れ様です！会計から集金のご連絡です。\n\n📌 対象日: ${dateTimeStr}\n💰 場所/詳細: ${loc}\n${m ? `⚠️ 期限/備考: ${m}\n` : ''}\n準備をよろしくお願いします！`;
+      } else if (currentTemplate === 'event') {
+        resBox.value = `【サークルイベント案内 🎉】\n\nお疲れ様です！イベント開催のお知らせです！\n\n🗓 日時: ${dateTimeStr}\n📍 場所: ${loc}\n${m ? `💡 備考・会費: ${m}\n` : ''}\nみんなで楽しみましょう！参加回答待ってます！`;
+      }
     }
 
     function updateRoleUI() {
@@ -233,7 +320,7 @@
       await loadAIAnalytics();
       await loadFeedbacks();
       updateRoleUI();
-      applyTemplate('practice');
+      generateNotice();
     }
 
     async function loadMembers() {
@@ -327,18 +414,21 @@
     }
 
     async function addPractice() {
-      const date = document.getElementById('p-date').value;
-      const location = document.getElementById('p-loc').value;
+      const dateVal = document.getElementById('p-date-picker').value;
+      const formattedDate = getFormattedDate(dateVal);
+      const timeStart = document.getElementById('p-time-start').value;
+      const timeEnd = document.getElementById('p-time-end').value;
+      const dateStr = `${formattedDate} ${timeStart}~${timeEnd}`;
+
+      const location = getSelectedLocation('practice');
       const memo = document.getElementById('p-memo').value;
-      if (!date || !location) return alert('日程と場所を入力してください');
 
       await fetch('/api/practices', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ date, location, memo })
+        body: JSON.stringify({ date: dateStr, location, memo })
       });
-      document.getElementById('p-date').value = '';
-      document.getElementById('p-loc').value = '';
+
       document.getElementById('p-memo').value = '';
       loadPractices();
       loadAIAnalytics();
