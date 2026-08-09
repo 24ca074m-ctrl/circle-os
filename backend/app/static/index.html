@@ -20,7 +20,7 @@
       <div class="space-y-3 text-xs pt-2">
         <div>
           <label class="block font-bold text-slate-700 mb-1">学籍番号</label>
-          <input type="text" id="login-student-id" placeholder="例: 21AB1234" class="w-full border p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none uppercase">
+          <input type="text" id="login-student-id" placeholder="例: 24CA074M" class="w-full border p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none uppercase">
         </div>
         <p class="text-[10px] text-slate-500 bg-slate-50 p-2 rounded">※部員名簿に登録されている学籍番号を入力してください。</p>
         <button onclick="handleLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg text-sm transition">
@@ -35,7 +35,7 @@
     <div class="max-w-md mx-auto flex justify-between items-center">
       <div>
         <h1 class="text-xl font-bold tracking-tight">RUB Manager</h1>
-        <p class="text-xs text-blue-200">Circle OS v3.3</p>
+        <p class="text-xs text-blue-200">Circle OS v3.4</p>
       </div>
       <div class="flex items-center gap-2">
         <span id="user-display-name" class="text-xs bg-blue-700 px-2.5 py-1 rounded-full text-white font-medium border border-blue-400">未ログイン</span>
@@ -238,7 +238,6 @@
     let currentRole = "部員";
     let currentUser = null;
 
-    // 役職人数の上限設定
     const ROLE_LIMITS = {
       "代表": 2,
       "副代表": 1,
@@ -246,8 +245,16 @@
       "コート取り": 3
     };
 
-    document.addEventListener("DOMContentLoaded", () => {
+    // 初期管理者データ（DBが空でもログイン可能）
+    const ADMIN_USER = {
+      student_id: "24CA074M",
+      name: "代表者",
+      role: "代表"
+    };
+
+    document.addEventListener("DOMContentLoaded", async () => {
       lucide.createIcons();
+      await ensureAdminRegistered();
       checkAuth();
       fetchAIAnalytics();
       fetchMembers();
@@ -259,6 +266,30 @@
       tomorrow.setDate(tomorrow.getDate() + 1);
       document.getElementById("practice-date").value = tomorrow.toISOString().split('T')[0];
     });
+
+    // データベースに 24CA074M が登録されているか確認し、なければ自動初期追加
+    async function ensureAdminRegistered() {
+      try {
+        const res = await fetch('/api/members');
+        const members = await res.json();
+        const exists = members.some(m => m.student_id && m.student_id.toUpperCase() === ADMIN_USER.student_id);
+
+        if (!exists) {
+          await fetch('/api/members', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: ADMIN_USER.name,
+              student_id: ADMIN_USER.student_id,
+              grade: "3年",
+              role: ADMIN_USER.role
+            })
+          });
+        }
+      } catch (err) {
+        console.error('Ensure admin error:', err);
+      }
+    }
 
     function checkAuth() {
       const savedUser = localStorage.getItem('circle_os_user_v3');
@@ -273,7 +304,6 @@
       }
     }
 
-    // 学籍番号のみでログイン
     async function handleLogin() {
       const studentId = document.getElementById('login-student-id').value.trim().toUpperCase();
       if (!studentId) return alert('学籍番号を入力してください');
@@ -281,7 +311,12 @@
       try {
         const res = await fetch('/api/members');
         const members = await res.json();
-        const member = members.find(m => m.student_id && m.student_id.toUpperCase() === studentId);
+        let member = members.find(m => m.student_id && m.student_id.toUpperCase() === studentId);
+
+        // フォールバック: DB未登録時に 24CA074M なら即ログイン許可
+        if (!member && studentId === ADMIN_USER.student_id) {
+          member = ADMIN_USER;
+        }
 
         if (!member) {
           return alert('登録されている学籍番号が見つかりません。\n代表または役職者に部員登録を依頼してください。');
@@ -296,6 +331,13 @@
         document.getElementById('login-modal').classList.add('hidden');
         document.getElementById('user-display-name').innerText = currentUser.name;
         document.getElementById('logout-btn').classList.remove('hidden');
+
+        // 代表権限の自動切り替え
+        if (studentId === ADMIN_USER.student_id || member.role === "代表") {
+          document.getElementById('role-selector').value = "代表";
+          changeRole("代表");
+        }
+
         alert(`おかえりなさい、${currentUser.name} さん！`);
       } catch (err) {
         console.error('Login error:', err);
@@ -409,7 +451,6 @@
       }
     }
 
-    // 部員追加（役職の上限チェックを追加）
     async function addMember() {
       const name = document.getElementById('new-member-name').value.trim();
       const student_id = document.getElementById('new-member-student-id').value.trim().toUpperCase();
@@ -418,7 +459,6 @@
 
       if (!name || !student_id) return alert('氏名と学籍番号を入力してください。');
 
-      // 役職の人数制限チェック
       if (ROLE_LIMITS[role]) {
         try {
           const res = await fetch('/api/members');
