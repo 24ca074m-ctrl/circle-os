@@ -14,7 +14,7 @@
     <div class="flex justify-between items-center mb-2">
       <div>
         <h1 class="text-xl font-bold tracking-wide">RUB Manager</h1>
-        <p class="text-xs text-blue-100">Circle OS v2.5</p>
+        <p class="text-xs text-blue-100">Circle OS v2.6</p>
       </div>
       <span class="bg-blue-800 text-xs px-2.5 py-1 rounded-full border border-blue-400 font-mono">DB Live</span>
     </div>
@@ -50,24 +50,43 @@
         </div>
       </div>
 
-      <!-- AI 連絡文自動生成 -->
+      <!-- AI LINE 連絡文を作成（定型文機能追加） -->
       <div class="bg-white p-4 rounded-xl shadow border border-gray-200 space-y-3">
         <h3 class="font-bold text-sm flex items-center gap-2 text-gray-700">
-          <i data-lucide="sparkles" class="w-4 h-4 text-amber-500"></i> AI LINE 連絡文を作成
+          <i data-lucide="sparkles" class="w-4 h-4 text-amber-500"></i> LINE 連絡文を自動作成
         </h3>
-        <div class="space-y-2">
-          <input type="text" id="notice-date" placeholder="日時 (例: 8/15 18:00-21:00)" class="w-full text-xs p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none">
-          <input type="text" id="notice-loc" placeholder="場所 (例: 立教大学体育館)" class="w-full text-xs p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none">
-          <input type="text" id="notice-memo" placeholder="備考 (例: ボール各自持参)" class="w-full text-xs p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none">
-          <button onclick="generateNotice()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2 rounded-lg transition">文章を自動生成</button>
+
+        <!-- 定型文テンプレート選択ボタン -->
+        <div class="space-y-1">
+          <div class="text-[11px] font-bold text-gray-500">定型文テンプレートを選択:</div>
+          <div class="grid grid-cols-2 gap-1.5 text-xs">
+            <button onclick="applyTemplate('practice')" class="bg-gray-100 hover:bg-indigo-50 hover:text-indigo-600 border border-gray-200 p-2 rounded-lg text-left font-bold text-[11px] flex items-center gap-1">
+              🏀 練習日程
+            </button>
+            <button onclick="applyTemplate('remind')" class="bg-gray-100 hover:bg-indigo-50 hover:text-indigo-600 border border-gray-200 p-2 rounded-lg text-left font-bold text-[11px] flex items-center gap-1">
+              ⏰ 出欠催促
+            </button>
+            <button onclick="applyTemplate('money')" class="bg-gray-100 hover:bg-indigo-50 hover:text-indigo-600 border border-gray-200 p-2 rounded-lg text-left font-bold text-[11px] flex items-center gap-1">
+              💴 集金案内
+            </button>
+            <button onclick="applyTemplate('event')" class="bg-gray-100 hover:bg-indigo-50 hover:text-indigo-600 border border-gray-200 p-2 rounded-lg text-left font-bold text-[11px] flex items-center gap-1">
+              🎉 飲み会・新歓
+            </button>
+          </div>
         </div>
-        <textarea id="notice-result" readonly placeholder="ここにLINE用の案内文が生成されます" class="w-full h-24 text-xs p-2 bg-gray-50 border rounded focus:outline-none"></textarea>
+
+        <div class="space-y-2 pt-1">
+          <input type="text" id="notice-date" placeholder="日時 (例: 8/15 18:00-21:00)" class="w-full text-xs p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none">
+          <input type="text" id="notice-loc" placeholder="場所・詳細 (例: 立教大学体育館 / 会費3,000円)" class="w-full text-xs p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none">
+          <input type="text" id="notice-memo" placeholder="備考 (例: ボール各自持参 / 期限8/12まで)" class="w-full text-xs p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none">
+          <button onclick="generateNotice()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2 rounded-lg transition">文章を生成</button>
+        </div>
+        <textarea id="notice-result" readonly placeholder="ここにLINE用の案内文が生成されます" class="w-full h-28 text-xs p-2 bg-gray-50 border rounded focus:outline-none"></textarea>
       </div>
     </section>
 
     <!-- TAB 2: 部員管理 -->
     <section id="tab-members" class="tab-content hidden space-y-4">
-      <!-- 代表のみ表示するエリア -->
       <div id="admin-member-form" class="bg-white p-4 rounded-xl shadow border border-gray-200">
         <h2 class="font-bold text-gray-700 mb-3 text-sm">新規部員を追加</h2>
         <div class="grid grid-cols-2 gap-2 mb-2">
@@ -93,7 +112,6 @@
 
     <!-- TAB 3: 体育館 & スケジュール -->
     <section id="tab-schedule" class="tab-content hidden space-y-4">
-      <!-- コート取り・代表のみ表示するフォーム -->
       <div id="court-schedule-form" class="bg-white p-4 rounded-xl shadow border border-gray-200 border-l-4 border-l-green-500">
         <div class="flex items-center justify-between mb-2">
           <h2 class="font-bold text-gray-700 text-sm">練習スケジュール作成</h2>
@@ -133,7 +151,6 @@
         </div>
       </div>
 
-      <!-- 代表のみ閲覧できる届いた意見一覧 -->
       <div id="admin-feedback-list" class="bg-white p-4 rounded-xl shadow border border-gray-200 border-l-4 border-l-purple-600">
         <div class="flex items-center justify-between mb-3">
           <h2 class="font-bold text-gray-700 text-sm">届いた意見一覧</h2>
@@ -168,33 +185,45 @@
   <script>
     lucide.createIcons();
 
+    let currentTemplate = 'practice';
     let allMembersCache = [];
+
+    function applyTemplate(type) {
+      currentTemplate = type;
+      const resBox = document.getElementById('notice-result');
+      const d = document.getElementById('notice-date').value || '[日時]';
+      const l = document.getElementById('notice-loc').value || '[場所・詳細]';
+      const m = document.getElementById('notice-memo').value || '';
+
+      if (type === 'practice') {
+        resBox.value = `【練習のお知らせ 🏀】\n\nお疲れ様です！次回練習の日程です。\n\n📅 日時: ${d}\n📍 場所: ${l}\n${m ? `📝 備考: ${m}\n` : ''}\nアプリから出欠回答をよろしくお願いします！`;
+      } else if (type === 'remind') {
+        resBox.value = `【出欠回答のお願い ⏰】\n\nお疲れ様です！\n${d} の練習/イベントの出欠未回答の方は、アプリより本日中に投票をお願いします！\n\n📍 場所: ${l}\nご協力よろしくお願いします！`;
+      } else if (type === 'money') {
+        resBox.value = `【集金のお知らせ 💴】\n\nお疲れ様です！会計から集金のご連絡です。\n\n📌 内容: ${d}\n💰 金額/詳細: ${l}\n${m ? `⚠️ 期限/備考: ${m}\n` : ''}\n準備をよろしくお願いします！`;
+      } else if (type === 'event') {
+        resBox.value = `【サークルイベント案内 🎉】\n\nお疲れ様です！イベント開催のお知らせです！\n\n🗓 日時: ${d}\n📍 場所: ${l}\n${m ? `💡 備考・会費: ${m}\n` : ''}\nみんなで楽しみましょう！参加回答待ってます！`;
+      }
+    }
+
+    function generateNotice() {
+      applyTemplate(currentTemplate);
+    }
 
     function updateRoleUI() {
       const role = document.getElementById('role-simulator').value;
-      
-      // 代表フォーム制御
-      const memberForm = document.getElementById('admin-member-form');
-      const feedbackList = document.getElementById('admin-feedback-list');
-      memberForm.style.display = (role === '代表') ? 'block' : 'none';
-      feedbackList.style.display = (role === '代表') ? 'block' : 'none';
-
-      // コート取りフォーム制御
-      const courtForm = document.getElementById('court-schedule-form');
-      courtForm.style.display = (role === '代表' || role === 'コート取り') ? 'block' : 'none';
-
+      document.getElementById('admin-member-form').style.display = (role === '代表') ? 'block' : 'none';
+      document.getElementById('admin-feedback-list').style.display = (role === '代表') ? 'block' : 'none';
+      document.getElementById('court-schedule-form').style.display = (role === '代表' || role === 'コート取り') ? 'block' : 'none';
       loadPractices();
     }
 
     function switchTab(tab) {
       document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
       document.getElementById(`tab-${tab}`).classList.remove('hidden');
-      
       ['home', 'members', 'schedule', 'feedback'].forEach(t => {
         const btn = document.getElementById(`nav-${t}`);
-        if(btn) {
-          btn.className = (t === tab) ? "flex flex-col items-center text-blue-600" : "flex flex-col items-center text-gray-400";
-        }
+        if(btn) btn.className = (t === tab) ? "flex flex-col items-center text-blue-600" : "flex flex-col items-center text-gray-400";
       });
     }
 
@@ -204,6 +233,7 @@
       await loadAIAnalytics();
       await loadFeedbacks();
       updateRoleUI();
+      applyTemplate('practice');
     }
 
     async function loadMembers() {
@@ -281,12 +311,10 @@
                 `<button onclick="deletePractice(${p.id})" class="text-red-500 hover:text-red-700 text-[10px] font-bold border border-red-200 px-1.5 py-0.5 rounded">削除</button>` : ''}
             </div>
 
-            <!-- 出欠状況サマリー -->
             <div class="flex gap-2 text-[11px] bg-white p-2 rounded border border-gray-100">
               <span class="text-green-600 font-bold">参加 (${joinList.length}名): ${joinList.join(', ')}</span>
             </div>
 
-            <!-- 出欠投票エリア -->
             <div class="pt-1 flex items-center gap-1.5">
               <select id="voter-${p.id}" class="text-[11px] p-1 border rounded bg-white outline-none">
                 ${memberOptions}
@@ -384,17 +412,6 @@
       data.advice_list.forEach(a => {
         adviceBox.innerHTML += `<div>• ${a}</div>`;
       });
-    }
-
-    async function generateNotice() {
-      const date = document.getElementById('notice-date').value;
-      const loc = document.getElementById('notice-loc').value;
-      const memo = document.getElementById('notice-memo').value;
-      if (!date || !loc) return alert('日程と場所を入力してください');
-
-      const res = await fetch(`/api/ai/generate-notice?date=${encodeURIComponent(date)}&location=${encodeURIComponent(loc)}&memo=${encodeURIComponent(memo)}`);
-      const data = await res.json();
-      document.getElementById('notice-result').value = data.notice_text;
     }
 
     loadAllData();
