@@ -6,8 +6,8 @@ from pydantic import BaseModel
 from typing import List, Optional
 import os
 
-import models
-from database import engine, get_db
+from . import models
+from .database import engine, get_db
 
 models.Base.metadata.create_all(bind=engine)
 
