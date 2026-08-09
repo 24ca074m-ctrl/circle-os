@@ -303,7 +303,7 @@
   </nav>
 
   <script>
-    // GitHub Pages対応 LocalStorage モックDB
+    // LocalStorage モックDB
     const STORAGE_KEY_USER = 'rub_manager_user';
     const STORAGE_KEY_MEMBERS = 'rub_manager_db_members';
     const STORAGE_KEY_PRACTICES = 'rub_manager_db_practices';
@@ -329,7 +329,6 @@
       role: "代表"
     };
 
-    // XSS対策エスケープ関数
     function escapeHTML(str) {
       if (!str) return '';
       return String(str)
@@ -340,7 +339,6 @@
         .replace(/'/g, '&#039;');
     }
 
-    // DBヘルパー関数 (LocalStorage 操作)
     function getDB(key) {
       return JSON.parse(localStorage.getItem(key) || '[]');
     }
@@ -348,7 +346,6 @@
       localStorage.setItem(key, JSON.stringify(data));
     }
 
-    // 今日の日付を YYYY-MM-DD 形式で取得
     function getTodayString() {
       const today = new Date();
       return today.toISOString().split('T')[0];
@@ -365,12 +362,11 @@
       fetchFeedbacks();
       handleLocationChange();
 
-      // 今日の日付を取得して初期値および選択可能最小値(min)に設定
       const todayStr = getTodayString();
       const dateInput = document.getElementById("practice-date");
       if (dateInput) {
         dateInput.value = todayStr;
-        dateInput.min = todayStr; // 過去の日付を選択不可にする設定
+        dateInput.min = todayStr;
       }
     });
 
@@ -740,7 +736,6 @@
         return;
       }
 
-      // 日付順（今日に近い順）にソート
       practices.sort((a, b) => {
         const dateA = new Date(a.date.split(' ')[0]);
         const dateB = new Date(b.date.split(' ')[0]);
@@ -794,7 +789,6 @@
           </div>
         `;
 
-        // 直近1週間（今日〜7日後）の判定
         const pDateParsed = new Date(p.date.split(' ')[0]);
         if (!isNaN(pDateParsed) && pDateParsed >= today && pDateParsed <= nextWeek) {
           weeklyCount++;
@@ -886,7 +880,9 @@
     }
 
     function submitFeedback() {
-      const sender_name = document.getElementById('feedback-sender').value.trim() || (currentUser ? currentUser.name : '匿名');
+      const inputSender = document.getElementById('feedback-sender').value.trim();
+      // 名前入力欄が空ならログイン中に関わらず強制で「匿名部員」にする
+      const sender_name = inputSender || '匿名部員';
       const content = document.getElementById('feedback-content').value.trim();
 
       if (!content) return alert('ご意見・ご要望を入力してください。');
