@@ -1,105 +1,167 @@
-from fastapi import FastAPI, Depends, HTTPException, Query
-from fastapi.responses import HTMLResponse
-from sqlmodel import Session, select
+from fastapi import FastAPI, Depends, HTTPException
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+from sqlalchemy.orm import Session
+from pydantic import BaseModel
 from typing import List, Optional
-import random
+import os
 
-from .database import init_db, get_session
-from .models import Member, Practice, Attendance
+import models
+from database import engine, get_db
 
-app = FastAPI(title="Circle OS API")
+models.Base.metadata.create_all(bind=engine)
 
-@app.on_event("startup")
-def on_startup():
-    init_db()
+app = FastAPI(title="RUB Manager - Circle OS")
 
-# --- フロントエンド画面 ---
-@app.get("/app", response_class=HTMLResponse)
-def read_app():
-    with open("app/static/index.html", encoding="utf-8") as f:
-        return f.read()
+# Pydantic Schemas
+class MemberCreate(BaseModel):
+    name: str
+    grade: str
+    position: str
+    role: str = "部員"
 
-# --- 部員 API ---
-@app.get("/api/members", response_model=List[Member])
-def get_members(session: Session = Depends(get_session)):
-    return session.exec(select(Member)).all()
+class MemberResponse(MemberCreate):
+    id: int
+    class Config:
+        from_attributes = True
 
-@app.post("/api/members", response_model=Member)
-def create_member(member: Member, session: Session = Depends(get_session)):
-    session.add(member)
-    session.commit()
-    session.refresh(member)
-    return member
+class PracticeCreate(BaseModel):
+    date: str
+    location: str
+    memo: Optional[str] = None
+
+class PracticeResponse(PracticeCreate):
+    id: int
+    class Config:
+        from_attributes = True
+
+class AttendanceCreate(BaseModel):
+    practice_id: int
+    member_name: str
+    status: str  # 参加, 不参加, 未定
+
+class FeedbackCreate(BaseModel):
+    sender_name: Optional[str] = "匿名"
+    content: str
+
+# API Routes
+@app.get("/api/members", response_model=List[MemberResponse])
+def get_members(db: Session = Depends(get_db)):
+    return db.query(models.Member).all()
+
+@app.post("/api/members", response_model=MemberResponse)
+def create_member(member: MemberCreate, db: Session = Depends(get_db)):
+    db_member = models.Member(**member.dict())
+    db.add(db_member)
+    db.commit()
+    db.refresh(db_member)
+    return db_member
 
 @app.delete("/api/members/{member_id}")
-def delete_member(member_id: int, session: Session = Depends(get_session)):
-    member = session.get(Member, member_id)
-    if not member:
+def delete_member(member_id: int, db: Session = Depends(get_db)):
+    m = db.query(models.Member).filter(models.Member.id == member_id).first()
+    if not m:
         raise HTTPException(status_code=404, detail="Member not found")
-    session.delete(member)
-    session.commit()
-    return {"ok": True}
+    db.delete(m)
+    db.commit()
+    return {"message": "Member deleted"}
 
-# --- 練習・スケジュール API ---
-@app.get("/api/practices", response_model=List[Practice])
-def get_practices(session: Session = Depends(get_session)):
-    return session.exec(select(Practice)).all()
+@app.get("/api/practices", response_model=List[PracticeResponse])
+def get_practices(db: Session = Depends(get_db)):
+    return db.query(models.Practice).all()
 
-@app.post("/api/practices", response_model=Practice)
-def create_practice(practice: Practice, session: Session = Depends(get_session)):
-    session.add(practice)
-    session.commit()
-    session.refresh(practice)
-    return practice
+@app.post("/api/practices", response_model=PracticeResponse)
+def create_practice(practice: PracticeCreate, db: Session = Depends(get_db)):
+    db_practice = models.Practice(**practice.dict())
+    db.add(db_practice)
+    db.commit()
+    db.refresh(db_practice)
+    return db_practice
 
-# --- 出欠 API ---
-@app.post("/api/attendances")
-def set_attendance(attendance: Attendance, session: Session = Depends(get_session)):
-    # 既存の回答があれば更新、なければ新規作成
-    statement = select(Attendance).where(
-        Attendance.practice_id == attendance.practice_id,
-        Attendance.member_name == attendance.member_name
-    )
-    existing = session.exec(statement).first()
+@app.delete("/api/practices/{practice_id}")
+def delete_practice(practice_id: int, db: Session = Depends(get_db)):
+    p = db.query(models.Practice).filter(models.Practice.id == practice_id).first()
+    if not p:
+        raise HTTPException(status_code=404, detail="Practice not found")
+    db.delete(p)
+    db.commit()
+    return {"message": "Practice deleted"}
+
+# --- 出欠API ---
+@app.post("/api/attendance")
+def vote_attendance(att: AttendanceCreate, db: Session = Depends(get_db)):
+    existing = db.query(models.Attendance).filter(
+        models.Attendance.practice_id == att.practice_id,
+        models.Attendance.member_name == att.member_name
+    ).first()
+    
     if existing:
-        existing.status = attendance.status
-        session.add(existing)
+        existing.status = att.status
     else:
-        session.add(attendance)
-    session.commit()
-    return {"ok": True}
+        new_att = models.Attendance(**att.dict())
+        db.add(new_att)
+    
+    db.commit()
+    return {"message": "Attendance recorded"}
 
-# --- AI予測・分析 & 連絡作成 API ---
+@app.get("/api/attendance/{practice_id}")
+def get_attendance(practice_id: int, db: Session = Depends(get_db)):
+    atts = db.query(models.Attendance).filter(models.Attendance.practice_id == practice_id).all()
+    summary = {"参加": [], "不参加": [], "未定": []}
+    for a in atts:
+        if a.status in summary:
+            summary[a.status].append(a.member_name)
+    return summary
+
+# --- 意見箱API ---
+@app.post("/api/feedbacks")
+def create_feedback(fb: FeedbackCreate, db: Session = Depends(get_db)):
+    new_fb = models.Feedback(**fb.dict())
+    db.add(new_fb)
+    db.commit()
+    return {"message": "Feedback submitted"}
+
+@app.get("/api/feedbacks")
+def get_feedbacks(db: Session = Depends(get_db)):
+    fbs = db.query(models.Feedback).order_by(models.Feedback.created_at.desc()).all()
+    return fbs
+
+# --- AI アナリティクス & LINE案内文 ---
 @app.get("/api/ai/analytics")
-def get_ai_analytics(session: Session = Depends(get_session)):
-    members = session.exec(select(Member)).all()
-    practices = session.exec(select(Practice)).all()
-    
-    total_members = len(members)
-    predicted_attendance = max(1, int(total_members * random.uniform(0.65, 0.85))) if total_members > 0 else 0
-    
-    advice = []
-    if total_members == 0:
-        advice.append("部員がまだ登録されていません。まずは部員を追加しましょう。")
-    else:
-        advice.append(f"現在の登録メンバー数は {total_members} 名です。次回の練習参加予測は約 {predicted_attendance} 名です。")
-        advice.append("試験期間前のため、下級生への出欠リマインドを早めに出すのがおすすめです。")
-    
+def get_ai_analytics(db: Session = Depends(get_db)):
+    member_count = db.query(models.Member).count()
+    predicted = int(member_count * 0.7) if member_count > 0 else 0
+    advices = [
+        f"現在の登録部員数は {member_count} 名です。",
+        f"次回の予想参加人数は約 {predicted} 名です。",
+        "コート予約枠が不足しないよう、早めにコート取り担当へ共有してください。"
+    ]
     return {
-        "predicted_attendance": predicted_attendance,
-        "advice_list": advice
+        "member_count": member_count,
+        "predicted_attendance": predicted,
+        "advice_list": advices
     }
 
 @app.get("/api/ai/generate-notice")
-def generate_notice(date: str = Query(...), location: str = Query(...), memo: Optional[str] = ""):
-    text = (
-        f"【練習連絡 🏀】\n\n"
-        f"お疲れ様です！次回の練習日程が決まりましたので共有します。\n\n"
-        f"📅 日時: {date}\n"
-        f"📍 場所: {location}\n"
-    )
+def generate_notice(date: str, location: str, memo: str = ""):
+    notice = f"【練習のお知らせ 🏀】\n\n■ 日時: {date}\n■ 場所: {location}\n"
     if memo:
-        text += f"📝 備考: {memo}\n"
-    text += "\n参加・不参加の回答をアプリからお願いします！よろしくお願いします！"
-    
-    return {"notice_text": text}
+        notice += f"■ 備考: {memo}\n"
+    notice += "\n参加・不参加の回答をアプリからお願いします！"
+    return {"notice_text": notice}
+
+# --- 静的ファイル & ルーティング ---
+static_dir = os.path.join(os.path.dirname(__file__), "static")
+if os.path.exists(static_dir):
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+@app.get("/app")
+def read_app():
+    html_path = os.path.join(static_dir, "index.html")
+    if os.path.exists(html_path):
+        return FileResponse(html_path)
+    return {"error": "index.html not found"}
+
+@app.get("/")
+def read_root():
+    return {"message": "Circle OS Backend with FastApi & SQLite"}
