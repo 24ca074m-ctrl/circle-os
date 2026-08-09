@@ -20,7 +20,7 @@
       <div class="space-y-3 text-xs pt-2">
         <div>
           <label class="block font-bold text-slate-700 mb-1">学籍番号</label>
-          <input type="text" id="login-student-id" placeholder="例: 24CA074M" class="w-full border p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none uppercase">
+          <input type="text" id="login-student-id" placeholder="例: 20AA000A" class="w-full border p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none uppercase">
         </div>
         <p class="text-[10px] text-slate-500 bg-slate-50 p-2 rounded">※部員名簿に登録されている学籍番号を入力してください。</p>
         <button onclick="handleLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg text-sm transition">
@@ -30,12 +30,56 @@
     </div>
   </div>
 
+  <!-- 部員編集モーダル -->
+  <div id="edit-member-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-sm rounded-2xl p-5 shadow-xl space-y-3">
+      <h3 class="font-bold text-slate-800 text-sm">部員情報の編集</h3>
+      <input type="hidden" id="edit-member-id">
+      <div class="space-y-2 text-xs">
+        <div>
+          <label class="block text-slate-500 mb-1">氏名</label>
+          <input type="text" id="edit-member-name" class="w-full border rounded p-2 focus:ring-1 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block text-slate-500 mb-1">学籍番号</label>
+          <input type="text" id="edit-member-student-id" class="w-full border rounded p-2 uppercase focus:ring-1 focus:ring-blue-500">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-slate-500 mb-1">学年</label>
+            <select id="edit-member-grade" class="w-full border rounded p-2">
+              <option value="4年">4年</option>
+              <option value="3年">3年</option>
+              <option value="2年">2年</option>
+              <option value="1年">1年</option>
+              <option value="その他">その他</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-500 mb-1">役職</label>
+            <select id="edit-member-role" class="w-full border rounded p-2">
+              <option value="部員">一般部員</option>
+              <option value="代表">代表</option>
+              <option value="副代表">副代表</option>
+              <option value="会計">会計</option>
+              <option value="コート取り">コート取り</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="flex gap-2 pt-2 text-xs">
+        <button onclick="closeEditModal()" class="w-1/2 bg-slate-200 hover:bg-slate-300 font-bold py-2 rounded">キャンセル</button>
+        <button onclick="saveMemberEdit()" class="w-1/2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded">保存</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Header -->
   <header class="bg-blue-600 text-white p-4 shadow-md sticky top-0 z-50">
     <div class="max-w-md mx-auto flex justify-between items-center">
       <div>
         <h1 class="text-xl font-bold tracking-tight">RUB Manager</h1>
-        <p class="text-xs text-blue-200">Circle OS v3.4</p>
+        <p class="text-xs text-blue-200">Circle OS v3.5</p>
       </div>
       <div class="flex items-center gap-2">
         <span id="user-display-name" class="text-xs bg-blue-700 px-2.5 py-1 rounded-full text-white font-medium border border-blue-400">未ログイン</span>
@@ -48,9 +92,10 @@
         <i data-lucide="shield" class="w-3.5 h-3.5"></i> 現在の表示役職:
       </span>
       <select id="role-selector" onchange="changeRole(this.value)" class="bg-white text-slate-800 font-bold rounded px-2 py-1 focus:outline-none">
-        <option value="代表">代表 (全機能/役職)</option>
-        <option value="コート取り">コート取り (日程追加/削除可)</option>
-        <option value="部員" selected>一般部員 (閲覧・出欠選択・意見送信のみ)</option>
+        <option value="代表">代表 (全権限)</option>
+        <option value="副代表">副代表 (全権限)</option>
+        <option value="コート取り">コート取り (日程管理)</option>
+        <option value="部員" selected>一般部員</option>
       </select>
     </div>
   </header>
@@ -83,9 +128,10 @@
 
     <!-- Tab 2: Members -->
     <div id="tab-members" class="tab-content hidden space-y-4">
+      <!-- 代表のみ登録可能 -->
       <div id="member-add-box" class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 hidden">
         <h2 class="font-bold text-slate-700 mb-3 text-sm flex items-center gap-2">
-          <i data-lucide="user-plus" class="w-4 h-4 text-blue-600"></i> 新規部員登録
+          <i data-lucide="user-plus" class="w-4 h-4 text-blue-600"></i> 新規部員登録 <span class="text-[10px] text-blue-600 font-normal">(代表専用)</span>
         </h2>
         <div class="space-y-2 text-xs">
           <div class="grid grid-cols-2 gap-2">
@@ -95,7 +141,7 @@
             </div>
             <div>
               <label class="block text-slate-500 mb-1">学籍番号</label>
-              <input type="text" id="new-member-student-id" placeholder="例: 21AB1234" class="w-full border rounded p-2 uppercase focus:ring-1 focus:ring-blue-500">
+              <input type="text" id="new-member-student-id" placeholder="例: 20AA000A" class="w-full border rounded p-2 uppercase focus:ring-1 focus:ring-blue-500">
             </div>
           </div>
           <div class="grid grid-cols-2 gap-2">
@@ -106,6 +152,7 @@
                 <option value="2年">2年</option>
                 <option value="3年">3年</option>
                 <option value="4年">4年</option>
+                <option value="その他">その他</option>
               </select>
             </div>
             <div>
@@ -136,7 +183,7 @@
     <!-- Tab 3: Gymnasium / Practice Schedule -->
     <div id="tab-gym" class="tab-content hidden space-y-4">
       <div id="practice-create-box" class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 relative hidden">
-        <span class="absolute top-3 right-3 text-[10px] bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded">コート取り専用</span>
+        <span class="absolute top-3 right-3 text-[10px] bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded">管理権限</span>
         <h2 class="font-bold text-slate-700 mb-3 text-sm">練習スケジュール作成</h2>
         <div class="space-y-3 text-xs">
           <div>
@@ -237,6 +284,7 @@
   <script>
     let currentRole = "部員";
     let currentUser = null;
+    let cachedMembers = [];
 
     const ROLE_LIMITS = {
       "代表": 2,
@@ -245,7 +293,6 @@
       "コート取り": 3
     };
 
-    // 初期管理者データ（DBが空でもログイン可能）
     const ADMIN_USER = {
       student_id: "24CA074M",
       name: "代表者",
@@ -267,7 +314,6 @@
       document.getElementById("practice-date").value = tomorrow.toISOString().split('T')[0];
     });
 
-    // データベースに 24CA074M が登録されているか確認し、なければ自動初期追加
     async function ensureAdminRegistered() {
       try {
         const res = await fetch('/api/members');
@@ -313,13 +359,12 @@
         const members = await res.json();
         let member = members.find(m => m.student_id && m.student_id.toUpperCase() === studentId);
 
-        // フォールバック: DB未登録時に 24CA074M なら即ログイン許可
         if (!member && studentId === ADMIN_USER.student_id) {
           member = ADMIN_USER;
         }
 
         if (!member) {
-          return alert('登録されている学籍番号が見つかりません。\n代表または役職者に部員登録を依頼してください。');
+          return alert('登録されている学籍番号が見つかりません。\n代表権限者に部員登録を依頼してください。');
         }
 
         currentUser = {
@@ -332,10 +377,9 @@
         document.getElementById('user-display-name').innerText = currentUser.name;
         document.getElementById('logout-btn').classList.remove('hidden');
 
-        // 代表権限の自動切り替え
-        if (studentId === ADMIN_USER.student_id || member.role === "代表") {
-          document.getElementById('role-selector').value = "代表";
-          changeRole("代表");
+        if (member.role === "代表" || member.role === "副代表") {
+          document.getElementById('role-selector').value = member.role;
+          changeRole(member.role);
         }
 
         alert(`おかえりなさい、${currentUser.name} さん！`);
@@ -374,28 +418,34 @@
       fetchMembers();
     }
 
-    function isOfficerRole() {
-      return currentRole === "代表" || currentRole === "副代表" || currentRole === "会計" || currentRole === "コート取り";
+    function hasAdminAccess() {
+      return currentRole === "代表" || currentRole === "副代表";
     }
 
     function updateRoleVisibility() {
-      const isOfficer = isOfficerRole();
+      const isRepresentative = currentRole === "代表";
+      const isAdmin = hasAdminAccess();
+      const isCourtOfficer = currentRole === "コート取り";
 
+      // 新規部員登録は「代表のみ」可能
       const memberAddBox = document.getElementById("member-add-box");
       if (memberAddBox) {
-        if (isOfficer) memberAddBox.classList.remove("hidden");
+        if (isRepresentative) memberAddBox.classList.remove("hidden");
         else memberAddBox.classList.add("hidden");
       }
 
+      // スケジュール作成は代表・副代表・コート取りが利用可能
       const practiceCreateBox = document.getElementById("practice-create-box");
       if (practiceCreateBox) {
-        if (currentRole === "コート取り" || currentRole === "代表") {
+        if (isAdmin || isCourtOfficer) {
           practiceCreateBox.classList.remove("hidden");
         } else {
           practiceCreateBox.classList.add("hidden");
         }
       }
 
+      // 意見箱閲覧は役職者（代表・副代表・コート取り・会計）
+      const isOfficer = isAdmin || isCourtOfficer || currentRole === "会計";
       const feedbackFormSection = document.getElementById("feedback-form-section");
       const feedbackListSection = document.getElementById("feedback-list-section");
 
@@ -419,30 +469,65 @@
       }
     }
 
+    // 部員名簿のソート優先順位関数
+    function getMemberSortPriority(member) {
+      const roleOrder = {
+        "代表": 1,
+        "副代表": 2,
+        "コート取り": 3,
+        "会計": 4
+      };
+
+      if (roleOrder[member.role]) {
+        return roleOrder[member.role] * 10;
+      }
+
+      const gradeOrder = {
+        "4年": 100,
+        "3年": 101,
+        "2年": 102,
+        "1年": 103,
+        "その他": 200
+      };
+
+      return gradeOrder[member.grade] || 200;
+    }
+
     async function fetchMembers() {
       try {
         const res = await fetch('/api/members');
-        const members = await res.json();
+        cachedMembers = await res.json();
         const list = document.getElementById('member-list');
-        const isOfficer = isOfficerRole();
+        const isAdmin = hasAdminAccess();
+        const isRepresentative = currentRole === "代表";
 
-        if (members.length === 0) {
+        if (cachedMembers.length === 0) {
           list.innerHTML = '<p class="text-slate-400 py-2">部員が登録されていません。</p>';
           return;
         }
 
-        list.innerHTML = members.map(m => `
+        // 指定条件に準拠した並び替え
+        cachedMembers.sort((a, b) => getMemberSortPriority(a) - getMemberSortPriority(b));
+
+        list.innerHTML = cachedMembers.map(m => `
           <div class="py-2.5 flex items-center justify-between">
             <div>
               <span class="font-bold text-slate-800">${m.name}</span>
-              <span class="ml-1 text-[10px] text-slate-400">(${m.student_id || '学籍未登録'})</span>
+              <span class="ml-1 text-[10px] text-slate-500">(${m.student_id})</span>
               <span class="ml-1 text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">${m.grade}</span>
               <span class="ml-1 text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-medium">${m.role}</span>
             </div>
-            ${isOfficer ? `
-              <button onclick="deleteMember(${m.id})" class="text-xs text-red-500 hover:text-red-700 bg-red-50 px-2 py-1 rounded">
-                削除
-              </button>
+            ${isAdmin ? `
+              <div class="flex gap-1">
+                <button onclick="openEditModal(${m.id})" class="text-xs text-blue-600 hover:text-blue-800 bg-blue-50 px-2 py-1 rounded">
+                  編集
+                </button>
+                ${isRepresentative ? `
+                  <button onclick="deleteMember(${m.id})" class="text-xs text-red-500 hover:text-red-700 bg-red-50 px-2 py-1 rounded">
+                    削除
+                  </button>
+                ` : ''}
+              </div>
             ` : ''}
           </div>
         `).join('');
@@ -452,6 +537,8 @@
     }
 
     async function addMember() {
+      if (currentRole !== "代表") return alert("新規部員登録は代表のみ実行可能です。");
+
       const name = document.getElementById('new-member-name').value.trim();
       const student_id = document.getElementById('new-member-student-id').value.trim().toUpperCase();
       const grade = document.getElementById('new-member-grade').value;
@@ -487,7 +574,61 @@
       alert('部員を登録しました！');
     }
 
+    function openEditModal(id) {
+      const member = cachedMembers.find(m => m.id === id);
+      if (!member) return;
+
+      document.getElementById('edit-member-id').value = member.id;
+      document.getElementById('edit-member-name').value = member.name;
+      document.getElementById('edit-member-student-id').value = member.student_id;
+      document.getElementById('edit-member-grade').value = member.grade;
+      document.getElementById('edit-member-role').value = member.role;
+
+      // 役職フィールドの有効/無効化制御（代表のみ変更可）
+      const roleSelect = document.getElementById('edit-member-role');
+      if (currentRole === "代表") {
+        roleSelect.disabled = false;
+      } else {
+        roleSelect.disabled = true;
+      }
+
+      document.getElementById('edit-member-modal').classList.remove('hidden');
+    }
+
+    function closeEditModal() {
+      document.getElementById('edit-member-modal').classList.add('hidden');
+    }
+
+    async function saveMemberEdit() {
+      const id = document.getElementById('edit-member-id').value;
+      const name = document.getElementById('edit-member-name').value.trim();
+      const student_id = document.getElementById('edit-member-student-id').value.trim().toUpperCase();
+      const grade = document.getElementById('edit-member-grade').value;
+      const role = document.getElementById('edit-member-role').value;
+
+      if (!name || !student_id) return alert('氏名と学籍番号を入力してください。');
+
+      // 編集削除 ➔ 再登録によるデータ更新処理
+      try {
+        await fetch(`/api/members/${id}`, { method: 'DELETE' });
+        await fetch('/api/members', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, student_id, grade, role })
+        });
+
+        closeEditModal();
+        fetchMembers();
+        fetchAIAnalytics();
+        alert('部員情報を更新しました！');
+      } catch (err) {
+        console.error('Save member error:', err);
+        alert('更新処理中にエラーが発生しました。');
+      }
+    }
+
     async function deleteMember(id) {
+      if (currentRole !== "代表") return alert("部員削除は代表のみ実行可能です。");
       if (!confirm('本当にこの部員を削除しますか？')) return;
       await fetch(`/api/members/${id}`, { method: 'DELETE' });
       fetchMembers();
@@ -500,7 +641,7 @@
         const practices = await res.json();
         const list = document.getElementById('practice-list');
         const weeklyList = document.getElementById('weekly-practice-list');
-        const canDelete = currentRole === "コート取り" || currentRole === "代表";
+        const canDelete = hasAdminAccess() || currentRole === "コート取り";
 
         if (practices.length === 0) {
           list.innerHTML = '<p class="text-slate-400 py-2">予定されている練習はありません。</p>';
@@ -638,7 +779,7 @@
       document.getElementById('feedback-content').value = '';
       document.getElementById('feedback-sender').value = '';
       alert('ご意見を送信しました。ありがとうございます！');
-      if (isOfficerRole()) fetchFeedbacks();
+      if (hasAdminAccess() || currentRole === "コート取り" || currentRole === "会計") fetchFeedbacks();
     }
 
     async function fetchFeedbacks() {
@@ -659,9 +800,11 @@
               <span class="text-[10px]">${new Date(f.created_at).toLocaleDateString('ja-JP')}</span>
             </div>
             <p class="text-slate-600 bg-slate-50 p-2 rounded border border-slate-100 whitespace-pre-wrap">${f.content}</p>
-            <button onclick="deleteFeedback(${f.id})" class="absolute top-2 right-0 text-[10px] text-red-500 hover:text-red-700 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded font-bold">
-              削除
-            </button>
+            ${hasAdminAccess() ? `
+              <button onclick="deleteFeedback(${f.id})" class="absolute top-2 right-0 text-[10px] text-red-500 hover:text-red-700 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded font-bold">
+                削除
+              </button>
+            ` : ''}
           </div>
         `).join('');
       } catch (err) {
