@@ -89,7 +89,7 @@
     <div class="max-w-md mx-auto flex justify-between items-center">
       <div>
         <h1 class="text-xl font-bold tracking-tight">RUB Manager</h1>
-        <p class="text-xs text-blue-200">Circle OS v3.7 (GitHub Pages)</p>
+        <p class="text-xs text-blue-200">Circle OS v3.7</p>
       </div>
       <div class="flex items-center gap-2">
         <button onclick="toggleDarkMode()" class="p-1.5 rounded-lg bg-blue-700 dark:bg-blue-900 hover:bg-blue-800 transition text-white">
@@ -340,12 +340,18 @@
         .replace(/'/g, '&#039;');
     }
 
-    // DBヘパー関数 (LocalStorage 操作)
+    // DBヘルパー関数 (LocalStorage 操作)
     function getDB(key) {
       return JSON.parse(localStorage.getItem(key) || '[]');
     }
     function setDB(key, data) {
       localStorage.setItem(key, JSON.stringify(data));
+    }
+
+    // 今日の日付を YYYY-MM-DD 形式で取得
+    function getTodayString() {
+      const today = new Date();
+      return today.toISOString().split('T')[0];
     }
 
     document.addEventListener("DOMContentLoaded", () => {
@@ -359,9 +365,13 @@
       fetchFeedbacks();
       handleLocationChange();
 
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      document.getElementById("practice-date").value = tomorrow.toISOString().split('T')[0];
+      // 今日の日付を取得して初期値および選択可能最小値(min)に設定
+      const todayStr = getTodayString();
+      const dateInput = document.getElementById("practice-date");
+      if (dateInput) {
+        dateInput.value = todayStr;
+        dateInput.min = todayStr; // 過去の日付を選択不可にする設定
+      }
     });
 
     function initTheme() {
@@ -716,7 +726,7 @@
     }
 
     function fetchPractices() {
-      const practices = getDB(STORAGE_KEY_PRACTICES);
+      let practices = getDB(STORAGE_KEY_PRACTICES);
       const attendance = getDB(STORAGE_KEY_ATTENDANCE);
 
       const list = document.getElementById('practice-list');
@@ -729,6 +739,13 @@
         document.getElementById('weekly-count-badge').innerText = '0件';
         return;
       }
+
+      // 日付順（今日に近い順）にソート
+      practices.sort((a, b) => {
+        const dateA = new Date(a.date.split(' ')[0]);
+        const dateB = new Date(b.date.split(' ')[0]);
+        return dateA - dateB;
+      });
 
       let html = '';
       let weeklyHtml = '';
@@ -777,7 +794,7 @@
           </div>
         `;
 
-        // 直近1週間フィルタリング
+        // 直近1週間（今日〜7日後）の判定
         const pDateParsed = new Date(p.date.split(' ')[0]);
         if (!isNaN(pDateParsed) && pDateParsed >= today && pDateParsed <= nextWeek) {
           weeklyCount++;
