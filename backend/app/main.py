@@ -1,6 +1,11 @@
-from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
+from typing import List
+from fastapi import FastAPI, Depends, HTTPException, Form
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
+from sqlmodel import Session, select
+
+from app.database import init_db, get_session
+from app.models import Member, Practice, Venue
 
 app = FastAPI(title="RUB Manager API")
 
@@ -12,14 +17,66 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# 起動時にデータベースとテーブルを自動作成
+@app.on_event("startup")
+def on_startup():
+    init_db()
+
 @app.get("/")
 def root():
     return {"message": "Circle OS API is fully online!"}
 
-# UI画面 ( /app )
+# --- データベース連携 API ---
+
+# 部員追加 (フォーム送信対応)
+@app.post("/members/add")
+def add_member(
+    name: str = Form(...),
+    grade: int = Form(...),
+    position: str = Form(...),
+    session: Session = Depends(get_session)
+):
+    new_member = Member(name=name, grade=grade, position=position)
+    session.add(new_member)
+    session.commit()
+    return RedirectResponse(url="/app", status_code=303)
+
+# 部員削除
+@app.post("/members/delete/{member_id}")
+def delete_member(member_id: int, session: Session = Depends(get_session)):
+    member = session.get(Member, member_id)
+    if member:
+        session.delete(member)
+        session.commit()
+    return RedirectResponse(url="/app", status_code=303)
+
+# --- フロントエンド画面 (/app) ---
 @app.get("/app", response_class=HTMLResponse)
-def get_ui():
-    return """
+def get_ui(session: Session = Depends(get_session)):
+    members = session.exec(select(Member)).all()
+    member_count = len(members)
+    
+    # 部員リストの HTML 生成
+    members_html = ""
+    if not members:
+        members_html = '<p class="text-xs text-gray-500 text-center py-4">登録された部員はいません。下のフォームから追加してください。</p>'
+    else:
+        for m in members:
+            members_html += f"""
+            <div class="flex justify-between items-center border-b pb-2">
+                <div>
+                    <span class="font-bold">{m.name}</span> <span class="text-xs text-gray-500">({m.grade}年/{m.position})</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">{m.payment_status}</span>
+                    <form action="/members/delete/{m.id}" method="post" class="inline">
+                        <button type="submit" class="text-xs text-red-500 hover:text-red-700 font-bold">削除</button>
+                    </form>
+                </div>
+            </div>
+            """
+
+    return f"""
     <!DOCTYPE html>
     <html lang="ja">
     <head>
@@ -31,13 +88,12 @@ def get_ui():
     <body class="bg-gray-100 text-gray-800 pb-20 font-sans">
         <div class="max-w-md mx-auto p-4 space-y-4">
             
-            <!-- ヘッダー -->
             <header class="bg-blue-600 text-white p-4 rounded-xl shadow-lg flex justify-between items-center">
                 <h1 class="text-xl font-bold">RUB Manager</h1>
-                <span class="text-xs bg-blue-500 px-2 py-1 rounded">Circle OS</span>
+                <span class="text-xs bg-blue-500 px-2 py-1 rounded">DB Live</span>
             </header>
 
-            <!-- タブ 1: ダッシュボード -->
+            <!-- タブ 1: ホーム -->
             <div id="tab-dashboard" class="tab-content space-y-4">
                 <section class="bg-white p-4 rounded-xl shadow border border-gray-100">
                     <h2 class="text-sm font-semibold text-gray-500 mb-2">次回練習・AI予測</h2>
@@ -46,67 +102,45 @@ def get_ui():
                     <div class="bg-blue-50 p-3 rounded-lg border border-blue-100 flex justify-between items-center">
                         <div>
                             <div class="text-xs text-gray-500">AI参加予測人数</div>
-                            <div class="text-2xl font-extrabold text-blue-800">38 人</div>
+                            <div class="text-2xl font-extrabold text-blue-800">{member_count} 人</div>
                         </div>
                         <div class="text-right">
                             <div class="text-xs text-gray-500">信頼度</div>
-                            <div class="text-sm font-bold text-green-600">82%</div>
+                            <div class="text-sm font-bold text-green-600">88%</div>
                         </div>
                     </div>
                 </section>
 
                 <div class="grid grid-cols-2 gap-3">
                     <div class="bg-white p-3 rounded-xl shadow text-center">
-                        <div class="text-xs text-gray-500">総部員数</div>
-                        <div class="text-xl font-bold">40 名</div>
+                        <div class="text-xs text-gray-500">登録部員数</div>
+                        <div class="text-xl font-bold">{member_count} 名</div>
                     </div>
                     <div class="bg-white p-3 rounded-xl shadow text-center">
                         <div class="text-xs text-gray-500">平均参加率</div>
-                        <div class="text-xl font-bold text-green-600">78%</div>
+                        <div class="text-xl font-bold text-green-600">82%</div>
                     </div>
                 </div>
-
-                <section class="bg-gradient-to-r from-purple-500 to-indigo-600 text-white p-4 rounded-xl shadow">
-                    <h2 class="text-sm font-bold mb-2">💡 AI運営分析</h2>
-                    <ul class="text-xs space-y-1 list-disc list-inside opacity-90">
-                        <li>金曜日の参加率が低下傾向にあります</li>
-                        <li>4年生の参加率フォローが必要です（65%）</li>
-                    </ul>
-                </section>
             </div>
 
-            <!-- タブ 2: 部員管理 -->
+            <!-- タブ 2: 部員管理 (DB連携 & 追加フォーム) -->
             <div id="tab-members" class="tab-content hidden space-y-3">
-                <h2 class="text-md font-bold text-gray-700">部員一覧 (40名)</h2>
+                <h2 class="text-md font-bold text-gray-700">部員登録 & 一覧 ({member_count}名)</h2>
+                
+                <!-- 新規追加フォーム -->
+                <form action="/members/add" method="post" class="bg-white p-3 rounded-xl shadow space-y-2">
+                    <div class="text-xs font-bold text-gray-600">新規部員を追加</div>
+                    <div class="grid grid-cols-3 gap-2">
+                        <input type="text" name="name" placeholder="名前" required class="text-xs p-2 border rounded bg-gray-50">
+                        <input type="number" name="grade" placeholder="学年" min="1" max="4" required class="text-xs p-2 border rounded bg-gray-50">
+                        <input type="text" name="position" placeholder="ポジ(G/F/C)" required class="text-xs p-2 border rounded bg-gray-50">
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 text-white font-bold py-1.5 rounded text-xs">追加保存</button>
+                </form>
+
+                <!-- 部員リスト -->
                 <div class="bg-white p-4 rounded-xl shadow space-y-3">
-                    <div class="flex justify-between items-center border-b pb-2">
-                        <div>
-                            <div class="font-bold">山田 太郎</div>
-                            <div class="text-xs text-gray-500">3年 / ガード (G)</div>
-                        </div>
-                        <span class="text-xs bg-green-100 text-green-700 font-bold px-2.5 py-1 rounded-full">参加 86% / 済</span>
-                    </div>
-                    <div class="flex justify-between items-center border-b pb-2">
-                        <div>
-                            <div class="font-bold">佐藤 花子</div>
-                            <div class="text-xs text-gray-500">2年 / フォワード (F)</div>
-                        </div>
-                        <span class="text-xs bg-green-100 text-green-700 font-bold px-2.5 py-1 rounded-full">参加 92% / 済</span>
-                    </div>
-                    <div class="flex justify-between items-center border-b pb-2">
-                        <div>
-                            <div class="font-bold">鈴木 健太</div>
-                            <div class="text-xs text-gray-500">4年 / センター (C)</div>
-                        </div>
-                        <span class="text-xs bg-red-100 text-red-700 font-bold px-2.5 py-1 rounded-full">参加 65% / 未払い</span>
-                    </div>
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <div class="font-bold">田中 翔</div>
-                            <div class="text-xs text-gray-500">1年 / ガード (G)</div>
-                        </div>
-                        <span class="text-xs bg-red-100 text-red-700 font-bold px-2.5 py-1 rounded-full">参加 80% / 未払い</span>
-                    </div>
+                    {members_html}
                 </div>
             </div>
 
@@ -118,14 +152,6 @@ def get_ui():
                         <div class="font-bold">立教大学体育館</div>
                         <div class="text-xs text-gray-500">料金: 12,000円 | 定員: 80人 | 池袋</div>
                     </div>
-                    <div class="bg-white p-3 rounded-xl shadow border-l-4 border-green-500">
-                        <div class="font-bold">池袋体育館</div>
-                        <div class="text-xs text-gray-500">料金: 9,000円 | 定員: 60人 | 池袋</div>
-                    </div>
-                    <div class="bg-white p-3 rounded-xl shadow border-l-4 border-yellow-500">
-                        <div class="font-bold">豊島区スポーツセンター</div>
-                        <div class="text-xs text-gray-500">料金: 15,000円 | 定員: 100人 | 巣鴨</div>
-                    </div>
                 </div>
             </div>
 
@@ -133,18 +159,14 @@ def get_ui():
             <div id="tab-ai" class="tab-content hidden space-y-3">
                 <h2 class="text-md font-bold text-gray-700">🤖 AI連絡文作成</h2>
                 <div class="bg-white p-4 rounded-xl shadow space-y-3">
-                    <label class="block text-xs font-semibold text-gray-600">連絡の目的</label>
                     <input type="text" id="ai-topic" value="8/12の練習参加呼びかけ" class="w-full text-sm p-2 border rounded-lg bg-gray-50">
-                    
-                    <button onclick="generateText()" class="w-full bg-blue-600 text-white font-bold py-2 rounded-lg text-sm shadow hover:bg-blue-700">連絡文を生成する</button>
-                    
+                    <button onclick="generateText()" class="w-full bg-blue-600 text-white font-bold py-2 rounded-lg text-sm shadow">連絡文を生成する</button>
                     <div id="ai-output" class="hidden bg-gray-50 p-3 rounded-lg border text-xs text-gray-700 whitespace-pre-wrap"></div>
                 </div>
             </div>
 
         </div>
 
-        <!-- ナビゲーションバー -->
         <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around py-2 max-w-md mx-auto shadow-lg">
             <button onclick="switchTab('dashboard')" class="text-center text-blue-600 font-bold" id="nav-dashboard">
                 <div class="text-lg">📊</div>
@@ -171,11 +193,7 @@ def get_ui():
                 
                 ['dashboard', 'members', 'venues', 'ai'].forEach(name => {
                     const btn = document.getElementById('nav-' + name);
-                    if (name === tabName) {
-                        btn.className = "text-center text-blue-600 font-bold";
-                    } else {
-                        btn.className = "text-center text-gray-400";
-                    }
+                    btn.className = (name === tabName) ? "text-center text-blue-600 font-bold" : "text-center text-gray-400";
                 });
             }
 
@@ -183,7 +201,7 @@ def get_ui():
                 const topic = document.getElementById('ai-topic').value;
                 const out = document.getElementById('ai-output');
                 out.classList.remove('hidden');
-                out.innerText = "【AI作成メッセージ】\n\nお疲れ様です！\n" + topic + "についてお知らせです。\n\n日時: 8/12(水) 18:00〜20:00\n場所: 立教大学体育館\n\n参加・欠席の回答をアプリからお願いします！🔥";
+                out.innerText = "【AI作成メッセージ】\\n\\nお疲れ様です！\\n" + topic + "についてお知らせです。\\n\\n日時: 8/12(水) 18:00〜20:00\\n場所: 立教大学体育館\\n\\n回答をお願いします！🔥";
             }
         </script>
     </body>
