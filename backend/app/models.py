@@ -1,12 +1,11 @@
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
-from sqlalchemy.orm import relationship
 from datetime import datetime
 from .database import Base
 
 class Member(Base):
     __tablename__ = "members"
 
-    id = Column(Integer, primary_order=True, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
     grade = Column(String, nullable=False)      # 例: 1年, 2年, 3年, 4年
     position = Column(String, nullable=False)   # 例: PG, SG, SF, PF, C
