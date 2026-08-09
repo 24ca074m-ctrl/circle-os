@@ -30,9 +30,8 @@
       <div class="space-y-3 text-xs pt-2">
         <div>
           <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">学籍番号</label>
-          <input type="text" id="login-student-id" placeholder="例: 24CA074M" class="w-full border dark:border-slate-600 dark:bg-slate-700 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none uppercase">
+          <input type="text" id="login-student-id" placeholder="例: 20AA000A" class="w-full border dark:border-slate-600 dark:bg-slate-700 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none uppercase">
         </div>
-        <p class="text-[10px] text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-700/50 p-2 rounded">※初期代表アカウント: <strong>24CA074M</strong>（全権限）</p>
         <button onclick="handleLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg text-sm transition">
           ログイン
         </button>
@@ -881,7 +880,6 @@
 
     function submitFeedback() {
       const inputSender = document.getElementById('feedback-sender').value.trim();
-      // 名前入力欄が空ならログイン中に関わらず強制で「匿名部員」にする
       const sender_name = inputSender || '匿名部員';
       const content = document.getElementById('feedback-content').value.trim();
 
