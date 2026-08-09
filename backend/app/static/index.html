@@ -9,14 +9,41 @@
 </head>
 <body class="bg-slate-100 text-slate-800 pb-20">
 
+  <!-- ログイン画面モーダル -->
+  <div id="login-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl space-y-4">
+      <div class="text-center space-y-1">
+        <h1 class="text-2xl font-bold text-blue-600">RUB Manager</h1>
+        <p class="text-xs text-slate-500">立教大学サークル専用ログイン</p>
+      </div>
+
+      <div class="space-y-3 text-xs pt-2">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">お名前</label>
+          <input type="text" id="login-name" placeholder="例: 立教 太郎" class="w-full border p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">立教メールアドレス</label>
+          <input type="email" id="login-email" placeholder="example@rikkyo.ac.jp" class="w-full border p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+        </div>
+        <p class="text-[10px] text-amber-600 bg-amber-50 p-2 rounded">※ @rikkyo.ac.jp ドメインのメールアドレスのみログイン可能です。</p>
+        <button onclick="handleLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg text-sm transition">
+          ログインして利用開始
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Header -->
   <header class="bg-blue-600 text-white p-4 shadow-md sticky top-0 z-50">
     <div class="max-w-md mx-auto flex justify-between items-center">
       <div>
         <h1 class="text-xl font-bold tracking-tight">RUB Manager</h1>
-        <p class="text-xs text-blue-200">Circle OS v3.0</p>
+        <p class="text-xs text-blue-200">Circle OS v3.1</p>
       </div>
-      <span class="text-xs bg-blue-800 px-2 py-1 rounded-full text-blue-100 border border-blue-400">DB Live</span>
+      <div class="flex items-center gap-2">
+        <span id="user-display-name" class="text-xs bg-blue-700 px-2.5 py-1 rounded-full text-white font-medium border border-blue-400">未ログイン</span>
+      </div>
     </div>
     <!-- Role Switcher -->
     <div class="max-w-md mx-auto mt-3 bg-blue-700/60 p-2 rounded-lg flex items-center justify-between text-xs">
@@ -37,18 +64,30 @@
     <!-- Tab 1: Home / AI -->
     <div id="tab-home" class="tab-content space-y-4">
       <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-        <h2 class="font-bold text-slate-700 flex items-center gap-2 mb-2">
-          <i data-lucide="bot" class="w-5 h-5 text-blue-600"></i> サークルAIアシスタント
+        <h2 class="font-bold text-slate-700 flex items-center gap-2 mb-2 text-sm">
+          <i data-lucide="bot" class="w-4 h-4 text-blue-600"></i> サークルAIアシスタント
         </h2>
-        <div id="ai-advice" class="text-sm text-slate-600 bg-blue-50 p-3 rounded-lg border border-blue-100 space-y-1">
+        <div id="ai-advice" class="text-xs text-slate-600 bg-blue-50 p-3 rounded-lg border border-blue-100 space-y-1">
           <p class="animate-pulse">AIが分析中...</p>
+        </div>
+      </div>
+
+      <!-- 直近1週間の練習予定（新規追加） -->
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 space-y-3">
+        <h2 class="font-bold text-slate-700 text-sm flex items-center justify-between">
+          <span class="flex items-center gap-2">
+            <i data-lucide="calendar-days" class="w-4 h-4 text-green-600"></i> 直近1週間の練習予定
+          </span>
+          <span id="weekly-count-badge" class="text-[10px] bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded-full">0件</span>
+        </h2>
+        <div id="weekly-practice-list" class="space-y-2 text-xs">
+          <!-- 動的読み込み -->
         </div>
       </div>
     </div>
 
     <!-- Tab 2: Members -->
     <div id="tab-members" class="tab-content hidden space-y-4">
-      <!-- Member Add Form (Officers Only) -->
       <div id="member-add-box" class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 hidden">
         <h2 class="font-bold text-slate-700 mb-3 text-sm flex items-center gap-2">
           <i data-lucide="user-plus" class="w-4 h-4 text-blue-600"></i> 新規部員登録
@@ -85,20 +124,16 @@
         </div>
       </div>
 
-      <!-- Member List -->
       <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
         <h2 class="font-bold text-slate-700 mb-3 text-sm flex items-center gap-2">
           <i data-lucide="users" class="w-4 h-4 text-slate-500"></i> 部員名簿
         </h2>
-        <div id="member-list" class="divide-y divide-slate-100 text-xs">
-          <!-- Dynamically populated -->
-        </div>
+        <div id="member-list" class="divide-y divide-slate-100 text-xs"></div>
       </div>
     </div>
 
     <!-- Tab 3: Gymnasium / Practice Schedule -->
     <div id="tab-gym" class="tab-content hidden space-y-4">
-      <!-- Practice Schedule Creation (Court Manager / Rep Only) -->
       <div id="practice-create-box" class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 relative hidden">
         <span class="absolute top-3 right-3 text-[10px] bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded">コート取り専用</span>
         <h2 class="font-bold text-slate-700 mb-3 text-sm">練習スケジュール作成</h2>
@@ -136,18 +171,15 @@
         </div>
       </div>
 
-      <!-- Practice Schedule & Attendance Voting -->
       <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-        <h2 class="font-bold text-slate-700 mb-3 text-sm">練習スケジュール & 出欠投票</h2>
-        <div id="practice-list" class="space-y-3 text-xs">
-          <!-- Dynamically populated -->
-        </div>
+        <h2 class="font-bold text-slate-700 mb-3 text-sm">全練習スケジュール & 出欠投票</h2>
+        <div id="practice-list" class="space-y-3 text-xs"></div>
       </div>
     </div>
 
     <!-- Tab 4: Feedback / Opinion Box -->
     <div id="tab-feedback" class="tab-content hidden space-y-4">
-      <!-- General Member View: Submission Form Only -->
+      <!-- 一般部員用：送信フォーム -->
       <div id="feedback-form-section" class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
         <h2 class="font-bold text-slate-700 mb-2 text-sm flex items-center gap-2">
           <i data-lucide="message-square-plus" class="w-4 h-4 text-blue-600"></i> サークル意見箱 (送信)
@@ -168,7 +200,7 @@
         </div>
       </div>
 
-      <!-- Officers View: Feedback List Only -->
+      <!-- 役職者用：届いた意見一覧（右上削除機能追加） -->
       <div id="feedback-list-section" class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 hidden">
         <div class="flex items-center justify-between mb-3">
           <h2 class="font-bold text-slate-700 text-sm flex items-center gap-2">
@@ -176,9 +208,7 @@
           </h2>
           <span class="text-[10px] bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded">役職者限定閲覧</span>
         </div>
-        <div id="feedback-list" class="space-y-2 text-xs divide-y divide-slate-100">
-          <!-- Dynamically populated -->
-        </div>
+        <div id="feedback-list" class="space-y-2 text-xs divide-y divide-slate-100"></div>
       </div>
     </div>
 
@@ -208,20 +238,48 @@
 
   <script>
     let currentRole = "部員";
+    let currentUser = null;
 
     document.addEventListener("DOMContentLoaded", () => {
       lucide.createIcons();
+      checkAuth();
       fetchAIAnalytics();
       fetchMembers();
       fetchPractices();
       fetchFeedbacks();
       updateRoleVisibility();
 
-      // デフォルトの練習日を明日に設定
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
       document.getElementById("practice-date").value = tomorrow.toISOString().split('T')[0];
     });
+
+    // ログイン認証チェック
+    function checkAuth() {
+      const savedUser = localStorage.getItem('circle_os_user');
+      if (savedUser) {
+        currentUser = JSON.parse(savedUser);
+        document.getElementById('login-modal').classList.add('hidden');
+        document.getElementById('user-display-name').innerText = currentUser.name;
+      } else {
+        document.getElementById('login-modal').classList.remove('hidden');
+      }
+    }
+
+    function handleLogin() {
+      const name = document.getElementById('login-name').value.trim();
+      const email = document.getElementById('login-email').value.trim();
+
+      if (!name) return alert('お名前を入力してください');
+      if (!email || !email.endsWith('@rikkyo.ac.jp')) {
+        return alert('立教大学のメールアドレス (@rikkyo.ac.jp) を入力してください');
+      }
+
+      currentUser = { name, email };
+      localStorage.setItem('circle_os_user', JSON.stringify(currentUser));
+      document.getElementById('login-modal').classList.add('hidden');
+      document.getElementById('user-display-name').innerText = currentUser.name;
+    }
 
     function switchTab(tabName) {
       document.querySelectorAll(".tab-content").forEach(el => el.classList.add("hidden"));
@@ -250,14 +308,12 @@
     function updateRoleVisibility() {
       const isOfficer = isOfficerRole();
 
-      // 部員追加エリア（役職持ちのみ）
       const memberAddBox = document.getElementById("member-add-box");
       if (memberAddBox) {
         if (isOfficer) memberAddBox.classList.remove("hidden");
         else memberAddBox.classList.add("hidden");
       }
 
-      // 練習作成エリア（コート取り or 代表のみ）
       const practiceCreateBox = document.getElementById("practice-create-box");
       if (practiceCreateBox) {
         if (currentRole === "コート取り" || currentRole === "代表") {
@@ -267,7 +323,6 @@
         }
       }
 
-      // 意見箱の表示切り替え（一般部員：投稿フォームのみ／役職者：一覧のみ）
       const feedbackFormSection = document.getElementById("feedback-form-section");
       const feedbackListSection = document.getElementById("feedback-list-section");
 
@@ -280,7 +335,6 @@
       }
     }
 
-    // AI アナリティクス
     async function fetchAIAnalytics() {
       try {
         const res = await fetch('/api/ai/analytics');
@@ -292,7 +346,6 @@
       }
     }
 
-    // 部員 API
     async function fetchMembers() {
       try {
         const res = await fetch('/api/members');
@@ -329,10 +382,7 @@
       const grade = document.getElementById('new-member-grade').value;
       const role = document.getElementById('new-member-role').value;
 
-      if (!name) {
-        alert('氏名を入力してください。');
-        return;
-      }
+      if (!name) return alert('氏名を入力してください。');
 
       await fetch('/api/members', {
         method: 'POST',
@@ -352,24 +402,35 @@
       fetchAIAnalytics();
     }
 
-    // 練習スケジュール API
     async function fetchPractices() {
       try {
         const res = await fetch('/api/practices');
         const practices = await res.json();
         const list = document.getElementById('practice-list');
+        const weeklyList = document.getElementById('weekly-practice-list');
         const canDelete = currentRole === "コート取り" || currentRole === "代表";
 
         if (practices.length === 0) {
           list.innerHTML = '<p class="text-slate-400 py-2">予定されている練習はありません。</p>';
+          weeklyList.innerHTML = '<p class="text-slate-400 py-1">直近1週間の練習予定はありません。</p>';
+          document.getElementById('weekly-count-badge').innerText = '0件';
           return;
         }
 
+        // 直近1週間（今日〜7日後）のフィルタリング
+        const now = new Date();
+        const nextWeek = new Date();
+        nextWeek.setDate(now.getDate() + 7);
+
         let html = '';
+        let weeklyHtml = '';
+        let weeklyCount = 0;
+
         for (const p of practices) {
           const attRes = await fetch(`/api/attendance/${p.id}`);
           const att = await attRes.json();
 
+          // スケジュール全体の表示
           html += `
             <div class="border rounded-lg p-3 bg-slate-50 space-y-2">
               <div class="flex justify-between items-start">
@@ -385,13 +446,13 @@
                 ` : ''}
               </div>
 
-              <!-- 出欠投票 -->
+              <!-- 出欠投票（ログインユーザーの名前でワンタップ投票） -->
               <div class="border-t pt-2 mt-2">
-                <p class="font-medium text-slate-600 mb-1">出欠投票:</p>
+                <p class="font-medium text-slate-600 mb-1">出欠投票 (${currentUser ? currentUser.name : '未ログイン'}):</p>
                 <div class="flex gap-1 mb-2">
-                  <button onclick="voteAttendance(${p.id}, '参加')" class="flex-1 bg-green-500 text-white font-bold py-1 rounded hover:bg-green-600 text-xs">参加</button>
-                  <button onclick="voteAttendance(${p.id}, '不参加')" class="flex-1 bg-red-500 text-white font-bold py-1 rounded hover:bg-red-600 text-xs">不参加</button>
-                  <button onclick="voteAttendance(${p.id}, '未定')" class="flex-1 bg-gray-400 text-white font-bold py-1 rounded hover:bg-gray-500 text-xs">未定</button>
+                  <button onclick="voteAttendance(${p.id}, '参加')" class="flex-1 bg-green-500 text-white font-bold py-1.5 rounded hover:bg-green-600 text-xs">参加</button>
+                  <button onclick="voteAttendance(${p.id}, '不参加')" class="flex-1 bg-red-500 text-white font-bold py-1.5 rounded hover:bg-red-600 text-xs">不参加</button>
+                  <button onclick="voteAttendance(${p.id}, '未定')" class="flex-1 bg-gray-400 text-white font-bold py-1.5 rounded hover:bg-gray-500 text-xs">未定</button>
                 </div>
                 <div class="text-[11px] text-slate-500 bg-white p-2 rounded border space-y-0.5">
                   <div><span class="font-bold text-green-600">参加 (${att.参加.length}名):</span> ${att.参加.join(', ') || 'なし'}</div>
@@ -401,8 +462,24 @@
               </div>
             </div>
           `;
+
+          // 直近の予定に追加（トップ数件）
+          weeklyCount++;
+          weeklyHtml += `
+            <div class="p-2.5 bg-slate-50 border rounded-lg flex items-center justify-between">
+              <div>
+                <div class="font-bold text-blue-600">${p.date}</div>
+                <div class="text-slate-500 text-[11px]">📍 ${p.location}</div>
+              </div>
+              <span class="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded">参加 ${att.参加.length}名</span>
+            </div>
+          `;
         }
+
         list.innerHTML = html;
+        weeklyList.innerHTML = weeklyHtml;
+        document.getElementById('weekly-count-badge').innerText = `${weeklyCount}件`;
+
       } catch (err) {
         console.error('Fetch practices error:', err);
       }
@@ -415,10 +492,7 @@
       const location = document.getElementById('practice-location').value;
       const memo = document.getElementById('practice-memo').value.trim();
 
-      if (!dateVal) {
-        alert('練習日を選択してください。');
-        return;
-      }
+      if (!dateVal) return alert('練習日を選択してください。');
 
       const fullDateStr = `${dateVal} (${startTime}〜${endTime})`;
 
@@ -433,18 +507,13 @@
           })
         });
 
-        if (!res.ok) {
-          const errData = await res.json();
-          alert(`スケジュールの作成に失敗しました: ${errData.detail || 'エラーが発生しました'}`);
-          return;
-        }
+        if (!res.ok) return alert('スケジュールの作成に失敗しました');
 
         document.getElementById('practice-memo').value = '';
         await fetchPractices();
         alert('練習スケジュールを作成しました！');
       } catch (err) {
         console.error('Create practice error:', err);
-        alert('通信エラーが発生しました。ネットワーク接続を確認してください。');
       }
     }
 
@@ -454,16 +523,16 @@
       fetchPractices();
     }
 
+    // 名前ポップアップなし！ログインユーザー名でワンタップ投票
     async function voteAttendance(practiceId, status) {
-      const name = prompt('投票者のお名前を入力してください:');
-      if (!name || !name.trim()) return;
+      if (!currentUser) return alert('ログインしてください');
 
       await fetch('/api/attendance', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           practice_id: practiceId,
-          member_name: name.trim(),
+          member_name: currentUser.name,
           status: status
         })
       });
@@ -473,13 +542,10 @@
 
     // 意見箱 API
     async function submitFeedback() {
-      const sender_name = document.getElementById('feedback-sender').value.trim() || '匿名';
+      const sender_name = document.getElementById('feedback-sender').value.trim() || (currentUser ? currentUser.name : '匿名');
       const content = document.getElementById('feedback-content').value.trim();
 
-      if (!content) {
-        alert('ご意見・ご要望を入力してください。');
-        return;
-      }
+      if (!content) return alert('ご意見・ご要望を入力してください。');
 
       await fetch('/api/feedbacks', {
         method: 'POST',
@@ -490,9 +556,7 @@
       document.getElementById('feedback-content').value = '';
       document.getElementById('feedback-sender').value = '';
       alert('ご意見を送信しました。ありがとうございます！');
-      if (isOfficerRole()) {
-        fetchFeedbacks();
-      }
+      if (isOfficerRole()) fetchFeedbacks();
     }
 
     async function fetchFeedbacks() {
@@ -506,18 +570,28 @@
           return;
         }
 
+        // 各ご意見の右上に削除ボタンを追加
         list.innerHTML = feedbacks.map(f => `
-          <div class="py-2.5">
-            <div class="flex justify-between text-slate-500 mb-1">
+          <div class="py-2.5 relative group">
+            <div class="flex justify-between items-center text-slate-500 mb-1 pr-12">
               <span class="font-bold text-slate-700">${f.sender_name}</span>
               <span class="text-[10px]">${new Date(f.created_at).toLocaleDateString('ja-JP')}</span>
             </div>
             <p class="text-slate-600 bg-slate-50 p-2 rounded border border-slate-100 whitespace-pre-wrap">${f.content}</p>
+            <button onclick="deleteFeedback(${f.id})" class="absolute top-2 right-0 text-[10px] text-red-500 hover:text-red-700 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded font-bold">
+              削除
+            </button>
           </div>
         `).join('');
       } catch (err) {
         console.error('Fetch feedbacks error:', err);
       }
+    }
+
+    async function deleteFeedback(id) {
+      if (!confirm('このご意見を削除しますか？')) return;
+      await fetch(`/api/feedbacks/${id}`, { method: 'DELETE' });
+      fetchFeedbacks();
     }
   </script>
 </body>
