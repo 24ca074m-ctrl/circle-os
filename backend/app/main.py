@@ -16,6 +16,7 @@ app = FastAPI(title="RUB Manager - Circle OS")
 # Pydantic Schemas
 class MemberCreate(BaseModel):
     name: str
+    student_id: Optional[str] = ""
     grade: str
     role: str = "部員"
 
@@ -53,7 +54,7 @@ def create_member(member: MemberCreate, db: Session = Depends(get_db)):
     db_member = models.Member(
         name=member.name,
         grade=member.grade,
-        position="",
+        position=member.student_id or "",  # 学籍番号を保存
         role=member.role
     )
     db.add(db_member)
