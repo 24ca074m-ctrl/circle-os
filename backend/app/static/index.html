@@ -9,7 +9,7 @@
 </head>
 <body class="bg-slate-100 text-slate-800 pb-20">
 
-  <!-- ログイン画面モーダル -->
+  <!-- ログインモーダル -->
   <div id="login-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
     <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl space-y-4">
       <div class="text-center space-y-1">
@@ -19,14 +19,14 @@
 
       <div class="space-y-3 text-xs pt-2">
         <div>
-          <label class="block font-bold text-slate-700 mb-1">お名前</label>
-          <input type="text" id="login-name" placeholder="例: 立教 太郎" class="w-full border p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+          <label class="block font-bold text-slate-700 mb-1">学籍番号</label>
+          <input type="text" id="login-student-id" placeholder="例: 21AB1234" class="w-full border p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none uppercase">
         </div>
         <div>
           <label class="block font-bold text-slate-700 mb-1">立教メールアドレス</label>
-          <input type="email" id="login-email" placeholder="example@rikkyo.ac.jp" class="w-full border p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+          <input type="email" id="login-email" placeholder="21ab1234@rikkyo.ac.jp" class="w-full border p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
         </div>
-        <p class="text-[10px] text-amber-600 bg-amber-50 p-2 rounded">※ @rikkyo.ac.jp ドメインのメールアドレスのみログイン可能です。</p>
+        <p class="text-[10px] text-amber-600 bg-amber-50 p-2 rounded">※部員名簿に登録されている学籍番号の立教メールでのみログイン可能です。</p>
         <button onclick="handleLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg text-sm transition">
           ログインして利用開始
         </button>
@@ -39,10 +39,11 @@
     <div class="max-w-md mx-auto flex justify-between items-center">
       <div>
         <h1 class="text-xl font-bold tracking-tight">RUB Manager</h1>
-        <p class="text-xs text-blue-200">Circle OS v3.1</p>
+        <p class="text-xs text-blue-200">Circle OS v3.2</p>
       </div>
       <div class="flex items-center gap-2">
         <span id="user-display-name" class="text-xs bg-blue-700 px-2.5 py-1 rounded-full text-white font-medium border border-blue-400">未ログイン</span>
+        <button onclick="handleLogout()" id="logout-btn" class="hidden text-[10px] bg-blue-800 hover:bg-blue-900 px-2 py-1 rounded border border-blue-500">ログアウト</button>
       </div>
     </div>
     <!-- Role Switcher -->
@@ -72,7 +73,7 @@
         </div>
       </div>
 
-      <!-- 直近1週間の練習予定（新規追加） -->
+      <!-- 直近1週間の練習予定 -->
       <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 space-y-3">
         <h2 class="font-bold text-slate-700 text-sm flex items-center justify-between">
           <span class="flex items-center gap-2">
@@ -80,9 +81,7 @@
           </span>
           <span id="weekly-count-badge" class="text-[10px] bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded-full">0件</span>
         </h2>
-        <div id="weekly-practice-list" class="space-y-2 text-xs">
-          <!-- 動的読み込み -->
-        </div>
+        <div id="weekly-practice-list" class="space-y-2 text-xs"></div>
       </div>
     </div>
 
@@ -93,9 +92,15 @@
           <i data-lucide="user-plus" class="w-4 h-4 text-blue-600"></i> 新規部員登録
         </h2>
         <div class="space-y-2 text-xs">
-          <div>
-            <label class="block text-slate-500 mb-1">氏名</label>
-            <input type="text" id="new-member-name" placeholder="例: 立教 太郎" class="w-full border rounded p-2 focus:ring-1 focus:ring-blue-500">
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-slate-500 mb-1">氏名</label>
+              <input type="text" id="new-member-name" placeholder="例: 立教 太郎" class="w-full border rounded p-2 focus:ring-1 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="block text-slate-500 mb-1">学籍番号</label>
+              <input type="text" id="new-member-student-id" placeholder="例: 21AB1234" class="w-full border rounded p-2 uppercase focus:ring-1 focus:ring-blue-500">
+            </div>
           </div>
           <div class="grid grid-cols-2 gap-2">
             <div>
@@ -179,7 +184,6 @@
 
     <!-- Tab 4: Feedback / Opinion Box -->
     <div id="tab-feedback" class="tab-content hidden space-y-4">
-      <!-- 一般部員用：送信フォーム -->
       <div id="feedback-form-section" class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
         <h2 class="font-bold text-slate-700 mb-2 text-sm flex items-center gap-2">
           <i data-lucide="message-square-plus" class="w-4 h-4 text-blue-600"></i> サークル意見箱 (送信)
@@ -200,7 +204,6 @@
         </div>
       </div>
 
-      <!-- 役職者用：届いた意見一覧（右上削除機能追加） -->
       <div id="feedback-list-section" class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 hidden">
         <div class="flex items-center justify-between mb-3">
           <h2 class="font-bold text-slate-700 text-sm flex items-center gap-2">
@@ -214,7 +217,6 @@
 
   </main>
 
-  <!-- Bottom Navigation -->
   <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-50">
     <div class="max-w-md mx-auto grid grid-cols-4 text-center py-2 text-xs">
       <button onclick="switchTab('home')" id="nav-home" class="nav-btn text-blue-600 font-bold flex flex-col items-center">
@@ -254,31 +256,69 @@
       document.getElementById("practice-date").value = tomorrow.toISOString().split('T')[0];
     });
 
-    // ログイン認証チェック
+    // 永続ログイン認証チェック
     function checkAuth() {
-      const savedUser = localStorage.getItem('circle_os_user');
+      const savedUser = localStorage.getItem('circle_os_user_v2');
       if (savedUser) {
         currentUser = JSON.parse(savedUser);
         document.getElementById('login-modal').classList.add('hidden');
         document.getElementById('user-display-name').innerText = currentUser.name;
+        document.getElementById('logout-btn').classList.remove('hidden');
       } else {
         document.getElementById('login-modal').classList.remove('hidden');
+        document.getElementById('logout-btn').classList.add('hidden');
       }
     }
 
-    function handleLogin() {
-      const name = document.getElementById('login-name').value.trim();
-      const email = document.getElementById('login-email').value.trim();
+    async function handleLogin() {
+      const studentId = document.getElementById('login-student-id').value.trim().toUpperCase();
+      const email = document.getElementById('login-email').value.trim().toLowerCase();
 
-      if (!name) return alert('お名前を入力してください');
+      if (!studentId) return alert('学籍番号を入力してください');
       if (!email || !email.endsWith('@rikkyo.ac.jp')) {
-        return alert('立教大学のメールアドレス (@rikkyo.ac.jp) を入力してください');
+        return alert('正しい立教メールアドレス (@rikkyo.ac.jp) を入力してください');
       }
 
-      currentUser = { name, email };
-      localStorage.setItem('circle_os_user', JSON.stringify(currentUser));
-      document.getElementById('login-modal').classList.add('hidden');
-      document.getElementById('user-display-name').innerText = currentUser.name;
+      const expectedEmail = `${studentId.toLowerCase()}@rikkyo.ac.jp`;
+      if (email !== expectedEmail) {
+        return alert(`学籍番号とメールアドレスが一致しません。\n（入力例: ${studentId.toLowerCase()}@rikkyo.ac.jp）`);
+      }
+
+      // サーバー側の部員名簿と学籍番号を照合
+      try {
+        const res = await fetch('/api/members');
+        const members = await res.json();
+        const member = members.find(m => m.student_id && m.student_id.toUpperCase() === studentId);
+
+        if (!member) {
+          return alert('登録されている学籍番号が見つかりません。\n代表または役職者に部員登録を依頼してください。');
+        }
+
+        currentUser = {
+          name: member.name,
+          student_id: member.student_id,
+          email: email
+        };
+
+        // localStorage に永久保存（アプリを閉じてもログイン維持）
+        localStorage.setItem('circle_os_user_v2', JSON.stringify(currentUser));
+        document.getElementById('login-modal').classList.add('hidden');
+        document.getElementById('user-display-name').innerText = currentUser.name;
+        document.getElementById('logout-btn').classList.remove('hidden');
+        alert(`おかえりなさい、${currentUser.name} さん！`);
+      } catch (err) {
+        console.error('Login error:', err);
+        alert('通信エラーが発生しました。');
+      }
+    }
+
+    function handleLogout() {
+      if (!confirm('ログアウトしますか？')) return;
+      localStorage.removeItem('circle_os_user_v2');
+      currentUser = null;
+      document.getElementById('user-display-name').innerText = '未ログイン';
+      document.getElementById('logout-btn').classList.add('hidden');
+      document.getElementById('login-modal').classList.remove('hidden');
     }
 
     function switchTab(tabName) {
@@ -362,7 +402,8 @@
           <div class="py-2.5 flex items-center justify-between">
             <div>
               <span class="font-bold text-slate-800">${m.name}</span>
-              <span class="ml-2 text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">${m.grade}</span>
+              <span class="ml-1 text-[10px] text-slate-400">(${m.student_id || '学籍未登録'})</span>
+              <span class="ml-1 text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">${m.grade}</span>
               <span class="ml-1 text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-medium">${m.role}</span>
             </div>
             ${isOfficer ? `
@@ -379,18 +420,20 @@
 
     async function addMember() {
       const name = document.getElementById('new-member-name').value.trim();
+      const student_id = document.getElementById('new-member-student-id').value.trim().toUpperCase();
       const grade = document.getElementById('new-member-grade').value;
       const role = document.getElementById('new-member-role').value;
 
-      if (!name) return alert('氏名を入力してください。');
+      if (!name || !student_id) return alert('氏名と学籍番号を入力してください。');
 
       await fetch('/api/members', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, grade, role })
+        body: JSON.stringify({ name, student_id, grade, role })
       });
 
       document.getElementById('new-member-name').value = '';
+      document.getElementById('new-member-student-id').value = '';
       fetchMembers();
       fetchAIAnalytics();
     }
@@ -417,11 +460,6 @@
           return;
         }
 
-        // 直近1週間（今日〜7日後）のフィルタリング
-        const now = new Date();
-        const nextWeek = new Date();
-        nextWeek.setDate(now.getDate() + 7);
-
         let html = '';
         let weeklyHtml = '';
         let weeklyCount = 0;
@@ -430,7 +468,6 @@
           const attRes = await fetch(`/api/attendance/${p.id}`);
           const att = await attRes.json();
 
-          // スケジュール全体の表示
           html += `
             <div class="border rounded-lg p-3 bg-slate-50 space-y-2">
               <div class="flex justify-between items-start">
@@ -446,7 +483,6 @@
                 ` : ''}
               </div>
 
-              <!-- 出欠投票（ログインユーザーの名前でワンタップ投票） -->
               <div class="border-t pt-2 mt-2">
                 <p class="font-medium text-slate-600 mb-1">出欠投票 (${currentUser ? currentUser.name : '未ログイン'}):</p>
                 <div class="flex gap-1 mb-2">
@@ -463,7 +499,6 @@
             </div>
           `;
 
-          // 直近の予定に追加（トップ数件）
           weeklyCount++;
           weeklyHtml += `
             <div class="p-2.5 bg-slate-50 border rounded-lg flex items-center justify-between">
@@ -523,7 +558,6 @@
       fetchPractices();
     }
 
-    // 名前ポップアップなし！ログインユーザー名でワンタップ投票
     async function voteAttendance(practiceId, status) {
       if (!currentUser) return alert('ログインしてください');
 
@@ -540,7 +574,6 @@
       fetchPractices();
     }
 
-    // 意見箱 API
     async function submitFeedback() {
       const sender_name = document.getElementById('feedback-sender').value.trim() || (currentUser ? currentUser.name : '匿名');
       const content = document.getElementById('feedback-content').value.trim();
@@ -570,7 +603,6 @@
           return;
         }
 
-        // 各ご意見の右上に削除ボタンを追加
         list.innerHTML = feedbacks.map(f => `
           <div class="py-2.5 relative group">
             <div class="flex justify-between items-center text-slate-500 mb-1 pr-12">
