@@ -17,7 +17,6 @@ app = FastAPI(title="RUB Manager - Circle OS")
 class MemberCreate(BaseModel):
     name: str
     grade: str
-    position: str
     role: str = "部員"
 
 class MemberResponse(MemberCreate):
@@ -38,7 +37,7 @@ class PracticeResponse(PracticeCreate):
 class AttendanceCreate(BaseModel):
     practice_id: int
     member_name: str
-    status: str  # 参加, 不参加, 未定
+    status: str
 
 class FeedbackCreate(BaseModel):
     sender_name: Optional[str] = "匿名"
@@ -51,7 +50,12 @@ def get_members(db: Session = Depends(get_db)):
 
 @app.post("/api/members", response_model=MemberResponse)
 def create_member(member: MemberCreate, db: Session = Depends(get_db)):
-    db_member = models.Member(**member.dict())
+    db_member = models.Member(
+        name=member.name,
+        grade=member.grade,
+        position="", # ポジション廃止に伴い空文字設定
+        role=member.role
+    )
     db.add(db_member)
     db.commit()
     db.refresh(db_member)
@@ -87,7 +91,7 @@ def delete_practice(practice_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"message": "Practice deleted"}
 
-# --- 出欠API ---
+# 出欠API
 @app.post("/api/attendance")
 def vote_attendance(att: AttendanceCreate, db: Session = Depends(get_db)):
     existing = db.query(models.Attendance).filter(
@@ -113,7 +117,7 @@ def get_attendance(practice_id: int, db: Session = Depends(get_db)):
             summary[a.status].append(a.member_name)
     return summary
 
-# --- 意見箱API ---
+# 意見箱API
 @app.post("/api/feedbacks")
 def create_feedback(fb: FeedbackCreate, db: Session = Depends(get_db)):
     new_fb = models.Feedback(**fb.dict())
@@ -126,7 +130,7 @@ def get_feedbacks(db: Session = Depends(get_db)):
     fbs = db.query(models.Feedback).order_by(models.Feedback.created_at.desc()).all()
     return fbs
 
-# --- AI アナリティクス & LINE案内文 ---
+# AI アナリティクス
 @app.get("/api/ai/analytics")
 def get_ai_analytics(db: Session = Depends(get_db)):
     member_count = db.query(models.Member).count()
@@ -142,15 +146,7 @@ def get_ai_analytics(db: Session = Depends(get_db)):
         "advice_list": advices
     }
 
-@app.get("/api/ai/generate-notice")
-def generate_notice(date: str, location: str, memo: str = ""):
-    notice = f"【練習のお知らせ 🏀】\n\n■ 日時: {date}\n■ 場所: {location}\n"
-    if memo:
-        notice += f"■ 備考: {memo}\n"
-    notice += "\n参加・不参加の回答をアプリからお願いします！"
-    return {"notice_text": notice}
-
-# --- 静的ファイル & ルーティング ---
+# 静的ファイル配信
 static_dir = os.path.join(os.path.dirname(__file__), "static")
 if os.path.exists(static_dir):
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
