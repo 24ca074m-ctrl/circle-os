@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Circle OS - RUB Manager</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans pb-20">
+
+  <!-- ヘッダー -->
+  <header class="bg-blue-600 text-white p-4 shadow-md sticky top-0 z-50 flex justify-between items-center">
+    <div>
+      <h1 class="text-xl font-bold tracking-wide">RUB Manager</h1>
+      <p class="text-xs text-blue-100">Circle OS v2.0</p>
+    </div>
+    <span class="bg-blue-800 text-xs px-2.5 py-1 rounded-full border border-blue-400 font-mono">DB Live</span>
+  </header>
+
+  <main class="max-w-md mx-auto p-4 space-y-6">
+
+    <!-- TAB 1: ホーム & AI分析 -->
+    <section id="tab-home" class="tab-content space-y-4">
+      <div class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-5 rounded-2xl shadow-lg">
+        <div class="flex items-center space-x-2 mb-2">
+          <i data-lucide="bot" class="w-6 h-6"></i>
+          <h2 class="text-lg font-bold">AI 運営アナリティクス</h2>
+        </div>
+        <p class="text-xs text-blue-100 mb-3">現在の部員数と練習スケジュールから自動分析中</p>
+        <div class="bg-white/10 backdrop-blur-md p-3 rounded-xl border border-white/20 mb-3">
+          <div class="text-xs text-blue-100">次回練習の予測参加人数</div>
+          <div id="ai-prediction" class="text-3xl font-extrabold mt-1">-- 名</div>
+        </div>
+        <div id="ai-advice" class="space-y-1 text-xs text-blue-50 bg-black/10 p-3 rounded-xl">
+          分析データを読み込み中...
+        </div>
+      </div>
+
+      <!-- AI 連絡文自動生成 -->
+      <div class="bg-white p-4 rounded-xl shadow border border-gray-200 space-y-3">
+        <h3 class="font-bold text-sm flex items-center gap-2 text-gray-700">
+          <i data-lucide="sparkles" class="w-4 h-4 text-amber-500"></i> AI LINE 連絡文を作成
+        </h3>
+        <div class="space-y-2">
+          <input type="text" id="notice-date" placeholder="日時 (例: 8/15 18:00-21:00)" class="w-full text-xs p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none">
+          <input type="text" id="notice-loc" placeholder="場所 (例: 立教大学体育館)" class="w-full text-xs p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none">
+          <input type="text" id="notice-memo" placeholder="備考 (例: ボール各自持参)" class="w-full text-xs p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none">
+          <button onclick="generateNotice()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2 rounded-lg transition">文章を自動生成</button>
+        </div>
+        <textarea id="notice-result" readonly placeholder="ここにLINE用の案内文が生成されます" class="w-full h-28 text-xs p-2 bg-gray-50 border rounded focus:outline-none"></textarea>
+      </div>
+    </section>
+
+    <!-- TAB 2: 部員管理 -->
+    <section id="tab-members" class="tab-content hidden space-y-4">
+      <div class="bg-white p-4 rounded-xl shadow border border-gray-200">
+        <h2 class="font-bold text-gray-700 mb-3 text-sm">新規部員を追加</h2>
+        <div class="grid grid-cols-2 gap-2 mb-2">
+          <input type="text" id="m-name" placeholder="名前" class="text-xs p-2 border rounded outline-none">
+          <input type="text" id="m-grade" placeholder="学年 (例: 2年)" class="text-xs p-2 border rounded outline-none">
+          <input type="text" id="m-pos" placeholder="ポジ (例: PG)" class="text-xs p-2 border rounded outline-none">
+          <select id="m-role" class="text-xs p-2 border rounded outline-none bg-white">
+            <option value="部員">部員</option>
+            <option value="代表">代表</option>
+            <option value="副代表">副代表</option>
+            <option value="会計">会計</option>
+          </select>
+        </div>
+        <button onclick="addMember()" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2 rounded-lg transition">追加保存</button>
+      </div>
+
+      <div class="bg-white p-4 rounded-xl shadow border border-gray-200">
+        <h2 class="font-bold text-gray-700 mb-2 text-sm">部員名簿 (<span id="member-count">0</span>名)</h2>
+        <div id="member-list" class="divide-y divide-gray-100"></div>
+      </div>
+    </section>
+
+    <!-- TAB 3: 体育館 & スケジュール -->
+    <section id="tab-schedule" class="tab-content hidden space-y-4">
+      <div class="bg-white p-4 rounded-xl shadow border border-gray-200">
+        <h2 class="font-bold text-gray-700 mb-3 text-sm">練習スケジュールを登録</h2>
+        <div class="space-y-2 mb-2">
+          <input type="text" id="p-date" placeholder="日程 (例: 8/20 17:00~)" class="w-full text-xs p-2 border rounded outline-none">
+          <input type="text" id="p-loc" placeholder="体育館・場所" class="w-full text-xs p-2 border rounded outline-none">
+          <input type="text" id="p-memo" placeholder="メモ・持ち物" class="w-full text-xs p-2 border rounded outline-none">
+        </div>
+        <button onclick="addPractice()" class="w-full bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-2 rounded-lg transition">スケジュール作成</button>
+      </div>
+
+      <div class="bg-white p-4 rounded-xl shadow border border-gray-200">
+        <h2 class="font-bold text-gray-700 mb-2 text-sm">予定されている練習</h2>
+        <div id="practice-list" class="space-y-3"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ナビゲーションバー -->
+  <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-2 px-6 flex justify-around items-center z-50">
+    <button onclick="switchTab('home')" id="nav-home" class="flex flex-col items-center text-blue-600">
+      <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+      <span class="text-[10px] mt-1 font-bold">ホーム/AI</span>
+    </button>
+    <button onclick="switchTab('members')" id="nav-members" class="flex flex-col items-center text-gray-400">
+      <i data-lucide="users" class="w-5 h-5"></i>
+      <span class="text-[10px] mt-1 font-bold">部員</span>
+    </button>
+    <button onclick="switchTab('schedule')" id="nav-schedule" class="flex flex-col items-center text-gray-400">
+      <i data-lucide="calendar" class="w-5 h-5"></i>
+      <span class="text-[10px] mt-1 font-bold">体育館</span>
+    </button>
+  </nav>
+
+  <script>
+    lucide.createIcons();
+
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.getElementById(`tab-${tab}`).classList.remove('hidden');
+      
+      ['home', 'members', 'schedule'].forEach(t => {
+        const btn = document.getElementById(`nav-${t}`);
+        if(t === tab) {
+          btn.className = "flex flex-col items-center text-blue-600";
+        } else {
+          btn.className = "flex flex-col items-center text-gray-400";
+        }
+      });
+    }
+
+    async function loadAllData() {
+      loadMembers();
+      loadPractices();
+      loadAIAnalytics();
+    }
+
+    async function loadMembers() {
+      const res = await fetch('/api/members');
+      const members = await res.json();
+      document.getElementById('member-count').innerText = members.length;
+      const list = document.getElementById('member-list');
+      list.innerHTML = members.length === 0 ? '<p class="text-xs text-gray-400 py-2">部員がいません。</p>' : '';
+      members.forEach(m => {
+        list.innerHTML += `
+          <div class="py-2 flex justify-between items-center text-xs">
+            <div>
+              <span class="font-bold text-gray-800">${m.name}</span> 
+              <span class="text-gray-500">(${m.grade} / ${m.position})</span>
+              <span class="ml-1 bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded text-[10px]">${m.role}</span>
+            </div>
+            <button onclick="deleteMember(${m.id})" class="text-red-500 hover:text-red-700 font-bold text-[10px]">削除</button>
+          </div>`;
+      });
+    }
+
+    async function addMember() {
+      const name = document.getElementById('m-name').value;
+      const grade = document.getElementById('m-grade').value;
+      const position = document.getElementById('m-pos').value;
+      const role = document.getElementById('m-role').value;
+      if (!name) return alert('名前を入力してください');
+
+      await fetch('/api/members', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ name, grade, position, role })
+      });
+      document.getElementById('m-name').value = '';
+      loadAllData();
+    }
+
+    async function deleteMember(id) {
+      if(!confirm('本当に削除しますか？')) return;
+      await fetch(`/api/members/${id}`, { method: 'DELETE' });
+      loadAllData();
+    }
+
+    async function loadPractices() {
+      const res = await fetch('/api/practices');
+      const practices = await res.json();
+      const list = document.getElementById('practice-list');
+      list.innerHTML = practices.length === 0 ? '<p class="text-xs text-gray-400">予定されている練習はありません。</p>' : '';
+      practices.forEach(p => {
+        list.innerHTML += `
+          <div class="p-3 bg-gray-50 rounded-lg border border-gray-100 text-xs space-y-1">
+            <div class="font-bold text-blue-600">${p.date}</div>
+            <div class="text-gray-700">📍 ${p.location}</div>
+            ${p.memo ? `<div class="text-gray-500">📝 ${p.memo}</div>` : ''}
+          </div>`;
+      });
+    }
+
+    async function addPractice() {
+      const date = document.getElementById('p-date').value;
+      const location = document.getElementById('p-loc').value;
+      const memo = document.getElementById('p-memo').value;
+      if (!date || !location) return alert('日程と場所を入力してください');
+
+      await fetch('/api/practices', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ date, location, memo })
+      });
+      document.getElementById('p-date').value = '';
+      document.getElementById('p-loc').value = '';
+      document.getElementById('p-memo').value = '';
+      loadPractices();
+      loadAIAnalytics();
+    }
+
+    async function loadAIAnalytics() {
+      const res = await fetch('/api/ai/analytics');
+      const data = await res.json();
+      document.getElementById('ai-prediction').innerText = `${data.predicted_attendance} 名`;
+      const adviceBox = document.getElementById('ai-advice');
+      adviceBox.innerHTML = '';
+      data.advice_list.forEach(a => {
+        adviceBox.innerHTML += `<div>• ${a}</div>`;
+      });
+    }
+
+    async function generateNotice() {
+      const date = document.getElementById('notice-date').value;
+      const loc = document.getElementById('notice-loc').value;
+      const memo = document.getElementById('notice-memo').value;
+      if (!date || !loc) return alert('日程と場所を入力してください');
+
+      const res = await fetch(`/api/ai/generate-notice?date=${encodeURIComponent(date)}&location=${encodeURIComponent(loc)}&memo=${encodeURIComponent(memo)}`);
+      const data = await res.json();
+      document.getElementById('notice-result').value = data.notice_text;
+    }
+
+    loadAllData();
+  </script>
+</body>
+</html>
