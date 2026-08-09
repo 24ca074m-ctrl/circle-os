@@ -27,7 +27,7 @@ class MemberResponse(MemberCreate):
 class PracticeCreate(BaseModel):
     date: str
     location: str
-    memo: Optional[str] = None
+    memo: Optional[str] = ""  # 空文字列やNoneを許可
 
 class PracticeResponse(PracticeCreate):
     id: int
@@ -53,7 +53,7 @@ def create_member(member: MemberCreate, db: Session = Depends(get_db)):
     db_member = models.Member(
         name=member.name,
         grade=member.grade,
-        position="", # ポジション廃止に伴い空文字設定
+        position="",
         role=member.role
     )
     db.add(db_member)
@@ -76,7 +76,11 @@ def get_practices(db: Session = Depends(get_db)):
 
 @app.post("/api/practices", response_model=PracticeResponse)
 def create_practice(practice: PracticeCreate, db: Session = Depends(get_db)):
-    db_practice = models.Practice(**practice.dict())
+    db_practice = models.Practice(
+        date=practice.date,
+        location=practice.location,
+        memo=practice.memo or ""
+    )
     db.add(db_practice)
     db.commit()
     db.refresh(db_practice)
