@@ -14,7 +14,7 @@
     <div class="flex justify-between items-center mb-2">
       <div>
         <h1 class="text-xl font-bold tracking-wide">RUB Manager</h1>
-        <p class="text-xs text-blue-100">Circle OS v2.8</p>
+        <p class="text-xs text-blue-100">Circle OS v2.9</p>
       </div>
       <span class="bg-blue-800 text-xs px-2.5 py-1 rounded-full border border-blue-400 font-mono">DB Live</span>
     </div>
@@ -50,11 +50,14 @@
         </div>
       </div>
 
-      <!-- AI LINE 連絡文を作成 -->
-      <div class="bg-white p-4 rounded-xl shadow border border-gray-200 space-y-3">
-        <h3 class="font-bold text-sm flex items-center gap-2 text-gray-700">
-          <i data-lucide="sparkles" class="w-4 h-4 text-amber-500"></i> LINE 連絡文を自動作成
-        </h3>
+      <!-- AI LINE 連絡文を作成 (幹部・コート取り専用) -->
+      <div id="admin-notice-form" class="bg-white p-4 rounded-xl shadow border border-gray-200 border-l-4 border-l-indigo-500 space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="font-bold text-sm flex items-center gap-2 text-gray-700">
+            <i data-lucide="sparkles" class="w-4 h-4 text-amber-500"></i> LINE 連絡文を自動作成
+          </h3>
+          <span class="bg-indigo-100 text-indigo-700 text-[10px] px-2 py-0.5 rounded font-bold">幹部・係専用</span>
+        </div>
 
         <!-- 定型文テンプレート選択ボタン -->
         <div class="space-y-1">
@@ -112,8 +115,11 @@
 
     <!-- TAB 2: 部員管理 -->
     <section id="tab-members" class="tab-content hidden space-y-4">
-      <div id="admin-member-form" class="bg-white p-4 rounded-xl shadow border border-gray-200">
-        <h2 class="font-bold text-gray-700 mb-3 text-sm">新規部員を追加</h2>
+      <div id="admin-member-form" class="bg-white p-4 rounded-xl shadow border border-gray-200 border-l-4 border-l-blue-500">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="font-bold text-gray-700 text-sm">新規部員を追加</h2>
+          <span class="bg-blue-100 text-blue-700 text-[10px] px-2 py-0.5 rounded font-bold">代表専用</span>
+        </div>
         <div class="space-y-2 mb-3">
           <input type="text" id="m-name" placeholder="名前" class="w-full text-xs p-2 border rounded outline-none">
           <div class="grid grid-cols-2 gap-2">
@@ -153,7 +159,7 @@
       <div id="court-schedule-form" class="bg-white p-4 rounded-xl shadow border border-gray-200 border-l-4 border-l-green-500">
         <div class="flex items-center justify-between mb-2">
           <h2 class="font-bold text-gray-700 text-sm">練習スケジュール作成</h2>
-          <span class="bg-green-100 text-green-700 text-[10px] px-2 py-0.5 rounded font-bold">コート取り専用</span>
+          <span class="bg-green-100 text-green-700 text-[10px] px-2 py-0.5 rounded font-bold">コート取り・幹部専用</span>
         </div>
         <div class="space-y-2 mb-3">
           <div>
@@ -247,7 +253,6 @@
     let currentTemplate = 'practice';
     let allMembersCache = [];
 
-    // 初期化（今日の日付）
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('notice-date-picker').value = today;
     document.getElementById('p-date-picker').value = today;
@@ -287,6 +292,7 @@
 
     function generateNotice() {
       const resBox = document.getElementById('notice-result');
+      if (!resBox) return;
       const dateVal = document.getElementById('notice-date-picker').value;
       const formattedDate = getFormattedDate(dateVal);
       const timeStart = document.getElementById('notice-time-start').value;
@@ -309,9 +315,18 @@
 
     function updateRoleUI() {
       const role = document.getElementById('role-simulator').value;
+      
+      // LINE文章作成フォームの制御（代表・コート取りのみ表示）
+      const noticeForm = document.getElementById('admin-notice-form');
+      noticeForm.style.display = (role === '代表' || role === 'コート取り') ? 'block' : 'none';
+
+      // 新規部員追加フォーム＆意見一覧の制御（代表のみ表示）
       document.getElementById('admin-member-form').style.display = (role === '代表') ? 'block' : 'none';
       document.getElementById('admin-feedback-list').style.display = (role === '代表') ? 'block' : 'none';
+      
+      // スケジュール作成フォームの制御（代表・コート取りのみ表示）
       document.getElementById('court-schedule-form').style.display = (role === '代表' || role === 'コート取り') ? 'block' : 'none';
+      
       loadPractices();
     }
 
