@@ -1,23 +1,37 @@
-from typing import Optional, List
-from sqlmodel import Field, SQLModel, Relationship
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
+from sqlalchemy.orm import relationship
+from datetime import datetime
+from database import Base
 
-class Member(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    name: str
-    grade: str
-    position: str
-    role: str = Field(default="部員")  # 代表, 副代表, 会計, 部員 など
+class Member(Base):
+    __tablename__ = "members"
 
-class Practice(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    date: str
-    location: str
-    memo: Optional[str] = None
-    attendances: List["Attendance"] = Relationship(back_populates="practice")
+    id = Column(Integer, primary_order=True, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    grade = Column(String, nullable=False)      # 例: 1年, 2年, 3年, 4年
+    position = Column(String, nullable=False)   # 例: PG, SG, SF, PF, C
+    role = Column(String, default="部員")        # 代表, 副代表, 会計, コート取り, 部員
 
-class Attendance(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    practice_id: int = Field(foreign_key="practice.id")
-    member_name: str
-    status: str  # 参加, 不参加, 未定
-    practice: Optional[Practice] = Relationship(back_populates="attendances")
+class Practice(Base):
+    __tablename__ = "practices"
+
+    id = Column(Integer, primary_key=True, index=True)
+    date = Column(String, nullable=False)
+    location = Column(String, nullable=False)
+    memo = Column(Text, nullable=True)
+
+class Attendance(Base):
+    __tablename__ = "attendances"
+
+    id = Column(Integer, primary_key=True, index=True)
+    practice_id = Column(Integer, ForeignKey("practices.id"), nullable=False)
+    member_name = Column(String, nullable=False)
+    status = Column(String, nullable=False)     # 参加, 不参加, 未定
+
+class Feedback(Base):
+    __tablename__ = "feedbacks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    sender_name = Column(String, default="匿名")  # 匿名 または 部員名
+    content = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
