@@ -1,28 +1,38 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="ja" class="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RUB Manager - Circle OS</title>
+  <!-- PWA設定 (ホーム画面アプリ化対応) -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="RUB Manager">
+  
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+    }
+  </script>
   <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body class="bg-slate-100 text-slate-800 pb-20">
+<body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 pb-20 transition-colors duration-200">
 
   <!-- ログインモーダル -->
   <div id="login-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-    <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl space-y-4">
+    <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-2xl p-6 shadow-2xl space-y-4 text-slate-800 dark:text-slate-100">
       <div class="text-center space-y-1">
-        <h1 class="text-2xl font-bold text-blue-600">RUB Manager</h1>
-        <p class="text-xs text-slate-500">立教大学サークル専用ログイン</p>
+        <h1 class="text-2xl font-bold text-blue-600 dark:text-blue-400">RUB Manager</h1>
+        <p class="text-xs text-slate-500 dark:text-slate-400">立教大学サークル専用ログイン</p>
       </div>
 
       <div class="space-y-3 text-xs pt-2">
         <div>
-          <label class="block font-bold text-slate-700 mb-1">学籍番号</label>
-          <input type="text" id="login-student-id" placeholder="例: 20AA000A" class="w-full border p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none uppercase">
+          <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">学籍番号</label>
+          <input type="text" id="login-student-id" placeholder="例: 20AA000A" class="w-full border dark:border-slate-600 dark:bg-slate-700 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none uppercase">
         </div>
-        <p class="text-[10px] text-slate-500 bg-slate-50 p-2 rounded">※部員名簿に登録されている学籍番号を入力してください。</p>
+        <p class="text-[10px] text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-700/50 p-2 rounded">※部員名簿に登録されている学籍番号を入力してください。</p>
         <button onclick="handleLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg text-sm transition">
           ログイン
         </button>
@@ -32,22 +42,22 @@
 
   <!-- 部員編集モーダル -->
   <div id="edit-member-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] hidden flex items-center justify-center p-4">
-    <div class="bg-white w-full max-w-sm rounded-2xl p-5 shadow-xl space-y-3">
-      <h3 class="font-bold text-slate-800 text-sm">部員情報の編集</h3>
+    <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-2xl p-5 shadow-xl space-y-3 text-slate-800 dark:text-slate-100">
+      <h3 class="font-bold text-sm">部員情報の編集</h3>
       <input type="hidden" id="edit-member-id">
       <div class="space-y-2 text-xs">
         <div>
-          <label class="block text-slate-500 mb-1">氏名</label>
-          <input type="text" id="edit-member-name" class="w-full border rounded p-2 focus:ring-1 focus:ring-blue-500">
+          <label class="block text-slate-500 dark:text-slate-400 mb-1">氏名</label>
+          <input type="text" id="edit-member-name" class="w-full border dark:border-slate-600 dark:bg-slate-700 rounded p-2 focus:ring-1 focus:ring-blue-500">
         </div>
         <div>
-          <label class="block text-slate-500 mb-1">学籍番号</label>
-          <input type="text" id="edit-member-student-id" class="w-full border rounded p-2 uppercase focus:ring-1 focus:ring-blue-500">
+          <label class="block text-slate-500 dark:text-slate-400 mb-1">学籍番号</label>
+          <input type="text" id="edit-member-student-id" class="w-full border dark:border-slate-600 dark:bg-slate-700 rounded p-2 uppercase focus:ring-1 focus:ring-blue-500">
         </div>
         <div class="grid grid-cols-2 gap-2">
           <div>
-            <label class="block text-slate-500 mb-1">学年</label>
-            <select id="edit-member-grade" class="w-full border rounded p-2">
+            <label class="block text-slate-500 dark:text-slate-400 mb-1">学年</label>
+            <select id="edit-member-grade" class="w-full border dark:border-slate-600 dark:bg-slate-700 rounded p-2">
               <option value="4年">4年</option>
               <option value="3年">3年</option>
               <option value="2年">2年</option>
@@ -56,8 +66,8 @@
             </select>
           </div>
           <div>
-            <label class="block text-slate-500 mb-1">役職</label>
-            <select id="edit-member-role" class="w-full border rounded p-2">
+            <label class="block text-slate-500 dark:text-slate-400 mb-1">役職</label>
+            <select id="edit-member-role" class="w-full border dark:border-slate-600 dark:bg-slate-700 rounded p-2">
               <option value="部員">一般部員</option>
               <option value="代表">代表</option>
               <option value="副代表">副代表</option>
@@ -68,30 +78,34 @@
         </div>
       </div>
       <div class="flex gap-2 pt-2 text-xs">
-        <button onclick="closeEditModal()" class="w-1/2 bg-slate-200 hover:bg-slate-300 font-bold py-2 rounded">キャンセル</button>
+        <button onclick="closeEditModal()" class="w-1/2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 font-bold py-2 rounded">キャンセル</button>
         <button onclick="saveMemberEdit()" class="w-1/2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded">保存</button>
       </div>
     </div>
   </div>
 
   <!-- Header -->
-  <header class="bg-blue-600 text-white p-4 shadow-md sticky top-0 z-50">
+  <header class="bg-blue-600 dark:bg-blue-800 text-white p-4 shadow-md sticky top-0 z-50">
     <div class="max-w-md mx-auto flex justify-between items-center">
       <div>
         <h1 class="text-xl font-bold tracking-tight">RUB Manager</h1>
-        <p class="text-xs text-blue-200">Circle OS v3.5</p>
+        <p class="text-xs text-blue-200">Circle OS v3.6</p>
       </div>
       <div class="flex items-center gap-2">
-        <span id="user-display-name" class="text-xs bg-blue-700 px-2.5 py-1 rounded-full text-white font-medium border border-blue-400">未ログイン</span>
-        <button onclick="handleLogout()" id="logout-btn" class="hidden text-[10px] bg-blue-800 hover:bg-blue-900 px-2 py-1 rounded border border-blue-500">ログアウト</button>
+        <!-- ダークモード切り替えボタン -->
+        <button onclick="toggleDarkMode()" class="p-1.5 rounded-lg bg-blue-700 dark:bg-blue-900 hover:bg-blue-800 transition text-white">
+          <i id="theme-icon" data-lucide="moon" class="w-4 h-4"></i>
+        </button>
+        <span id="user-display-name" class="text-xs bg-blue-700 dark:bg-blue-900 px-2.5 py-1 rounded-full text-white font-medium border border-blue-400 dark:border-blue-600">未ログイン</span>
+        <button onclick="handleLogout()" id="logout-btn" class="hidden text-[10px] bg-blue-800 dark:bg-blue-950 hover:bg-blue-900 px-2 py-1 rounded border border-blue-500">ログアウト</button>
       </div>
     </div>
     <!-- Role Switcher -->
-    <div class="max-w-md mx-auto mt-3 bg-blue-700/60 p-2 rounded-lg flex items-center justify-between text-xs">
+    <div class="max-w-md mx-auto mt-3 bg-blue-700/60 dark:bg-blue-900/60 p-2 rounded-lg flex items-center justify-between text-xs">
       <span class="font-medium flex items-center gap-1">
         <i data-lucide="shield" class="w-3.5 h-3.5"></i> 現在の表示役職:
       </span>
-      <select id="role-selector" onchange="changeRole(this.value)" class="bg-white text-slate-800 font-bold rounded px-2 py-1 focus:outline-none">
+      <select id="role-selector" onchange="changeRole(this.value)" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-bold rounded px-2 py-1 focus:outline-none">
         <option value="代表">代表 (全権限)</option>
         <option value="副代表">副代表 (全権限)</option>
         <option value="コート取り">コート取り (日程管理)</option>
@@ -105,22 +119,22 @@
 
     <!-- Tab 1: Home / AI -->
     <div id="tab-home" class="tab-content space-y-4">
-      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-        <h2 class="font-bold text-slate-700 flex items-center gap-2 mb-2 text-sm">
-          <i data-lucide="bot" class="w-4 h-4 text-blue-600"></i> サークルAIアシスタント
+      <div class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+        <h2 class="font-bold text-slate-700 dark:text-slate-200 flex items-center gap-2 mb-2 text-sm">
+          <i data-lucide="bot" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i> サークルAIアシスタント
         </h2>
-        <div id="ai-advice" class="text-xs text-slate-600 bg-blue-50 p-3 rounded-lg border border-blue-100 space-y-1">
+        <div id="ai-advice" class="text-xs text-slate-600 dark:text-slate-300 bg-blue-50 dark:bg-slate-700/50 p-3 rounded-lg border border-blue-100 dark:border-slate-600 space-y-1">
           <p class="animate-pulse">AIが分析中...</p>
         </div>
       </div>
 
       <!-- 直近1週間の練習予定 -->
-      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 space-y-3">
-        <h2 class="font-bold text-slate-700 text-sm flex items-center justify-between">
+      <div class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-3">
+        <h2 class="font-bold text-slate-700 dark:text-slate-200 text-sm flex items-center justify-between">
           <span class="flex items-center gap-2">
-            <i data-lucide="calendar-days" class="w-4 h-4 text-green-600"></i> 直近1週間の練習予定
+            <i data-lucide="calendar-days" class="w-4 h-4 text-green-600 dark:text-green-400"></i> 直近1週間の練習予定
           </span>
-          <span id="weekly-count-badge" class="text-[10px] bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded-full">0件</span>
+          <span id="weekly-count-badge" class="text-[10px] bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 font-bold px-2 py-0.5 rounded-full">0件</span>
         </h2>
         <div id="weekly-practice-list" class="space-y-2 text-xs"></div>
       </div>
@@ -129,25 +143,25 @@
     <!-- Tab 2: Members -->
     <div id="tab-members" class="tab-content hidden space-y-4">
       <!-- 代表のみ登録可能 -->
-      <div id="member-add-box" class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 hidden">
-        <h2 class="font-bold text-slate-700 mb-3 text-sm flex items-center gap-2">
-          <i data-lucide="user-plus" class="w-4 h-4 text-blue-600"></i> 新規部員登録 <span class="text-[10px] text-blue-600 font-normal">(代表専用)</span>
+      <div id="member-add-box" class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 hidden">
+        <h2 class="font-bold text-slate-700 dark:text-slate-200 mb-3 text-sm flex items-center gap-2">
+          <i data-lucide="user-plus" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i> 新規部員登録 <span class="text-[10px] text-blue-600 dark:text-blue-400 font-normal">(代表専用)</span>
         </h2>
         <div class="space-y-2 text-xs">
           <div class="grid grid-cols-2 gap-2">
             <div>
-              <label class="block text-slate-500 mb-1">氏名</label>
-              <input type="text" id="new-member-name" placeholder="例: 立教 太郎" class="w-full border rounded p-2 focus:ring-1 focus:ring-blue-500">
+              <label class="block text-slate-500 dark:text-slate-400 mb-1">氏名</label>
+              <input type="text" id="new-member-name" placeholder="例: 立教 太郎" class="w-full border dark:border-slate-600 dark:bg-slate-700 rounded p-2 focus:ring-1 focus:ring-blue-500">
             </div>
             <div>
-              <label class="block text-slate-500 mb-1">学籍番号</label>
-              <input type="text" id="new-member-student-id" placeholder="例: 20AA000A" class="w-full border rounded p-2 uppercase focus:ring-1 focus:ring-blue-500">
+              <label class="block text-slate-500 dark:text-slate-400 mb-1">学籍番号</label>
+              <input type="text" id="new-member-student-id" placeholder="例: 20AA000A" class="w-full border dark:border-slate-600 dark:bg-slate-700 rounded p-2 uppercase focus:ring-1 focus:ring-blue-500">
             </div>
           </div>
           <div class="grid grid-cols-2 gap-2">
             <div>
-              <label class="block text-slate-500 mb-1">学年</label>
-              <select id="new-member-grade" class="w-full border rounded p-2">
+              <label class="block text-slate-500 dark:text-slate-400 mb-1">学年</label>
+              <select id="new-member-grade" class="w-full border dark:border-slate-600 dark:bg-slate-700 rounded p-2">
                 <option value="1年">1年</option>
                 <option value="2年">2年</option>
                 <option value="3年">3年</option>
@@ -156,8 +170,8 @@
               </select>
             </div>
             <div>
-              <label class="block text-slate-500 mb-1">役職</label>
-              <select id="new-member-role" class="w-full border rounded p-2">
+              <label class="block text-slate-500 dark:text-slate-400 mb-1">役職</label>
+              <select id="new-member-role" class="w-full border dark:border-slate-600 dark:bg-slate-700 rounded p-2">
                 <option value="部員">一般部員</option>
                 <option value="代表">代表 (最大2名)</option>
                 <option value="副代表">副代表 (最大1名)</option>
@@ -172,46 +186,57 @@
         </div>
       </div>
 
-      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-        <h2 class="font-bold text-slate-700 mb-3 text-sm flex items-center gap-2">
+      <div class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+        <h2 class="font-bold text-slate-700 dark:text-slate-200 mb-3 text-sm flex items-center gap-2">
           <i data-lucide="users" class="w-4 h-4 text-slate-500"></i> 部員名簿
         </h2>
-        <div id="member-list" class="divide-y divide-slate-100 text-xs"></div>
+        <div id="member-list" class="divide-y divide-slate-100 dark:divide-slate-700 text-xs"></div>
       </div>
     </div>
 
     <!-- Tab 3: Gymnasium / Practice Schedule -->
     <div id="tab-gym" class="tab-content hidden space-y-4">
-      <div id="practice-create-box" class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 relative hidden">
-        <span class="absolute top-3 right-3 text-[10px] bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded">管理権限</span>
-        <h2 class="font-bold text-slate-700 mb-3 text-sm">練習スケジュール作成</h2>
+      <div id="practice-create-box" class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 relative hidden">
+        <span class="absolute top-3 right-3 text-[10px] bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 font-bold px-2 py-0.5 rounded">管理権限</span>
+        <h2 class="font-bold text-slate-700 dark:text-slate-200 mb-3 text-sm">練習スケジュール作成</h2>
         <div class="space-y-3 text-xs">
           <div>
-            <label class="block text-slate-500 mb-1 font-medium">練習日</label>
-            <input type="date" id="practice-date" class="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-green-500 focus:outline-none text-sm bg-slate-50">
+            <label class="block text-slate-500 dark:text-slate-400 mb-1 font-medium">練習日</label>
+            <input type="date" id="practice-date" class="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 focus:ring-2 focus:ring-green-500 focus:outline-none text-sm bg-slate-50 dark:bg-slate-700">
           </div>
           <div>
-            <label class="block text-slate-500 mb-1 font-medium">時間帯</label>
+            <label class="block text-slate-500 dark:text-slate-400 mb-1 font-medium">時間帯</label>
             <div class="grid grid-cols-2 gap-2 items-center">
-              <input type="time" id="practice-start-time" value="18:00" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-slate-50">
+              <input type="time" id="practice-start-time" value="18:00" class="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 text-sm bg-slate-50 dark:bg-slate-700">
               <div class="flex items-center gap-1">
                 <span class="text-slate-400">〜</span>
-                <input type="time" id="practice-end-time" value="21:00" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-slate-50">
+                <input type="time" id="practice-end-time" value="21:00" class="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 text-sm bg-slate-50 dark:bg-slate-700">
               </div>
             </div>
           </div>
-          <div>
-            <label class="block text-slate-500 mb-1 font-medium">場所</label>
-            <select id="practice-location" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-slate-50">
-              <option value="立教大学体育館">立教大学体育館</option>
-              <option value="池袋スポーツセンター">池袋スポーツセンター</option>
-              <option value="豊島区立体育館">豊島区立体育館</option>
-              <option value="その他">その他</option>
-            </select>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-slate-500 dark:text-slate-400 mb-1 font-medium">場所</label>
+              <select id="practice-location" onchange="handleLocationChange()" class="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 text-sm bg-slate-50 dark:bg-slate-700">
+                <option value="立教大学体育館">立教大学体育館</option>
+                <option value="池袋スポーツセンター">池袋スポーツセンター</option>
+                <option value="豊島区立体育館">豊島区立体育館</option>
+                <option value="その他">その他</option>
+              </select>
+            </div>
+            <!-- 立教大学体育館の場合のみ選択可能 (手前・奥・両面) -->
+            <div id="court-side-container">
+              <label class="block text-slate-500 dark:text-slate-400 mb-1 font-medium">コート面</label>
+              <select id="practice-court-side" class="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 text-sm bg-slate-50 dark:bg-slate-700">
+                <option value="手前">手前</option>
+                <option value="奥">奥</option>
+                <option value="両面">両面</option>
+              </select>
+            </div>
           </div>
           <div>
-            <label class="block text-slate-500 mb-1 font-medium">メモ・持ち物</label>
-            <input type="text" id="practice-memo" placeholder="例: ボール持参" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-slate-50">
+            <label class="block text-slate-500 dark:text-slate-400 mb-1 font-medium">メモ・持ち物</label>
+            <input type="text" id="practice-memo" placeholder="例: ボール持参" class="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 text-sm bg-slate-50 dark:bg-slate-700">
           </div>
           <button onclick="createPractice()" class="w-full bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition shadow-sm text-sm flex items-center justify-center gap-1">
             <i data-lucide="plus-circle" class="w-4 h-4"></i> スケジュール作成
@@ -219,27 +244,27 @@
         </div>
       </div>
 
-      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-        <h2 class="font-bold text-slate-700 mb-3 text-sm">全練習スケジュール & 出欠投票</h2>
+      <div class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+        <h2 class="font-bold text-slate-700 dark:text-slate-200 mb-3 text-sm">全練習スケジュール & 出欠投票</h2>
         <div id="practice-list" class="space-y-3 text-xs"></div>
       </div>
     </div>
 
     <!-- Tab 4: Feedback / Opinion Box -->
     <div id="tab-feedback" class="tab-content hidden space-y-4">
-      <div id="feedback-form-section" class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-        <h2 class="font-bold text-slate-700 mb-2 text-sm flex items-center gap-2">
-          <i data-lucide="message-square-plus" class="w-4 h-4 text-blue-600"></i> サークル意見箱 (送信)
+      <div id="feedback-form-section" class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+        <h2 class="font-bold text-slate-700 dark:text-slate-200 mb-2 text-sm flex items-center gap-2">
+          <i data-lucide="message-square-plus" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i> サークル意見箱 (送信)
         </h2>
-        <p class="text-xs text-slate-500 mb-3">サークル運営への要望や意見を匿名で送信できます（役職者のみ確認できます）。</p>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">サークル運営への要望や意見を匿名で送信できます（役職者のみ確認できます）。</p>
         <div class="space-y-3 text-xs">
           <div>
-            <label class="block text-slate-500 mb-1 font-medium">お名前 (任意)</label>
-            <input type="text" id="feedback-sender" placeholder="匿名希望の場合は空欄" class="w-full border rounded-lg p-2.5 bg-slate-50 focus:ring-1 focus:ring-blue-500">
+            <label class="block text-slate-500 dark:text-slate-400 mb-1 font-medium">お名前 (任意)</label>
+            <input type="text" id="feedback-sender" placeholder="匿名希望の場合は空欄" class="w-full border dark:border-slate-600 rounded-lg p-2.5 bg-slate-50 dark:bg-slate-700 focus:ring-1 focus:ring-blue-500">
           </div>
           <div>
-            <label class="block text-slate-500 mb-1 font-medium">ご意見・ご要望</label>
-            <textarea id="feedback-content" rows="4" placeholder="例: イベントの開催頻度を増やしてほしいです。" class="w-full border rounded-lg p-2.5 bg-slate-50 focus:ring-1 focus:ring-blue-500"></textarea>
+            <label class="block text-slate-500 dark:text-slate-400 mb-1 font-medium">ご意見・ご要望</label>
+            <textarea id="feedback-content" rows="4" placeholder="例: イベントの開催頻度を増やしてほしいです。" class="w-full border dark:border-slate-600 rounded-lg p-2.5 bg-slate-50 dark:bg-slate-700 focus:ring-1 focus:ring-blue-500"></textarea>
           </div>
           <button onclick="submitFeedback()" class="w-full bg-blue-600 text-white font-bold py-2.5 rounded-lg hover:bg-blue-700 transition flex items-center justify-center gap-1">
             <i data-lucide="send" class="w-4 h-4"></i> 意見を送信する
@@ -247,22 +272,22 @@
         </div>
       </div>
 
-      <div id="feedback-list-section" class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 hidden">
+      <div id="feedback-list-section" class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 hidden">
         <div class="flex items-center justify-between mb-3">
-          <h2 class="font-bold text-slate-700 text-sm flex items-center gap-2">
-            <i data-lucide="inbox" class="w-4 h-4 text-purple-600"></i> 届いたご意見一覧
+          <h2 class="font-bold text-slate-700 dark:text-slate-200 text-sm flex items-center gap-2">
+            <i data-lucide="inbox" class="w-4 h-4 text-purple-600 dark:text-purple-400"></i> 届いたご意見一覧
           </h2>
-          <span class="text-[10px] bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded">役職者限定閲覧</span>
+          <span class="text-[10px] bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 font-bold px-2 py-0.5 rounded">役職者限定閲覧</span>
         </div>
-        <div id="feedback-list" class="space-y-2 text-xs divide-y divide-slate-100"></div>
+        <div id="feedback-list" class="space-y-2 text-xs divide-y divide-slate-100 dark:divide-slate-700"></div>
       </div>
     </div>
 
   </main>
 
-  <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-50">
+  <nav class="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 z-50">
     <div class="max-w-md mx-auto grid grid-cols-4 text-center py-2 text-xs">
-      <button onclick="switchTab('home')" id="nav-home" class="nav-btn text-blue-600 font-bold flex flex-col items-center">
+      <button onclick="switchTab('home')" id="nav-home" class="nav-btn text-blue-600 dark:text-blue-400 font-bold flex flex-col items-center">
         <i data-lucide="layout-grid" class="w-5 h-5"></i>
         <span>ホーム/AI</span>
       </button>
@@ -300,6 +325,7 @@
     };
 
     document.addEventListener("DOMContentLoaded", async () => {
+      initTheme();
       lucide.createIcons();
       await ensureAdminRegistered();
       checkAuth();
@@ -308,11 +334,54 @@
       fetchPractices();
       fetchFeedbacks();
       updateRoleVisibility();
+      handleLocationChange();
 
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
       document.getElementById("practice-date").value = tomorrow.toISOString().split('T')[0];
     });
+
+    // ダークモード切替処理
+    function initTheme() {
+      const isDark = localStorage.getItem('theme') === 'dark';
+      if (isDark) {
+        document.documentElement.classList.add('dark');
+        document.documentElement.classList.remove('light');
+        document.getElementById('theme-icon').setAttribute('data-lucide', 'sun');
+      } else {
+        document.documentElement.classList.add('light');
+        document.documentElement.classList.remove('dark');
+        document.getElementById('theme-icon').setAttribute('data-lucide', 'moon');
+      }
+      lucide.createIcons();
+    }
+
+    function toggleDarkMode() {
+      const isDark = document.documentElement.classList.contains('dark');
+      if (isDark) {
+        document.documentElement.classList.remove('dark');
+        document.documentElement.classList.add('light');
+        localStorage.setItem('theme', 'light');
+        document.getElementById('theme-icon').setAttribute('data-lucide', 'moon');
+      } else {
+        document.documentElement.classList.add('dark');
+        document.documentElement.classList.remove('light');
+        localStorage.setItem('theme', 'dark');
+        document.getElementById('theme-icon').setAttribute('data-lucide', 'sun');
+      }
+      lucide.createIcons();
+    }
+
+    // 場所変更時のコート面表示切替
+    function handleLocationChange() {
+      const loc = document.getElementById('practice-location').value;
+      const courtContainer = document.getElementById('court-side-container');
+      if (loc === '立教大学体育館') {
+        courtContainer.classList.remove('hidden');
+      } else {
+        courtContainer.classList.add('hidden');
+      }
+    }
 
     async function ensureAdminRegistered() {
       try {
@@ -403,12 +472,12 @@
       document.getElementById(`tab-${tabName}`).classList.remove("hidden");
 
       document.querySelectorAll(".nav-btn").forEach(btn => {
-        btn.classList.remove("text-blue-600", "font-bold");
+        btn.classList.remove("text-blue-600", "dark:text-blue-400", "font-bold");
         btn.classList.add("text-slate-400");
       });
       const activeBtn = document.getElementById(`nav-${tabName}`);
       activeBtn.classList.remove("text-slate-400");
-      activeBtn.classList.add("text-blue-600", "font-bold");
+      activeBtn.classList.add("text-blue-600", "dark:text-blue-400", "font-bold");
     }
 
     function changeRole(role) {
@@ -427,14 +496,12 @@
       const isAdmin = hasAdminAccess();
       const isCourtOfficer = currentRole === "コート取り";
 
-      // 新規部員登録は「代表のみ」可能
       const memberAddBox = document.getElementById("member-add-box");
       if (memberAddBox) {
         if (isRepresentative) memberAddBox.classList.remove("hidden");
         else memberAddBox.classList.add("hidden");
       }
 
-      // スケジュール作成は代表・副代表・コート取りが利用可能
       const practiceCreateBox = document.getElementById("practice-create-box");
       if (practiceCreateBox) {
         if (isAdmin || isCourtOfficer) {
@@ -444,7 +511,6 @@
         }
       }
 
-      // 意見箱閲覧は役職者（代表・副代表・コート取り・会計）
       const isOfficer = isAdmin || isCourtOfficer || currentRole === "会計";
       const feedbackFormSection = document.getElementById("feedback-form-section");
       const feedbackListSection = document.getElementById("feedback-list-section");
@@ -469,7 +535,6 @@
       }
     }
 
-    // 部員名簿のソート優先順位関数
     function getMemberSortPriority(member) {
       const roleOrder = {
         "代表": 1,
@@ -506,24 +571,23 @@
           return;
         }
 
-        // 指定条件に準拠した並び替え
         cachedMembers.sort((a, b) => getMemberSortPriority(a) - getMemberSortPriority(b));
 
         list.innerHTML = cachedMembers.map(m => `
           <div class="py-2.5 flex items-center justify-between">
             <div>
-              <span class="font-bold text-slate-800">${m.name}</span>
-              <span class="ml-1 text-[10px] text-slate-500">(${m.student_id})</span>
-              <span class="ml-1 text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">${m.grade}</span>
-              <span class="ml-1 text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-medium">${m.role}</span>
+              <span class="font-bold text-slate-800 dark:text-slate-200">${m.name}</span>
+              <span class="ml-1 text-[10px] text-slate-500 dark:text-slate-400">(${m.student_id})</span>
+              <span class="ml-1 text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-1.5 py-0.5 rounded">${m.grade}</span>
+              <span class="ml-1 text-[10px] bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 px-1.5 py-0.5 rounded font-medium">${m.role}</span>
             </div>
             ${isAdmin ? `
               <div class="flex gap-1">
-                <button onclick="openEditModal(${m.id})" class="text-xs text-blue-600 hover:text-blue-800 bg-blue-50 px-2 py-1 rounded">
+                <button onclick="openEditModal(${m.id})" class="text-xs text-blue-600 dark:text-blue-400 hover:underline bg-blue-50 dark:bg-slate-700 px-2 py-1 rounded">
                   編集
                 </button>
                 ${isRepresentative ? `
-                  <button onclick="deleteMember(${m.id})" class="text-xs text-red-500 hover:text-red-700 bg-red-50 px-2 py-1 rounded">
+                  <button onclick="deleteMember(${m.id})" class="text-xs text-red-500 hover:underline bg-red-50 dark:bg-slate-700 px-2 py-1 rounded">
                     削除
                   </button>
                 ` : ''}
@@ -584,7 +648,6 @@
       document.getElementById('edit-member-grade').value = member.grade;
       document.getElementById('edit-member-role').value = member.role;
 
-      // 役職フィールドの有効/無効化制御（代表のみ変更可）
       const roleSelect = document.getElementById('edit-member-role');
       if (currentRole === "代表") {
         roleSelect.disabled = false;
@@ -608,7 +671,6 @@
 
       if (!name || !student_id) return alert('氏名と学籍番号を入力してください。');
 
-      // 編集削除 ➔ 再登録によるデータ更新処理
       try {
         await fetch(`/api/members/${id}`, { method: 'DELETE' });
         await fetch('/api/members', {
@@ -659,31 +721,31 @@
           const att = await attRes.json();
 
           html += `
-            <div class="border rounded-lg p-3 bg-slate-50 space-y-2">
+            <div class="border dark:border-slate-700 rounded-lg p-3 bg-slate-50 dark:bg-slate-700/50 space-y-2">
               <div class="flex justify-between items-start">
                 <div>
-                  <div class="font-bold text-sm text-slate-800">${p.date}</div>
-                  <div class="text-slate-600">${p.location}</div>
-                  ${p.memo ? `<div class="text-slate-500 text-[11px]">メモ: ${p.memo}</div>` : ''}
+                  <div class="font-bold text-sm text-slate-800 dark:text-slate-100">${p.date}</div>
+                  <div class="text-slate-600 dark:text-slate-300">${p.location}</div>
+                  ${p.memo ? `<div class="text-slate-500 dark:text-slate-400 text-[11px]">メモ: ${p.memo}</div>` : ''}
                 </div>
                 ${canDelete ? `
-                  <button onclick="deletePractice(${p.id})" class="text-xs text-red-500 hover:text-red-700 bg-red-50 px-2 py-1 rounded">
+                  <button onclick="deletePractice(${p.id})" class="text-xs text-red-500 hover:text-red-700 bg-red-50 dark:bg-slate-700 px-2 py-1 rounded">
                     削除
                   </button>
                 ` : ''}
               </div>
 
-              <div class="border-t pt-2 mt-2">
-                <p class="font-medium text-slate-600 mb-1">出欠投票 (${currentUser ? currentUser.name : '未ログイン'}):</p>
+              <div class="border-t dark:border-slate-600 pt-2 mt-2">
+                <p class="font-medium text-slate-600 dark:text-slate-300 mb-1">出欠投票 (${currentUser ? currentUser.name : '未ログイン'}):</p>
                 <div class="flex gap-1 mb-2">
                   <button onclick="voteAttendance(${p.id}, '参加')" class="flex-1 bg-green-500 text-white font-bold py-1.5 rounded hover:bg-green-600 text-xs">参加</button>
                   <button onclick="voteAttendance(${p.id}, '不参加')" class="flex-1 bg-red-500 text-white font-bold py-1.5 rounded hover:bg-red-600 text-xs">不参加</button>
                   <button onclick="voteAttendance(${p.id}, '未定')" class="flex-1 bg-gray-400 text-white font-bold py-1.5 rounded hover:bg-gray-500 text-xs">未定</button>
                 </div>
-                <div class="text-[11px] text-slate-500 bg-white p-2 rounded border space-y-0.5">
-                  <div><span class="font-bold text-green-600">参加 (${att.参加.length}名):</span> ${att.参加.join(', ') || 'なし'}</div>
-                  <div><span class="font-bold text-red-600">不参加 (${att.不参加.length}名):</span> ${att.不参加.join(', ') || 'なし'}</div>
-                  <div><span class="font-bold text-gray-500">未定 (${att.未定.length}名):</span> ${att.未定.join(', ') || 'なし'}</div>
+                <div class="text-[11px] text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 p-2 rounded border dark:border-slate-600 space-y-0.5">
+                  <div><span class="font-bold text-green-600 dark:text-green-400">参加 (${att.参加.length}名):</span> ${att.参加.join(', ') || 'なし'}</div>
+                  <div><span class="font-bold text-red-600 dark:text-red-400">不参加 (${att.不参加.length}名):</span> ${att.不参加.join(', ') || 'なし'}</div>
+                  <div><span class="font-bold text-gray-500 dark:text-slate-400">未定 (${att.未定.length}名):</span> ${att.未定.join(', ') || 'なし'}</div>
                 </div>
               </div>
             </div>
@@ -691,12 +753,12 @@
 
           weeklyCount++;
           weeklyHtml += `
-            <div class="p-2.5 bg-slate-50 border rounded-lg flex items-center justify-between">
+            <div class="p-2.5 bg-slate-50 dark:bg-slate-700/50 border dark:border-slate-600 rounded-lg flex items-center justify-between">
               <div>
-                <div class="font-bold text-blue-600">${p.date}</div>
-                <div class="text-slate-500 text-[11px]">📍 ${p.location}</div>
+                <div class="font-bold text-blue-600 dark:text-blue-400">${p.date}</div>
+                <div class="text-slate-500 dark:text-slate-400 text-[11px]">📍 ${p.location}</div>
               </div>
-              <span class="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded">参加 ${att.参加.length}名</span>
+              <span class="bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 text-[10px] font-bold px-2 py-0.5 rounded">参加 ${att.参加.length}名</span>
             </div>
           `;
         }
@@ -714,10 +776,16 @@
       const dateVal = document.getElementById('practice-date').value;
       const startTime = document.getElementById('practice-start-time').value;
       const endTime = document.getElementById('practice-end-time').value;
-      const location = document.getElementById('practice-location').value;
+      let location = document.getElementById('practice-location').value;
       const memo = document.getElementById('practice-memo').value.trim();
 
       if (!dateVal) return alert('練習日を選択してください。');
+
+      // 立教大学体育館の場合はコート面 (手前・奥・両面) を選択肢に付与
+      if (location === '立教大学体育館') {
+        const courtSide = document.getElementById('practice-court-side').value;
+        location = `立教大学体育館（${courtSide}）`;
+      }
 
       const fullDateStr = `${dateVal} (${startTime}〜${endTime})`;
 
@@ -795,13 +863,13 @@
 
         list.innerHTML = feedbacks.map(f => `
           <div class="py-2.5 relative group">
-            <div class="flex justify-between items-center text-slate-500 mb-1 pr-12">
-              <span class="font-bold text-slate-700">${f.sender_name}</span>
+            <div class="flex justify-between items-center text-slate-500 dark:text-slate-400 mb-1 pr-12">
+              <span class="font-bold text-slate-700 dark:text-slate-200">${f.sender_name}</span>
               <span class="text-[10px]">${new Date(f.created_at).toLocaleDateString('ja-JP')}</span>
             </div>
-            <p class="text-slate-600 bg-slate-50 p-2 rounded border border-slate-100 whitespace-pre-wrap">${f.content}</p>
+            <p class="text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-700/50 p-2 rounded border border-slate-100 dark:border-slate-600 whitespace-pre-wrap">${f.content}</p>
             ${hasAdminAccess() ? `
-              <button onclick="deleteFeedback(${f.id})" class="absolute top-2 right-0 text-[10px] text-red-500 hover:text-red-700 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded font-bold">
+              <button onclick="deleteFeedback(${f.id})" class="absolute top-2 right-0 text-[10px] text-red-500 hover:text-red-700 bg-red-50 dark:bg-slate-700 border border-red-200 dark:border-slate-600 px-1.5 py-0.5 rounded font-bold">
                 削除
               </button>
             ` : ''}
