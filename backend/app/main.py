@@ -27,7 +27,7 @@ class MemberResponse(MemberCreate):
 class PracticeCreate(BaseModel):
     date: str
     location: str
-    memo: Optional[str] = ""  # 空文字列やNoneを許可
+    memo: Optional[str] = ""
 
 class PracticeResponse(PracticeCreate):
     id: int
