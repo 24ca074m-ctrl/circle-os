@@ -3,15 +3,12 @@ from sqlmodel import SQLModel, create_engine, Session
 
 DATABASE_URL = os.getenv("DATABASE_URL", "")
 
-# 先頭のプロトコル表記補正とDB名の置換
+# PostgreSQLのプロトコル表記ゆれ補正のみ行う
 if DATABASE_URL:
-    if DATABASE_URL.startswith("Postgresql://"):
-        DATABASE_URL = DATABASE_URL.replace("Postgresql://", "postgresql://")
-    elif DATABASE_URL.startswith("postgres://"):
-        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://")
-    
-    if "circle_os_db" in DATABASE_URL:
-        DATABASE_URL = DATABASE_URL.replace("circle_os_db", "postgres")
+    if DATABASE_URL.startswith("postgres://"):
+        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+    elif DATABASE_URL.startswith("Postgresql://"):
+        DATABASE_URL = DATABASE_URL.replace("Postgresql://", "postgresql://", 1)
 
 engine = create_engine(DATABASE_URL if DATABASE_URL else "sqlite:///./test.db", echo=True)
 
