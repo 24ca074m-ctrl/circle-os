@@ -134,6 +134,15 @@ def get_feedbacks(db: Session = Depends(get_db)):
     fbs = db.query(models.Feedback).order_by(models.Feedback.created_at.desc()).all()
     return fbs
 
+@app.delete("/api/feedbacks/{feedback_id}")
+def delete_feedback(feedback_id: int, db: Session = Depends(get_db)):
+    fb = db.query(models.Feedback).filter(models.Feedback.id == feedback_id).first()
+    if not fb:
+        raise HTTPException(status_code=404, detail="Feedback not found")
+    db.delete(fb)
+    db.commit()
+    return {"message": "Feedback deleted"}
+
 # AI アナリティクス
 @app.get("/api/ai/analytics")
 def get_ai_analytics(db: Session = Depends(get_db)):
