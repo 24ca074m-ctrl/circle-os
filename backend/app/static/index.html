@@ -89,7 +89,7 @@
     <div class="max-w-md mx-auto flex justify-between items-center">
       <div>
         <h1 class="text-xl font-bold tracking-tight">RUB Manager</h1>
-        <p class="text-xs text-blue-200">Circle OS v3.6</p>
+        <p class="text-xs text-blue-200">Circle OS v3.7</p>
       </div>
       <div class="flex items-center gap-2">
         <!-- ダークモード切り替えボタン -->
@@ -106,10 +106,7 @@
         <i data-lucide="shield" class="w-3.5 h-3.5"></i> 現在の表示役職:
       </span>
       <select id="role-selector" onchange="changeRole(this.value)" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-bold rounded px-2 py-1 focus:outline-none">
-        <option value="代表">代表 (全権限)</option>
-        <option value="副代表">副代表 (全権限)</option>
-        <option value="コート取り">コート取り (日程管理)</option>
-        <option value="部員" selected>一般部員</option>
+        <option value="部員">一般部員</option>
       </select>
     </div>
   </header>
@@ -218,13 +215,12 @@
             <div>
               <label class="block text-slate-500 dark:text-slate-400 mb-1 font-medium">場所</label>
               <select id="practice-location" onchange="handleLocationChange()" class="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 text-sm bg-slate-50 dark:bg-slate-700">
-                <option value="立教大学体育館">立教大学体育館</option>
-                <option value="池袋スポーツセンター">池袋スポーツセンター</option>
-                <option value="豊島区立体育館">豊島区立体育館</option>
+                <option value="立教大学体育館(池袋)">立教大学体育館(池袋)</option>
+                <option value="立教大学体育館(新座)">立教大学体育館(新座)</option>
                 <option value="その他">その他</option>
               </select>
             </div>
-            <!-- 立教大学体育館の場合のみ選択可能 (手前・奥・両面) -->
+            <!-- 立教大学体育館（池袋/新座）の場合のみ表示 (手前・奥・両面) -->
             <div id="court-side-container">
               <label class="block text-slate-500 dark:text-slate-400 mb-1 font-medium">コート面</label>
               <select id="practice-court-side" class="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 text-sm bg-slate-50 dark:bg-slate-700">
@@ -233,6 +229,11 @@
                 <option value="両面">両面</option>
               </select>
             </div>
+          </div>
+          <!-- その他を選択した時だけ表示される自由入力欄 -->
+          <div id="custom-location-container" class="hidden">
+            <label class="block text-slate-500 dark:text-slate-400 mb-1 font-medium">場所の詳細を入力</label>
+            <input type="text" id="practice-custom-location" placeholder="例: 池袋スポーツセンター" class="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 text-sm bg-slate-50 dark:bg-slate-700">
           </div>
           <div>
             <label class="block text-slate-500 dark:text-slate-400 mb-1 font-medium">メモ・持ち物</label>
@@ -307,6 +308,9 @@
   </nav>
 
   <script>
+    // 永続化用キー（バージョンアップでリセットされない固定値）
+    const STORAGE_KEY = 'rub_manager_user';
+
     let currentRole = "部員";
     let currentUser = null;
     let cachedMembers = [];
@@ -333,7 +337,6 @@
       fetchMembers();
       fetchPractices();
       fetchFeedbacks();
-      updateRoleVisibility();
       handleLocationChange();
 
       const tomorrow = new Date();
@@ -372,14 +375,18 @@
       lucide.createIcons();
     }
 
-    // 場所変更時のコート面表示切替
+    // 場所変更時のコート面・カスタム入力表示切替
     function handleLocationChange() {
       const loc = document.getElementById('practice-location').value;
       const courtContainer = document.getElementById('court-side-container');
-      if (loc === '立教大学体育館') {
+      const customContainer = document.getElementById('custom-location-container');
+
+      if (loc === '立教大学体育館(池袋)' || loc === '立教大学体育館(新座)') {
         courtContainer.classList.remove('hidden');
+        customContainer.classList.add('hidden');
       } else {
         courtContainer.classList.add('hidden');
+        customContainer.classList.remove('hidden');
       }
     }
 
@@ -407,15 +414,26 @@
     }
 
     function checkAuth() {
-      const savedUser = localStorage.getItem('circle_os_user_v3');
+      // 旧バージョンのキーからの自動引継ぎ処理
+      let savedUser = localStorage.getItem(STORAGE_KEY);
+      if (!savedUser) {
+        const legacyKey = localStorage.getItem('circle_os_user_v3');
+        if (legacyKey) {
+          savedUser = legacyKey;
+          localStorage.setItem(STORAGE_KEY, legacyKey);
+        }
+      }
+
       if (savedUser) {
         currentUser = JSON.parse(savedUser);
         document.getElementById('login-modal').classList.add('hidden');
         document.getElementById('user-display-name').innerText = currentUser.name;
         document.getElementById('logout-btn').classList.remove('hidden');
+        updateRoleOptions();
       } else {
         document.getElementById('login-modal').classList.remove('hidden');
         document.getElementById('logout-btn').classList.add('hidden');
+        updateRoleOptions();
       }
     }
 
@@ -438,19 +456,16 @@
 
         currentUser = {
           name: member.name,
-          student_id: member.student_id
+          student_id: member.student_id,
+          role: member.role
         };
 
-        localStorage.setItem('circle_os_user_v3', JSON.stringify(currentUser));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(currentUser));
         document.getElementById('login-modal').classList.add('hidden');
         document.getElementById('user-display-name').innerText = currentUser.name;
         document.getElementById('logout-btn').classList.remove('hidden');
 
-        if (member.role === "代表" || member.role === "副代表") {
-          document.getElementById('role-selector').value = member.role;
-          changeRole(member.role);
-        }
-
+        updateRoleOptions();
         alert(`おかえりなさい、${currentUser.name} さん！`);
       } catch (err) {
         console.error('Login error:', err);
@@ -460,11 +475,51 @@
 
     function handleLogout() {
       if (!confirm('ログアウトしますか？')) return;
-      localStorage.removeItem('circle_os_user_v3');
+      localStorage.removeItem(STORAGE_KEY);
       currentUser = null;
       document.getElementById('user-display-name').innerText = '未ログイン';
       document.getElementById('logout-btn').classList.add('hidden');
       document.getElementById('login-modal').classList.remove('hidden');
+      updateRoleOptions();
+    }
+
+    // ユーザーの保有権限に応じて表示役職ドロップダウンの選択肢を制御
+    function updateRoleOptions() {
+      const selector = document.getElementById('role-selector');
+      selector.innerHTML = '';
+
+      if (!currentUser) {
+        selector.innerHTML = '<option value="部員">一般部員</option>';
+        changeRole("部員");
+        return;
+      }
+
+      const userRole = currentUser.role || "部員";
+
+      if (userRole === "代表" || userRole === "副代表") {
+        // 代表・副代表は全役職の確認・切り替えが可能
+        selector.innerHTML = `
+          <option value="代表">代表 (全権限)</option>
+          <option value="副代表">副代表 (全権限)</option>
+          <option value="コート取り">コート取り (日程管理)</option>
+          <option value="会計">会計 (意見箱等)</option>
+          <option value="部員">一般部員</option>
+        `;
+        selector.value = userRole;
+      } else if (userRole !== "部員") {
+        // 特定の役職者（会計、コート取り）は自分の役職と一般部員の切り替えが可能
+        selector.innerHTML = `
+          <option value="${userRole}">${userRole}</option>
+          <option value="部員">一般部員</option>
+        `;
+        selector.value = userRole;
+      } else {
+        // 一般部員は部員固定
+        selector.innerHTML = '<option value="部員">一般部員</option>';
+        selector.value = "部員";
+      }
+
+      changeRole(selector.value);
     }
 
     function switchTab(tabName) {
@@ -485,6 +540,7 @@
       updateRoleVisibility();
       fetchPractices();
       fetchMembers();
+      fetchFeedbacks();
     }
 
     function hasAdminAccess() {
@@ -569,6 +625,15 @@
         if (cachedMembers.length === 0) {
           list.innerHTML = '<p class="text-slate-400 py-2">部員が登録されていません。</p>';
           return;
+        }
+
+        // ログイン中のユーザー情報を更新（最新のロール情報をセット）
+        if (currentUser) {
+          const matched = cachedMembers.find(m => m.student_id && m.student_id.toUpperCase() === currentUser.student_id.toUpperCase());
+          if (matched && matched.role !== currentUser.role) {
+            currentUser.role = matched.role;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(currentUser));
+          }
         }
 
         cachedMembers.sort((a, b) => getMemberSortPriority(a) - getMemberSortPriority(b));
@@ -776,15 +841,20 @@
       const dateVal = document.getElementById('practice-date').value;
       const startTime = document.getElementById('practice-start-time').value;
       const endTime = document.getElementById('practice-end-time').value;
-      let location = document.getElementById('practice-location').value;
+      const selectLoc = document.getElementById('practice-location').value;
       const memo = document.getElementById('practice-memo').value.trim();
 
       if (!dateVal) return alert('練習日を選択してください。');
 
-      // 立教大学体育館の場合はコート面 (手前・奥・両面) を選択肢に付与
-      if (location === '立教大学体育館') {
+      let finalLocation = "";
+
+      if (selectLoc === 'その他') {
+        const customLoc = document.getElementById('practice-custom-location').value.trim();
+        if (!customLoc) return alert('「その他」を選択した場合は場所の詳細を入力してください。');
+        finalLocation = customLoc;
+      } else {
         const courtSide = document.getElementById('practice-court-side').value;
-        location = `立教大学体育館（${courtSide}）`;
+        finalLocation = `${selectLoc}（${courtSide}）`;
       }
 
       const fullDateStr = `${dateVal} (${startTime}〜${endTime})`;
@@ -795,7 +865,7 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             date: fullDateStr,
-            location: location,
+            location: finalLocation,
             memo: memo
           })
         });
@@ -803,6 +873,7 @@
         if (!res.ok) return alert('スケジュールの作成に失敗しました');
 
         document.getElementById('practice-memo').value = '';
+        document.getElementById('practice-custom-location').value = '';
         await fetchPractices();
         alert('練習スケジュールを作成しました！');
       } catch (err) {
