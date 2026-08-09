@@ -3,539 +3,522 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Circle OS - RUB Manager</title>
+  <title>RUB Manager - Circle OS</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body class="bg-gray-100 text-gray-800 font-sans pb-24">
+<body class="bg-slate-100 text-slate-800 pb-20">
 
-  <!-- ヘッダー -->
+  <!-- Header -->
   <header class="bg-blue-600 text-white p-4 shadow-md sticky top-0 z-50">
-    <div class="flex justify-between items-center mb-2">
+    <div class="max-w-md mx-auto flex justify-between items-center">
       <div>
-        <h1 class="text-xl font-bold tracking-wide">RUB Manager</h1>
-        <p class="text-xs text-blue-100">Circle OS v2.9</p>
+        <h1 class="text-xl font-bold tracking-tight">RUB Manager</h1>
+        <p class="text-xs text-blue-200">Circle OS v3.0</p>
       </div>
-      <span class="bg-blue-800 text-xs px-2.5 py-1 rounded-full border border-blue-400 font-mono">DB Live</span>
+      <span class="text-xs bg-blue-800 px-2 py-1 rounded-full text-blue-100 border border-blue-400">DB Live</span>
     </div>
-
-    <!-- 役職シミュレーション切替バー -->
-    <div class="bg-blue-700/60 p-2 rounded-lg flex items-center justify-between text-xs">
-      <span class="text-blue-100 font-bold flex items-center gap-1">
+    <!-- Role Switcher -->
+    <div class="max-w-md mx-auto mt-3 bg-blue-700/60 p-2 rounded-lg flex items-center justify-between text-xs">
+      <span class="font-medium flex items-center gap-1">
         <i data-lucide="shield" class="w-3.5 h-3.5"></i> 現在の表示役職:
       </span>
-      <select id="role-simulator" onchange="updateRoleUI()" class="bg-white text-gray-800 rounded px-2 py-1 font-bold outline-none">
-        <option value="代表">代表 (全権限)</option>
+      <select id="role-selector" onchange="changeRole(this.value)" class="bg-white text-slate-800 font-bold rounded px-2 py-1 focus:outline-none">
+        <option value="代表">代表 (全機能/役職)</option>
         <option value="コート取り">コート取り (日程追加/削除可)</option>
-        <option value="部員" selected>一般部員 (閲覧・投票のみ)</option>
+        <option value="部員" selected>一般部員 (閲覧・出欠選択・意見送信のみ)</option>
       </select>
     </div>
   </header>
 
-  <main class="max-w-md mx-auto p-4 space-y-6">
+  <!-- Main Content Container -->
+  <main class="max-w-md mx-auto p-4 space-y-4">
 
-    <!-- TAB 1: ホーム & AI分析 -->
-    <section id="tab-home" class="tab-content space-y-4">
-      <div class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-5 rounded-2xl shadow-lg">
-        <div class="flex items-center space-x-2 mb-2">
-          <i data-lucide="bot" class="w-6 h-6"></i>
-          <h2 class="text-lg font-bold">AI 運営アナリティクス</h2>
-        </div>
-        <div class="bg-white/10 backdrop-blur-md p-3 rounded-xl border border-white/20 mb-3">
-          <div class="text-xs text-blue-100">次回練習の予測参加人数</div>
-          <div id="ai-prediction" class="text-3xl font-extrabold mt-1">-- 名</div>
-        </div>
-        <div id="ai-advice" class="space-y-1 text-xs text-blue-50 bg-black/10 p-3 rounded-xl">
-          分析データを読み込み中...
+    <!-- Tab 1: Home / AI -->
+    <div id="tab-home" class="tab-content space-y-4">
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+        <h2 class="font-bold text-slate-700 flex items-center gap-2 mb-2">
+          <i data-lucide="bot" class="w-5 h-5 text-blue-600"></i> サークルAIアシスタント
+        </h2>
+        <div id="ai-advice" class="text-sm text-slate-600 bg-blue-50 p-3 rounded-lg border border-blue-100 space-y-1">
+          <p class="animate-pulse">AIが分析中...</p>
         </div>
       </div>
+    </div>
 
-      <!-- AI LINE 連絡文を作成 (幹部・コート取り専用) -->
-      <div id="admin-notice-form" class="bg-white p-4 rounded-xl shadow border border-gray-200 border-l-4 border-l-indigo-500 space-y-3">
-        <div class="flex items-center justify-between">
-          <h3 class="font-bold text-sm flex items-center gap-2 text-gray-700">
-            <i data-lucide="sparkles" class="w-4 h-4 text-amber-500"></i> LINE 連絡文を自動作成
-          </h3>
-          <span class="bg-indigo-100 text-indigo-700 text-[10px] px-2 py-0.5 rounded font-bold">幹部・係専用</span>
-        </div>
-
-        <!-- 定型文テンプレート選択ボタン -->
-        <div class="space-y-1">
-          <div class="text-[11px] font-bold text-gray-500">定型文テンプレートを選択:</div>
-          <div class="grid grid-cols-2 gap-1.5 text-xs">
-            <button onclick="applyTemplate('practice')" class="bg-gray-100 hover:bg-indigo-50 hover:text-indigo-600 border border-gray-200 p-2 rounded-lg text-left font-bold text-[11px] flex items-center gap-1">
-              🏀 練習日程
-            </button>
-            <button onclick="applyTemplate('remind')" class="bg-gray-100 hover:bg-indigo-50 hover:text-indigo-600 border border-gray-200 p-2 rounded-lg text-left font-bold text-[11px] flex items-center gap-1">
-              ⏰ 出欠催促
-            </button>
-            <button onclick="applyTemplate('money')" class="bg-gray-100 hover:bg-indigo-50 hover:text-indigo-600 border border-gray-200 p-2 rounded-lg text-left font-bold text-[11px] flex items-center gap-1">
-              💴 集金案内
-            </button>
-            <button onclick="applyTemplate('event')" class="bg-gray-100 hover:bg-indigo-50 hover:text-indigo-600 border border-gray-200 p-2 rounded-lg text-left font-bold text-[11px] flex items-center gap-1">
-              🎉 飲み会・新歓
-            </button>
-          </div>
-        </div>
-
-        <div class="space-y-2 pt-1">
+    <!-- Tab 2: Members -->
+    <div id="tab-members" class="tab-content hidden space-y-4">
+      <!-- Member Add Form (Officers Only) -->
+      <div id="member-add-box" class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 hidden">
+        <h2 class="font-bold text-slate-700 mb-3 text-sm flex items-center gap-2">
+          <i data-lucide="user-plus" class="w-4 h-4 text-blue-600"></i> 新規部員登録
+        </h2>
+        <div class="space-y-2 text-xs">
           <div>
-            <label class="text-[10px] text-gray-500 font-bold block mb-0.5">日付を選択</label>
-            <input type="date" id="notice-date-picker" onchange="generateNotice()" class="w-full text-xs p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+            <label class="block text-slate-500 mb-1">氏名</label>
+            <input type="text" id="new-member-name" placeholder="例: 立教 太郎" class="w-full border rounded p-2 focus:ring-1 focus:ring-blue-500">
           </div>
-
-          <div>
-            <label class="text-[10px] text-gray-500 font-bold block mb-0.5">時間を選択</label>
-            <div class="flex items-center gap-2">
-              <input type="time" id="notice-time-start" value="18:00" onchange="generateNotice()" class="w-full text-xs p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none bg-white">
-              <span class="text-xs text-gray-400 font-bold">〜</span>
-              <input type="time" id="notice-time-end" value="21:00" onchange="generateNotice()" class="w-full text-xs p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none bg-white">
-            </div>
-          </div>
-
-          <div>
-            <label class="text-[10px] text-gray-500 font-bold block mb-0.5">場所を選択</label>
-            <select id="notice-loc-select" onchange="toggleCustomLoc('notice')" class="w-full text-xs p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none bg-white font-medium">
-              <option value="立教大学体育館">立教大学体育館</option>
-              <option value="その他">その他 (手入力)</option>
-            </select>
-            <input type="text" id="notice-loc-custom" placeholder="場所を入力してください" oninput="generateNotice()" class="hidden w-full text-xs p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none mt-1">
-          </div>
-
-          <div>
-            <label class="text-[10px] text-gray-500 font-bold block mb-0.5">備考（任意）</label>
-            <input type="text" id="notice-memo" placeholder="例: ボール各自持参 / 期限8/12まで" oninput="generateNotice()" class="w-full text-xs p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none">
-          </div>
-
-          <button onclick="generateNotice()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2 rounded-lg transition">文章を更新</button>
-        </div>
-        <textarea id="notice-result" readonly placeholder="ここにLINE用の案内文が生成されます" class="w-full h-28 text-xs p-2 bg-gray-50 border rounded focus:outline-none"></textarea>
-      </div>
-    </section>
-
-    <!-- TAB 2: 部員管理 -->
-    <section id="tab-members" class="tab-content hidden space-y-4">
-      <div id="admin-member-form" class="bg-white p-4 rounded-xl shadow border border-gray-200 border-l-4 border-l-blue-500">
-        <div class="flex items-center justify-between mb-2">
-          <h2 class="font-bold text-gray-700 text-sm">新規部員を追加</h2>
-          <span class="bg-blue-100 text-blue-700 text-[10px] px-2 py-0.5 rounded font-bold">代表専用</span>
-        </div>
-        <div class="space-y-2 mb-3">
-          <input type="text" id="m-name" placeholder="名前" class="w-full text-xs p-2 border rounded outline-none">
           <div class="grid grid-cols-2 gap-2">
             <div>
-              <label class="text-[10px] text-gray-500 font-bold block mb-0.5">学年</label>
-              <select id="m-grade" class="w-full text-xs p-2 border rounded outline-none bg-white">
+              <label class="block text-slate-500 mb-1">学年</label>
+              <select id="new-member-grade" class="w-full border rounded p-2">
                 <option value="1年">1年</option>
                 <option value="2年">2年</option>
                 <option value="3年">3年</option>
                 <option value="4年">4年</option>
-                <option value="その他">その他</option>
               </select>
             </div>
             <div>
-              <label class="text-[10px] text-gray-500 font-bold block mb-0.5">役職</label>
-              <select id="m-role" class="w-full text-xs p-2 border rounded outline-none bg-white">
-                <option value="部員">部員</option>
+              <label class="block text-slate-500 mb-1">役職</label>
+              <select id="new-member-role" class="w-full border rounded p-2">
+                <option value="部員">一般部員</option>
                 <option value="代表">代表</option>
                 <option value="副代表">副代表</option>
-                <option value="コート取り">コート取り</option>
                 <option value="会計">会計</option>
+                <option value="コート取り">コート取り</option>
               </select>
             </div>
           </div>
+          <button onclick="addMember()" class="w-full bg-blue-600 text-white font-bold py-2 rounded-lg hover:bg-blue-700 mt-2">
+            部員を登録
+          </button>
         </div>
-        <button onclick="addMember()" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2 rounded-lg transition">追加保存</button>
       </div>
 
-      <div class="bg-white p-4 rounded-xl shadow border border-gray-200">
-        <h2 class="font-bold text-gray-700 mb-2 text-sm">部員名簿 (<span id="member-count">0</span>名)</h2>
-        <div id="member-list" class="divide-y divide-gray-100"></div>
-      </div>
-    </section>
-
-    <!-- TAB 3: 体育館 & スケジュール -->
-    <section id="tab-schedule" class="tab-content hidden space-y-4">
-      <div id="court-schedule-form" class="bg-white p-4 rounded-xl shadow border border-gray-200 border-l-4 border-l-green-500">
-        <div class="flex items-center justify-between mb-2">
-          <h2 class="font-bold text-gray-700 text-sm">練習スケジュール作成</h2>
-          <span class="bg-green-100 text-green-700 text-[10px] px-2 py-0.5 rounded font-bold">コート取り・幹部専用</span>
+      <!-- Member List -->
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+        <h2 class="font-bold text-slate-700 mb-3 text-sm flex items-center gap-2">
+          <i data-lucide="users" class="w-4 h-4 text-slate-500"></i> 部員名簿
+        </h2>
+        <div id="member-list" class="divide-y divide-slate-100 text-xs">
+          <!-- Dynamically populated -->
         </div>
-        <div class="space-y-2 mb-3">
+      </div>
+    </div>
+
+    <!-- Tab 3: Gymnasium / Practice Schedule -->
+    <div id="tab-gym" class="tab-content hidden space-y-4">
+      <!-- Practice Schedule Creation (Court Manager / Rep Only) -->
+      <div id="practice-create-box" class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 relative hidden">
+        <span class="absolute top-3 right-3 text-[10px] bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded">コート取り専用</span>
+        <h2 class="font-bold text-slate-700 mb-3 text-sm">練習スケジュール作成</h2>
+        <div class="space-y-3 text-xs">
           <div>
-            <label class="text-[10px] text-gray-500 font-bold block mb-0.5">練習日</label>
-            <input type="date" id="p-date-picker" class="w-full text-xs p-2 border rounded outline-none bg-white">
+            <label class="block text-slate-500 mb-1 font-medium">練習日</label>
+            <input type="date" id="practice-date" class="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-green-500 focus:outline-none text-sm bg-slate-50">
           </div>
           <div>
-            <label class="text-[10px] text-gray-500 font-bold block mb-0.5">時間帯</label>
-            <div class="flex items-center gap-2">
-              <input type="time" id="p-time-start" value="18:00" class="w-full text-xs p-2 border rounded outline-none bg-white">
-              <span class="text-xs text-gray-400 font-bold">〜</span>
-              <input type="time" id="p-time-end" value="21:00" class="w-full text-xs p-2 border rounded outline-none bg-white">
+            <label class="block text-slate-500 mb-1 font-medium">時間帯</label>
+            <div class="grid grid-cols-2 gap-2 items-center">
+              <input type="time" id="practice-start-time" value="18:00" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-slate-50">
+              <div class="flex items-center gap-1">
+                <span class="text-slate-400">〜</span>
+                <input type="time" id="practice-end-time" value="21:00" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-slate-50">
+              </div>
             </div>
           </div>
           <div>
-            <label class="text-[10px] text-gray-500 font-bold block mb-0.5">場所</label>
-            <select id="p-loc-select" onchange="toggleCustomLoc('practice')" class="w-full text-xs p-2 border rounded outline-none bg-white">
+            <label class="block text-slate-500 mb-1 font-medium">場所</label>
+            <select id="practice-location" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-slate-50">
               <option value="立教大学体育館">立教大学体育館</option>
-              <option value="その他">その他 (手入力)</option>
+              <option value="池袋スポーツセンター">池袋スポーツセンター</option>
+              <option value="豊島区立体育館">豊島区立体育館</option>
+              <option value="その他">その他</option>
             </select>
-            <input type="text" id="p-loc-custom" placeholder="場所を入力" class="hidden w-full text-xs p-2 border rounded outline-none mt-1">
           </div>
           <div>
-            <label class="text-[10px] text-gray-500 font-bold block mb-0.5">メモ・持ち物</label>
-            <input type="text" id="p-memo" placeholder="例: ボール持参" class="w-full text-xs p-2 border rounded outline-none">
+            <label class="block text-slate-500 mb-1 font-medium">メモ・持ち物</label>
+            <input type="text" id="practice-memo" placeholder="例: ボール持参" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-slate-50">
           </div>
+          <button onclick="createPractice()" class="w-full bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition shadow-sm text-sm flex items-center justify-center gap-1">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i> スケジュール作成
+          </button>
         </div>
-        <button onclick="addPractice()" class="w-full bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-2 rounded-lg transition">スケジュール作成</button>
       </div>
 
-      <div class="bg-white p-4 rounded-xl shadow border border-gray-200">
-        <h2 class="font-bold text-gray-700 mb-3 text-sm">練習スケジュール & 出欠投票</h2>
-        <div id="practice-list" class="space-y-4"></div>
+      <!-- Practice Schedule & Attendance Voting -->
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+        <h2 class="font-bold text-slate-700 mb-3 text-sm">練習スケジュール & 出欠投票</h2>
+        <div id="practice-list" class="space-y-3 text-xs">
+          <!-- Dynamically populated -->
+        </div>
       </div>
-    </section>
+    </div>
 
-    <!-- TAB 4: 意見箱 -->
-    <section id="tab-feedback" class="tab-content hidden space-y-4">
-      <div class="bg-white p-4 rounded-xl shadow border border-gray-200">
-        <h2 class="font-bold text-gray-700 mb-2 text-sm flex items-center gap-1.5">
-          <i data-lucide="message-square" class="w-4 h-4 text-purple-600"></i> サークル意見箱
+    <!-- Tab 4: Feedback / Opinion Box -->
+    <div id="tab-feedback" class="tab-content hidden space-y-4">
+      <!-- General Member View: Submission Form Only -->
+      <div id="feedback-form-section" class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+        <h2 class="font-bold text-slate-700 mb-2 text-sm flex items-center gap-2">
+          <i data-lucide="message-square-plus" class="w-4 h-4 text-blue-600"></i> サークル意見箱 (送信)
         </h2>
-        <p class="text-xs text-gray-500 mb-3">運営への要望や改善案、やってみたい企画など自由に投稿してください。</p>
-        <div class="space-y-3">
-          <textarea id="fb-content" placeholder="意見やメッセージを入力..." class="w-full h-24 text-xs p-2.5 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none bg-gray-50"></textarea>
-          <div class="flex items-center justify-between">
-            <label class="flex items-center gap-1.5 text-xs text-gray-600 cursor-pointer">
-              <input type="checkbox" id="fb-anonymous" class="rounded text-purple-600 focus:ring-purple-500">
-              匿名で送信する
-            </label>
-            <input type="text" id="fb-name" placeholder="お名前 (任意)" class="text-xs p-1.5 border rounded w-32 outline-none">
+        <p class="text-xs text-slate-500 mb-3">サークル運営への要望や意見を匿名で送信できます（役職者のみ確認できます）。</p>
+        <div class="space-y-3 text-xs">
+          <div>
+            <label class="block text-slate-500 mb-1 font-medium">お名前 (任意)</label>
+            <input type="text" id="feedback-sender" placeholder="匿名希望の場合は空欄" class="w-full border rounded-lg p-2.5 bg-slate-50 focus:ring-1 focus:ring-blue-500">
           </div>
-          <button onclick="submitFeedback()" class="w-full bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold py-2 rounded-lg transition">送信する</button>
+          <div>
+            <label class="block text-slate-500 mb-1 font-medium">ご意見・ご要望</label>
+            <textarea id="feedback-content" rows="4" placeholder="例: イベントの開催頻度を増やしてほしいです。" class="w-full border rounded-lg p-2.5 bg-slate-50 focus:ring-1 focus:ring-blue-500"></textarea>
+          </div>
+          <button onclick="submitFeedback()" class="w-full bg-blue-600 text-white font-bold py-2.5 rounded-lg hover:bg-blue-700 transition flex items-center justify-center gap-1">
+            <i data-lucide="send" class="w-4 h-4"></i> 意見を送信する
+          </button>
         </div>
       </div>
 
-      <div id="admin-feedback-list" class="bg-white p-4 rounded-xl shadow border border-gray-200 border-l-4 border-l-purple-600">
+      <!-- Officers View: Feedback List Only -->
+      <div id="feedback-list-section" class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 hidden">
         <div class="flex items-center justify-between mb-3">
-          <h2 class="font-bold text-gray-700 text-sm">届いた意見一覧</h2>
-          <span class="bg-purple-100 text-purple-700 text-[10px] px-2 py-0.5 rounded font-bold">代表専用</span>
+          <h2 class="font-bold text-slate-700 text-sm flex items-center gap-2">
+            <i data-lucide="inbox" class="w-4 h-4 text-purple-600"></i> 届いたご意見一覧
+          </h2>
+          <span class="text-[10px] bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded">役職者限定閲覧</span>
         </div>
-        <div id="feedback-items" class="space-y-2 divide-y divide-gray-100"></div>
+        <div id="feedback-list" class="space-y-2 text-xs divide-y divide-slate-100">
+          <!-- Dynamically populated -->
+        </div>
       </div>
-    </section>
+    </div>
 
   </main>
 
-  <!-- ナビゲーションバー -->
-  <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-2 px-4 flex justify-around items-center z-50">
-    <button onclick="switchTab('home')" id="nav-home" class="flex flex-col items-center text-blue-600">
-      <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
-      <span class="text-[10px] mt-1 font-bold">ホーム/AI</span>
-    </button>
-    <button onclick="switchTab('members')" id="nav-members" class="flex flex-col items-center text-gray-400">
-      <i data-lucide="users" class="w-5 h-5"></i>
-      <span class="text-[10px] mt-1 font-bold">部員</span>
-    </button>
-    <button onclick="switchTab('schedule')" id="nav-schedule" class="flex flex-col items-center text-gray-400">
-      <i data-lucide="calendar" class="w-5 h-5"></i>
-      <span class="text-[10px] mt-1 font-bold">体育館</span>
-    </button>
-    <button onclick="switchTab('feedback')" id="nav-feedback" class="flex flex-col items-center text-gray-400">
-      <i data-lucide="message-square" class="w-5 h-5"></i>
-      <span class="text-[10px] mt-1 font-bold">意見箱</span>
-    </button>
+  <!-- Bottom Navigation -->
+  <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-50">
+    <div class="max-w-md mx-auto grid grid-cols-4 text-center py-2 text-xs">
+      <button onclick="switchTab('home')" id="nav-home" class="nav-btn text-blue-600 font-bold flex flex-col items-center">
+        <i data-lucide="layout-grid" class="w-5 h-5"></i>
+        <span>ホーム/AI</span>
+      </button>
+      <button onclick="switchTab('members')" id="nav-members" class="nav-btn text-slate-400 flex flex-col items-center">
+        <i data-lucide="users" class="w-5 h-5"></i>
+        <span>部員</span>
+      </button>
+      <button onclick="switchTab('gym')" id="nav-gym" class="nav-btn text-slate-400 flex flex-col items-center">
+        <i data-lucide="calendar" class="w-5 h-5"></i>
+        <span>体育館</span>
+      </button>
+      <button onclick="switchTab('feedback')" id="nav-feedback" class="nav-btn text-slate-400 flex flex-col items-center">
+        <i data-lucide="message-square" class="w-5 h-5"></i>
+        <span>意見箱</span>
+      </button>
+    </div>
   </nav>
 
   <script>
-    lucide.createIcons();
+    let currentRole = "部員";
 
-    let currentTemplate = 'practice';
-    let allMembersCache = [];
+    document.addEventListener("DOMContentLoaded", () => {
+      lucide.createIcons();
+      fetchAIAnalytics();
+      fetchMembers();
+      fetchPractices();
+      fetchFeedbacks();
+      updateRoleVisibility();
 
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('notice-date-picker').value = today;
-    document.getElementById('p-date-picker').value = today;
+      // デフォルトの練習日を明日に設定
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      document.getElementById("practice-date").value = tomorrow.toISOString().split('T')[0];
+    });
 
-    function toggleCustomLoc(prefix) {
-      const sel = document.getElementById(`${prefix}-loc-select`).value;
-      const customInput = document.getElementById(`${prefix}-loc-custom`);
-      if (sel === 'その他') {
-        customInput.classList.remove('hidden');
+    function switchTab(tabName) {
+      document.querySelectorAll(".tab-content").forEach(el => el.classList.add("hidden"));
+      document.getElementById(`tab-${tabName}`).classList.remove("hidden");
+
+      document.querySelectorAll(".nav-btn").forEach(btn => {
+        btn.classList.remove("text-blue-600", "font-bold");
+        btn.classList.add("text-slate-400");
+      });
+      const activeBtn = document.getElementById(`nav-${tabName}`);
+      activeBtn.classList.remove("text-slate-400");
+      activeBtn.classList.add("text-blue-600", "font-bold");
+    }
+
+    function changeRole(role) {
+      currentRole = role;
+      updateRoleVisibility();
+      fetchPractices();
+      fetchMembers();
+    }
+
+    function isOfficerRole() {
+      return currentRole === "代表" || currentRole === "副代表" || currentRole === "会計" || currentRole === "コート取り";
+    }
+
+    function updateRoleVisibility() {
+      const isOfficer = isOfficerRole();
+
+      // 部員追加エリア（役職持ちのみ）
+      const memberAddBox = document.getElementById("member-add-box");
+      if (memberAddBox) {
+        if (isOfficer) memberAddBox.classList.remove("hidden");
+        else memberAddBox.classList.add("hidden");
+      }
+
+      // 練習作成エリア（コート取り or 代表のみ）
+      const practiceCreateBox = document.getElementById("practice-create-box");
+      if (practiceCreateBox) {
+        if (currentRole === "コート取り" || currentRole === "代表") {
+          practiceCreateBox.classList.remove("hidden");
+        } else {
+          practiceCreateBox.classList.add("hidden");
+        }
+      }
+
+      // 意見箱の表示切り替え（一般部員：投稿フォームのみ／役職者：一覧のみ）
+      const feedbackFormSection = document.getElementById("feedback-form-section");
+      const feedbackListSection = document.getElementById("feedback-list-section");
+
+      if (isOfficer) {
+        feedbackFormSection.classList.add("hidden");
+        feedbackListSection.classList.remove("hidden");
       } else {
-        customInput.classList.add('hidden');
-      }
-      if (prefix === 'notice') generateNotice();
-    }
-
-    function getFormattedDate(dateStr) {
-      if (!dateStr) return '[日時]';
-      const parts = dateStr.split('-');
-      if (parts.length !== 3) return dateStr;
-      const d = new Date(parts[0], parts[1] - 1, parts[2]);
-      const days = ['日', '月', '火', '水', '木', '金', '土'];
-      return `${parseInt(parts[1])}/${parseInt(parts[2])}(${days[d.getDay()]})`;
-    }
-
-    function getSelectedLocation(prefix) {
-      const sel = document.getElementById(`${prefix}-loc-select`).value;
-      if (sel === 'その他') {
-        return document.getElementById(`${prefix}-loc-custom`).value || '未定';
-      }
-      return sel;
-    }
-
-    function applyTemplate(type) {
-      currentTemplate = type;
-      generateNotice();
-    }
-
-    function generateNotice() {
-      const resBox = document.getElementById('notice-result');
-      if (!resBox) return;
-      const dateVal = document.getElementById('notice-date-picker').value;
-      const formattedDate = getFormattedDate(dateVal);
-      const timeStart = document.getElementById('notice-time-start').value;
-      const timeEnd = document.getElementById('notice-time-end').value;
-      const dateTimeStr = `${formattedDate} ${timeStart}~${timeEnd}`;
-      
-      const loc = getSelectedLocation('notice');
-      const m = document.getElementById('notice-memo').value || '';
-
-      if (currentTemplate === 'practice') {
-        resBox.value = `【練習のお知らせ 🏀】\n\nお疲れ様です！次回練習の日程です。\n\n📅 日時: ${dateTimeStr}\n📍 場所: ${loc}\n${m ? `📝 備考: ${m}\n` : ''}\nアプリから出欠回答をよろしくお願いします！`;
-      } else if (currentTemplate === 'remind') {
-        resBox.value = `【出欠回答のお願い ⏰】\n\nお疲れ様です！\n${dateTimeStr} の練習/イベントの出欠未回答の方は、アプリより本日中に投票をお願いします！\n\n📍 場所: ${loc}\nご協力よろしくお願いします！`;
-      } else if (currentTemplate === 'money') {
-        resBox.value = `【集金のお知らせ 💴】\n\nお疲れ様です！会計から集金のご連絡です。\n\n📌 対象日: ${dateTimeStr}\n💰 場所/詳細: ${loc}\n${m ? `⚠️ 期限/備考: ${m}\n` : ''}\n準備をよろしくお願いします！`;
-      } else if (currentTemplate === 'event') {
-        resBox.value = `【サークルイベント案内 🎉】\n\nお疲れ様です！イベント開催のお知らせです！\n\n🗓 日時: ${dateTimeStr}\n📍 場所: ${loc}\n${m ? `💡 備考・会費: ${m}\n` : ''}\nみんなで楽しみましょう！参加回答待ってます！`;
+        feedbackFormSection.classList.remove("hidden");
+        feedbackListSection.classList.add("hidden");
       }
     }
 
-    function updateRoleUI() {
-      const role = document.getElementById('role-simulator').value;
-      
-      // LINE文章作成フォームの制御（代表・コート取りのみ表示）
-      const noticeForm = document.getElementById('admin-notice-form');
-      noticeForm.style.display = (role === '代表' || role === 'コート取り') ? 'block' : 'none';
-
-      // 新規部員追加フォーム＆意見一覧の制御（代表のみ表示）
-      document.getElementById('admin-member-form').style.display = (role === '代表') ? 'block' : 'none';
-      document.getElementById('admin-feedback-list').style.display = (role === '代表') ? 'block' : 'none';
-      
-      // スケジュール作成フォームの制御（代表・コート取りのみ表示）
-      document.getElementById('court-schedule-form').style.display = (role === '代表' || role === 'コート取り') ? 'block' : 'none';
-      
-      loadPractices();
+    // AI アナリティクス
+    async function fetchAIAnalytics() {
+      try {
+        const res = await fetch('/api/ai/analytics');
+        const data = await res.json();
+        const adviceContainer = document.getElementById('ai-advice');
+        adviceContainer.innerHTML = data.advice_list.map(a => `<p>• ${a}</p>`).join('');
+      } catch (err) {
+        console.error('AI Analytics fetch error:', err);
+      }
     }
 
-    function switchTab(tab) {
-      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-      document.getElementById(`tab-${tab}`).classList.remove('hidden');
-      ['home', 'members', 'schedule', 'feedback'].forEach(t => {
-        const btn = document.getElementById(`nav-${t}`);
-        if(btn) btn.className = (t === tab) ? "flex flex-col items-center text-blue-600" : "flex flex-col items-center text-gray-400";
-      });
-    }
+    // 部員 API
+    async function fetchMembers() {
+      try {
+        const res = await fetch('/api/members');
+        const members = await res.json();
+        const list = document.getElementById('member-list');
+        const isOfficer = isOfficerRole();
 
-    async function loadAllData() {
-      await loadMembers();
-      await loadPractices();
-      await loadAIAnalytics();
-      await loadFeedbacks();
-      updateRoleUI();
-      generateNotice();
-    }
+        if (members.length === 0) {
+          list.innerHTML = '<p class="text-slate-400 py-2">部員が登録されていません。</p>';
+          return;
+        }
 
-    async function loadMembers() {
-      const res = await fetch('/api/members');
-      allMembersCache = await res.json();
-      document.getElementById('member-count').innerText = allMembersCache.length;
-      const list = document.getElementById('member-list');
-      list.innerHTML = allMembersCache.length === 0 ? '<p class="text-xs text-gray-400 py-2">部員がいません。</p>' : '';
-      const currentRole = document.getElementById('role-simulator').value;
-
-      allMembersCache.forEach(m => {
-        list.innerHTML += `
-          <div class="py-2 flex justify-between items-center text-xs">
+        list.innerHTML = members.map(m => `
+          <div class="py-2.5 flex items-center justify-between">
             <div>
-              <span class="font-bold text-gray-800">${m.name}</span> 
-              <span class="text-gray-500">(${m.grade})</span>
-              <span class="ml-1 bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded text-[10px] font-bold">${m.role}</span>
+              <span class="font-bold text-slate-800">${m.name}</span>
+              <span class="ml-2 text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">${m.grade}</span>
+              <span class="ml-1 text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-medium">${m.role}</span>
             </div>
-            ${currentRole === '代表' ? `<button onclick="deleteMember(${m.id})" class="text-red-500 hover:text-red-700 font-bold text-[10px]">削除</button>` : ''}
-          </div>`;
-      });
+            ${isOfficer ? `
+              <button onclick="deleteMember(${m.id})" class="text-xs text-red-500 hover:text-red-700 bg-red-50 px-2 py-1 rounded">
+                削除
+              </button>
+            ` : ''}
+          </div>
+        `).join('');
+      } catch (err) {
+        console.error('Fetch members error:', err);
+      }
     }
 
     async function addMember() {
-      const name = document.getElementById('m-name').value;
-      const grade = document.getElementById('m-grade').value;
-      const role = document.getElementById('m-role').value;
-      if (!name) return alert('名前を入力してください');
+      const name = document.getElementById('new-member-name').value.trim();
+      const grade = document.getElementById('new-member-grade').value;
+      const role = document.getElementById('new-member-role').value;
+
+      if (!name) {
+        alert('氏名を入力してください。');
+        return;
+      }
 
       await fetch('/api/members', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, grade, role })
       });
-      document.getElementById('m-name').value = '';
-      loadAllData();
+
+      document.getElementById('new-member-name').value = '';
+      fetchMembers();
+      fetchAIAnalytics();
     }
 
     async function deleteMember(id) {
-      if(!confirm('本当に削除しますか？')) return;
+      if (!confirm('本当にこの部員を削除しますか？')) return;
       await fetch(`/api/members/${id}`, { method: 'DELETE' });
-      loadAllData();
+      fetchMembers();
+      fetchAIAnalytics();
     }
 
-    async function loadPractices() {
-      const res = await fetch('/api/practices');
-      const practices = await res.json();
-      const list = document.getElementById('practice-list');
-      const currentRole = document.getElementById('role-simulator').value;
+    // 練習スケジュール API
+    async function fetchPractices() {
+      try {
+        const res = await fetch('/api/practices');
+        const practices = await res.json();
+        const list = document.getElementById('practice-list');
+        const canDelete = currentRole === "コート取り" || currentRole === "代表";
 
-      list.innerHTML = practices.length === 0 ? '<p class="text-xs text-gray-400 py-2">予定されている練習はありません。</p>' : '';
-      
-      for (const p of practices) {
-        const attRes = await fetch(`/api/attendance/${p.id}`);
-        const attData = await attRes.json();
-        
-        const joinList = attData['参加'] || [];
-        const absentList = attData['不参加'] || [];
+        if (practices.length === 0) {
+          list.innerHTML = '<p class="text-slate-400 py-2">予定されている練習はありません。</p>';
+          return;
+        }
 
-        let memberOptions = '<option value="">(自分を選択)</option>';
-        allMembersCache.forEach(m => {
-          memberOptions += `<option value="${m.name}">${m.name}</option>`;
-        });
+        let html = '';
+        for (const p of practices) {
+          const attRes = await fetch(`/api/attendance/${p.id}`);
+          const att = await attRes.json();
 
-        list.innerHTML += `
-          <div class="p-3 bg-gray-50 rounded-xl border border-gray-200 text-xs space-y-2">
-            <div class="flex justify-between items-start">
-              <div>
-                <div class="font-bold text-blue-600 text-sm">${p.date}</div>
-                <div class="text-gray-700 font-medium">📍 ${p.location}</div>
-                ${p.memo ? `<div class="text-gray-500 text-[11px]">📝 ${p.memo}</div>` : ''}
+          html += `
+            <div class="border rounded-lg p-3 bg-slate-50 space-y-2">
+              <div class="flex justify-between items-start">
+                <div>
+                  <div class="font-bold text-sm text-slate-800">${p.date}</div>
+                  <div class="text-slate-600">${p.location}</div>
+                  ${p.memo ? `<div class="text-slate-500 text-[11px]">メモ: ${p.memo}</div>` : ''}
+                </div>
+                ${canDelete ? `
+                  <button onclick="deletePractice(${p.id})" class="text-xs text-red-500 hover:text-red-700 bg-red-50 px-2 py-1 rounded">
+                    削除
+                  </button>
+                ` : ''}
               </div>
-              ${(currentRole === '代表' || currentRole === 'コート取り') ? 
-                `<button onclick="deletePractice(${p.id})" class="text-red-500 hover:text-red-700 text-[10px] font-bold border border-red-200 px-1.5 py-0.5 rounded">削除</button>` : ''}
-            </div>
 
-            <div class="flex gap-2 text-[11px] bg-white p-2 rounded border border-gray-100">
-              <span class="text-green-600 font-bold">参加 (${joinList.length}名): ${joinList.join(', ')}</span>
+              <!-- 出欠投票 -->
+              <div class="border-t pt-2 mt-2">
+                <p class="font-medium text-slate-600 mb-1">出欠投票:</p>
+                <div class="flex gap-1 mb-2">
+                  <button onclick="voteAttendance(${p.id}, '参加')" class="flex-1 bg-green-500 text-white font-bold py-1 rounded hover:bg-green-600 text-xs">参加</button>
+                  <button onclick="voteAttendance(${p.id}, '不参加')" class="flex-1 bg-red-500 text-white font-bold py-1 rounded hover:bg-red-600 text-xs">不参加</button>
+                  <button onclick="voteAttendance(${p.id}, '未定')" class="flex-1 bg-gray-400 text-white font-bold py-1 rounded hover:bg-gray-500 text-xs">未定</button>
+                </div>
+                <div class="text-[11px] text-slate-500 bg-white p-2 rounded border space-y-0.5">
+                  <div><span class="font-bold text-green-600">参加 (${att.参加.length}名):</span> ${att.参加.join(', ') || 'なし'}</div>
+                  <div><span class="font-bold text-red-600">不参加 (${att.不参加.length}名):</span> ${att.不参加.join(', ') || 'なし'}</div>
+                  <div><span class="font-bold text-gray-500">未定 (${att.未定.length}名):</span> ${att.未定.join(', ') || 'なし'}</div>
+                </div>
+              </div>
             </div>
-
-            <div class="pt-1 flex items-center gap-1.5">
-              <select id="voter-${p.id}" class="text-[11px] p-1 border rounded bg-white outline-none">
-                ${memberOptions}
-              </select>
-              <button onclick="vote(${p.id}, '参加')" class="bg-green-600 text-white px-2 py-1 rounded font-bold text-[10px]">参加</button>
-              <button onclick="vote(${p.id}, '不参加')" class="bg-red-500 text-white px-2 py-1 rounded font-bold text-[10px]">不参加</button>
-            </div>
-          </div>`;
+          `;
+        }
+        list.innerHTML = html;
+      } catch (err) {
+        console.error('Fetch practices error:', err);
       }
     }
 
-    async function addPractice() {
-      const dateVal = document.getElementById('p-date-picker').value;
-      if (!dateVal) return alert('日付を選択してください');
+    async function createPractice() {
+      const dateVal = document.getElementById('practice-date').value;
+      const startTime = document.getElementById('practice-start-time').value;
+      const endTime = document.getElementById('practice-end-time').value;
+      const location = document.getElementById('practice-location').value;
+      const memo = document.getElementById('practice-memo').value.trim();
 
-      const formattedDate = getFormattedDate(dateVal);
-      const timeStart = document.getElementById('p-time-start').value;
-      const timeEnd = document.getElementById('p-time-end').value;
-      const dateStr = `${formattedDate} ${timeStart}~${timeEnd}`;
+      if (!dateVal) {
+        alert('練習日を選択してください。');
+        return;
+      }
 
-      const location = getSelectedLocation('practice');
-      const memo = document.getElementById('p-memo').value;
+      const fullDateStr = `${dateVal} (${startTime}〜${endTime})`;
 
-      const res = await fetch('/api/practices', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ date: dateStr, location, memo })
-      });
+      try {
+        const res = await fetch('/api/practices', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            date: fullDateStr,
+            location: location,
+            memo: memo
+          })
+        });
 
-      if (res.ok) {
-        document.getElementById('p-memo').value = '';
-        await loadPractices();
-        await loadAIAnalytics();
+        if (!res.ok) {
+          const errData = await res.json();
+          alert(`スケジュールの作成に失敗しました: ${errData.detail || 'エラーが発生しました'}`);
+          return;
+        }
+
+        document.getElementById('practice-memo').value = '';
+        await fetchPractices();
         alert('練習スケジュールを作成しました！');
-      } else {
-        alert('スケジュールの作成に失敗しました');
+      } catch (err) {
+        console.error('Create practice error:', err);
+        alert('通信エラーが発生しました。ネットワーク接続を確認してください。');
       }
     }
 
     async function deletePractice(id) {
-      if(!confirm('練習予定を削除しますか？')) return;
+      if (!confirm('この練習スケジュールを削除しますか？')) return;
       await fetch(`/api/practices/${id}`, { method: 'DELETE' });
-      loadPractices();
+      fetchPractices();
     }
 
-    async function vote(practiceId, status) {
-      const voterName = document.getElementById(`voter-${practiceId}`).value;
-      if (!voterName) return alert('回答する自分の名前を選択してください');
+    async function voteAttendance(practiceId, status) {
+      const name = prompt('投票者のお名前を入力してください:');
+      if (!name || !name.trim()) return;
 
       await fetch('/api/attendance', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           practice_id: practiceId,
-          member_name: voterName,
+          member_name: name.trim(),
           status: status
         })
       });
-      loadPractices();
+
+      fetchPractices();
     }
 
+    // 意見箱 API
     async function submitFeedback() {
-      const content = document.getElementById('fb-content').value;
-      const isAnon = document.getElementById('fb-anonymous').checked;
-      const inputName = document.getElementById('fb-name').value;
-      
-      if (!content) return alert('意見内容を入力してください');
-      const sender_name = isAnon ? '匿名' : (inputName || '匿名');
+      const sender_name = document.getElementById('feedback-sender').value.trim() || '匿名';
+      const content = document.getElementById('feedback-content').value.trim();
+
+      if (!content) {
+        alert('ご意見・ご要望を入力してください。');
+        return;
+      }
 
       await fetch('/api/feedbacks', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sender_name, content })
       });
 
-      alert('意見を投稿しました！');
-      document.getElementById('fb-content').value = '';
-      loadFeedbacks();
+      document.getElementById('feedback-content').value = '';
+      document.getElementById('feedback-sender').value = '';
+      alert('ご意見を送信しました。ありがとうございます！');
+      if (isOfficerRole()) {
+        fetchFeedbacks();
+      }
     }
 
-    async function loadFeedbacks() {
-      const res = await fetch('/api/feedbacks');
-      const fbs = await res.json();
-      const container = document.getElementById('feedback-items');
-      container.innerHTML = fbs.length === 0 ? '<p class="text-xs text-gray-400 py-2">届いた意見はありません。</p>' : '';
-      
-      fbs.forEach(f => {
-        container.innerHTML += `
-          <div class="pt-2 text-xs">
-            <div class="flex justify-between text-gray-400 text-[10px] mb-0.5">
-              <span>送信者: ${f.sender_name}</span>
-              <span>${new Date(f.created_at).toLocaleDateString()}</span>
+    async function fetchFeedbacks() {
+      try {
+        const res = await fetch('/api/feedbacks');
+        const feedbacks = await res.json();
+        const list = document.getElementById('feedback-list');
+
+        if (feedbacks.length === 0) {
+          list.innerHTML = '<p class="text-slate-400 py-2">現在届いているご意見はありません。</p>';
+          return;
+        }
+
+        list.innerHTML = feedbacks.map(f => `
+          <div class="py-2.5">
+            <div class="flex justify-between text-slate-500 mb-1">
+              <span class="font-bold text-slate-700">${f.sender_name}</span>
+              <span class="text-[10px]">${new Date(f.created_at).toLocaleDateString('ja-JP')}</span>
             </div>
-            <p class="text-gray-800 bg-gray-50 p-2 rounded border border-gray-100">${f.content}</p>
-          </div>`;
-      });
+            <p class="text-slate-600 bg-slate-50 p-2 rounded border border-slate-100 whitespace-pre-wrap">${f.content}</p>
+          </div>
+        `).join('');
+      } catch (err) {
+        console.error('Fetch feedbacks error:', err);
+      }
     }
-
-    async function loadAIAnalytics() {
-      const res = await fetch('/api/ai/analytics');
-      const data = await res.json();
-      document.getElementById('ai-prediction').innerText = `${data.predicted_attendance} 名`;
-      const adviceBox = document.getElementById('ai-advice');
-      adviceBox.innerHTML = '';
-      data.advice_list.forEach(a => {
-        adviceBox.innerHTML += `<div>• ${a}</div>`;
-      });
-    }
-
-    loadAllData();
   </script>
 </body>
 </html>
