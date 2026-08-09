@@ -22,13 +22,9 @@
           <label class="block font-bold text-slate-700 mb-1">学籍番号</label>
           <input type="text" id="login-student-id" placeholder="例: 21AB1234" class="w-full border p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none uppercase">
         </div>
-        <div>
-          <label class="block font-bold text-slate-700 mb-1">立教メールアドレス</label>
-          <input type="email" id="login-email" placeholder="21ab1234@rikkyo.ac.jp" class="w-full border p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
-        </div>
-        <p class="text-[10px] text-amber-600 bg-amber-50 p-2 rounded">※部員名簿に登録されている学籍番号の立教メールでのみログイン可能です。</p>
+        <p class="text-[10px] text-slate-500 bg-slate-50 p-2 rounded">※部員名簿に登録されている学籍番号を入力してください。</p>
         <button onclick="handleLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg text-sm transition">
-          ログインして利用開始
+          ログイン
         </button>
       </div>
     </div>
@@ -39,7 +35,7 @@
     <div class="max-w-md mx-auto flex justify-between items-center">
       <div>
         <h1 class="text-xl font-bold tracking-tight">RUB Manager</h1>
-        <p class="text-xs text-blue-200">Circle OS v3.2</p>
+        <p class="text-xs text-blue-200">Circle OS v3.3</p>
       </div>
       <div class="flex items-center gap-2">
         <span id="user-display-name" class="text-xs bg-blue-700 px-2.5 py-1 rounded-full text-white font-medium border border-blue-400">未ログイン</span>
@@ -116,10 +112,10 @@
               <label class="block text-slate-500 mb-1">役職</label>
               <select id="new-member-role" class="w-full border rounded p-2">
                 <option value="部員">一般部員</option>
-                <option value="代表">代表</option>
-                <option value="副代表">副代表</option>
-                <option value="会計">会計</option>
-                <option value="コート取り">コート取り</option>
+                <option value="代表">代表 (最大2名)</option>
+                <option value="副代表">副代表 (最大1名)</option>
+                <option value="会計">会計 (最大3名)</option>
+                <option value="コート取り">コート取り (最大3名)</option>
               </select>
             </div>
           </div>
@@ -242,6 +238,14 @@
     let currentRole = "部員";
     let currentUser = null;
 
+    // 役職人数の上限設定
+    const ROLE_LIMITS = {
+      "代表": 2,
+      "副代表": 1,
+      "会計": 3,
+      "コート取り": 3
+    };
+
     document.addEventListener("DOMContentLoaded", () => {
       lucide.createIcons();
       checkAuth();
@@ -256,9 +260,8 @@
       document.getElementById("practice-date").value = tomorrow.toISOString().split('T')[0];
     });
 
-    // 永続ログイン認証チェック
     function checkAuth() {
-      const savedUser = localStorage.getItem('circle_os_user_v2');
+      const savedUser = localStorage.getItem('circle_os_user_v3');
       if (savedUser) {
         currentUser = JSON.parse(savedUser);
         document.getElementById('login-modal').classList.add('hidden');
@@ -270,21 +273,11 @@
       }
     }
 
+    // 学籍番号のみでログイン
     async function handleLogin() {
       const studentId = document.getElementById('login-student-id').value.trim().toUpperCase();
-      const email = document.getElementById('login-email').value.trim().toLowerCase();
-
       if (!studentId) return alert('学籍番号を入力してください');
-      if (!email || !email.endsWith('@rikkyo.ac.jp')) {
-        return alert('正しい立教メールアドレス (@rikkyo.ac.jp) を入力してください');
-      }
 
-      const expectedEmail = `${studentId.toLowerCase()}@rikkyo.ac.jp`;
-      if (email !== expectedEmail) {
-        return alert(`学籍番号とメールアドレスが一致しません。\n（入力例: ${studentId.toLowerCase()}@rikkyo.ac.jp）`);
-      }
-
-      // サーバー側の部員名簿と学籍番号を照合
       try {
         const res = await fetch('/api/members');
         const members = await res.json();
@@ -296,12 +289,10 @@
 
         currentUser = {
           name: member.name,
-          student_id: member.student_id,
-          email: email
+          student_id: member.student_id
         };
 
-        // localStorage に永久保存（アプリを閉じてもログイン維持）
-        localStorage.setItem('circle_os_user_v2', JSON.stringify(currentUser));
+        localStorage.setItem('circle_os_user_v3', JSON.stringify(currentUser));
         document.getElementById('login-modal').classList.add('hidden');
         document.getElementById('user-display-name').innerText = currentUser.name;
         document.getElementById('logout-btn').classList.remove('hidden');
@@ -314,7 +305,7 @@
 
     function handleLogout() {
       if (!confirm('ログアウトしますか？')) return;
-      localStorage.removeItem('circle_os_user_v2');
+      localStorage.removeItem('circle_os_user_v3');
       currentUser = null;
       document.getElementById('user-display-name').innerText = '未ログイン';
       document.getElementById('logout-btn').classList.add('hidden');
@@ -418,6 +409,7 @@
       }
     }
 
+    // 部員追加（役職の上限チェックを追加）
     async function addMember() {
       const name = document.getElementById('new-member-name').value.trim();
       const student_id = document.getElementById('new-member-student-id').value.trim().toUpperCase();
@@ -425,6 +417,22 @@
       const role = document.getElementById('new-member-role').value;
 
       if (!name || !student_id) return alert('氏名と学籍番号を入力してください。');
+
+      // 役職の人数制限チェック
+      if (ROLE_LIMITS[role]) {
+        try {
+          const res = await fetch('/api/members');
+          const members = await res.json();
+          const currentCount = members.filter(m => m.role === role).length;
+          const maxLimit = ROLE_LIMITS[role];
+
+          if (currentCount >= maxLimit) {
+            return alert(`【登録不可】${role} の上限人数（${maxLimit}名）に達しています。`);
+          }
+        } catch (err) {
+          console.error('Role limit check error:', err);
+        }
+      }
 
       await fetch('/api/members', {
         method: 'POST',
@@ -436,6 +444,7 @@
       document.getElementById('new-member-student-id').value = '';
       fetchMembers();
       fetchAIAnalytics();
+      alert('部員を登録しました！');
     }
 
     async function deleteMember(id) {
