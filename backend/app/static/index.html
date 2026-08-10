@@ -3,41 +3,73 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RUB Manager - Circle OS</title>
-  <!-- PWA設定 (ホーム画面アプリ化対応) -->
+  <title>RUB Picklers - Circle OS</title>
+  <!-- PWA設定 -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="RUB Manager">
+  <meta name="apple-mobile-web-app-title" content="RUB Picklers">
   
+  <!-- Google Fonts: POPで明るいフォント -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap" rel="stylesheet">
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"M PLUS Rounded 1c"', '"Fredoka"', 'sans-serif'],
+          },
+          colors: {
+            pickle: {
+              lime: '#84cc16',    /* ピックルボール・イエローグリーン */
+              yellow: '#facc15',  /* パドル・ボールカラー */
+              blue: '#06b6d4',    /* ポップな明るいブルー */
+              navy: '#0f172a',    /* 深みのある背景用 */
+              pink: '#f43f5e',    /* アクセントピンク */
+              bg: '#f7fee7',      /* 明るい黄緑系バックグラウンド */
+            }
+          }
+        }
+      }
     }
   </script>
   <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body { font-family: 'M PLUS Rounded 1c', sans-serif; }
+    .pop-shadow { box-shadow: 0 4px 0 0 #000; }
+    .pop-shadow-sm { box-shadow: 0 2px 0 0 #000; }
+    .pop-border { border: 2px solid #000; }
+  </style>
 </head>
-<body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 pb-20 transition-colors duration-200">
+<body class="bg-pickle-bg dark:bg-slate-900 text-slate-800 dark:text-slate-100 pb-24 transition-colors duration-200">
 
   <!-- ログインモーダル -->
   <div id="login-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-    <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-2xl p-6 shadow-2xl space-y-4 text-slate-800 dark:text-slate-100">
+    <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-3xl p-6 pop-border pop-shadow space-y-4 text-slate-800 dark:text-slate-100 relative overflow-hidden">
+      <div class="absolute -top-6 -right-6 w-20 h-20 bg-pickle-yellow rounded-full pop-border -z-10 opacity-50"></div>
       <div class="text-center space-y-1">
-        <h1 class="text-2xl font-bold text-blue-600 dark:text-blue-400">RUB Manager</h1>
-        <p class="text-xs text-slate-500 dark:text-slate-400">立教大学サークル専用ログイン</p>
+        <div class="inline-flex items-center justify-center w-12 h-12 bg-pickle-lime rounded-full pop-border mb-1">
+          <i data-lucide="circle-dot" class="w-7 h-7 text-white"></i>
+        </div>
+        <h1 class="text-2xl font-black text-slate-800 dark:text-white tracking-wider">RUB Picklers 🏓</h1>
+        <p class="text-xs font-bold text-slate-500 dark:text-slate-400">立教ピックルボールサークル OS</p>
       </div>
 
       <div class="space-y-3 text-xs pt-2">
         <div>
-          <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">学籍番号</label>
-          <input type="text" id="login-student-id" placeholder="例: 20AA000A" class="w-full border dark:border-slate-600 dark:bg-slate-700 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none uppercase">
+          <label class="block font-extrabold text-slate-700 dark:text-slate-300 mb-1">学籍番号</label>
+          <input type="text" id="login-student-id" placeholder="例: 20AA000A" class="w-full border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 p-2.5 rounded-xl font-bold focus:outline-none focus:ring-2 focus:ring-pickle-lime uppercase">
         </div>
         <div>
-          <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">パスワード</label>
-          <input type="password" id="login-password" placeholder="パスワード（初期: 6桁数字）" class="w-full border dark:border-slate-600 dark:bg-slate-700 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+          <label class="block font-extrabold text-slate-700 dark:text-slate-300 mb-1">パスワード</label>
+          <input type="password" id="login-password" placeholder="初期: 6桁数字" class="w-full border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 p-2.5 rounded-xl font-bold focus:outline-none focus:ring-2 focus:ring-pickle-lime">
         </div>
-        <button onclick="handleLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg text-sm transition">
-          ログイン
+        <button onclick="handleLogin()" class="w-full bg-pickle-lime hover:bg-lime-500 text-slate-900 font-black py-3 rounded-xl text-sm pop-border pop-shadow-sm transition active:translate-y-0.5">
+          コートイン！ (ログイン)
         </button>
       </div>
     </div>
@@ -45,56 +77,56 @@
 
   <!-- パスワード変更モーダル -->
   <div id="change-password-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] hidden flex items-center justify-center p-4">
-    <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-2xl p-5 shadow-xl space-y-3 text-slate-800 dark:text-slate-100">
-      <h3 class="font-bold text-sm flex items-center gap-1">
-        <i data-lucide="key" class="w-4 h-4 text-blue-600"></i> パスワードの変更
+    <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-3xl p-5 pop-border pop-shadow space-y-3 text-slate-800 dark:text-slate-100">
+      <h3 class="font-extrabold text-sm flex items-center gap-1.5 text-pickle-blue">
+        <i data-lucide="key" class="w-4 h-4"></i> パスワード変更
       </h3>
       <div class="space-y-2 text-xs">
         <div>
-          <label class="block text-slate-500 dark:text-slate-400 mb-1">現在のパスワード</label>
-          <input type="password" id="pwd-current" class="w-full border dark:border-slate-600 dark:bg-slate-700 rounded p-2">
+          <label class="block font-bold text-slate-500 dark:text-slate-400 mb-1">現在のパスワード</label>
+          <input type="password" id="pwd-current" class="w-full border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-2 font-bold">
         </div>
         <div>
-          <label class="block text-slate-500 dark:text-slate-400 mb-1">新しいパスワード</label>
-          <input type="password" id="pwd-new" class="w-full border dark:border-slate-600 dark:bg-slate-700 rounded p-2">
+          <label class="block font-bold text-slate-500 dark:text-slate-400 mb-1">新しいパスワード</label>
+          <input type="password" id="pwd-new" class="w-full border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-2 font-bold">
         </div>
         <div>
-          <label class="block text-slate-500 dark:text-slate-400 mb-1">新しいパスワード (確認用)</label>
-          <input type="password" id="pwd-new-confirm" class="w-full border dark:border-slate-600 dark:bg-slate-700 rounded p-2">
+          <label class="block font-bold text-slate-500 dark:text-slate-400 mb-1">確認用パスワード</label>
+          <input type="password" id="pwd-new-confirm" class="w-full border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-2 font-bold">
         </div>
       </div>
-      <div class="flex gap-2 pt-2 text-xs">
-        <button onclick="closeChangePasswordModal()" class="w-1/2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 font-bold py-2 rounded">キャンセル</button>
-        <button onclick="submitPasswordChange()" class="w-1/2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded">保存</button>
+      <div class="flex gap-2 pt-2 text-xs font-black">
+        <button onclick="closeChangePasswordModal()" class="w-1/2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 py-2 rounded-xl pop-border">キャンセル</button>
+        <button onclick="submitPasswordChange()" class="w-1/2 bg-pickle-blue text-white py-2 rounded-xl pop-border pop-shadow-sm">保存する</button>
       </div>
     </div>
   </div>
 
   <!-- 部員編集モーダル -->
   <div id="edit-member-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] hidden flex items-center justify-center p-4">
-    <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-2xl p-5 shadow-xl space-y-3 text-slate-800 dark:text-slate-100">
-      <h3 class="font-bold text-sm">部員情報の編集</h3>
+    <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-3xl p-5 pop-border pop-shadow space-y-3 text-slate-800 dark:text-slate-100">
+      <h3 class="font-extrabold text-sm">部員情報の編集 🏓</h3>
       <input type="hidden" id="edit-member-id">
-      <div class="space-y-2 text-xs">
+      <div class="space-y-2 text-xs font-bold">
         <div>
           <label class="block text-slate-500 dark:text-slate-400 mb-1">氏名</label>
-          <input type="text" id="edit-member-name" class="w-full border dark:border-slate-600 dark:bg-slate-700 rounded p-2 focus:ring-1 focus:ring-blue-500">
+          <input type="text" id="edit-member-name" class="w-full border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-2">
         </div>
         <div>
           <label class="block text-slate-500 dark:text-slate-400 mb-1">学籍番号</label>
-          <input type="text" id="edit-member-student-id" class="w-full border dark:border-slate-600 dark:bg-slate-700 rounded p-2 uppercase focus:ring-1 focus:ring-blue-500">
+          <input type="text" id="edit-member-student-id" class="w-full border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-2 uppercase">
         </div>
         <div>
-          <label class="block text-slate-500 dark:text-slate-400 mb-1">パスワードリセット <span class="text-[10px] text-blue-500">(代表用)</span></label>
+          <label class="block text-slate-500 dark:text-slate-400 mb-1">パスワードリセット</label>
           <div class="flex gap-2">
-            <input type="password" id="edit-member-password" placeholder="変更する場合のみ入力" class="w-full border dark:border-slate-600 dark:bg-slate-700 rounded p-2 focus:ring-1 focus:ring-blue-500">
-            <button type="button" onclick="generateEditPassword()" class="bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 whitespace-nowrap px-2 rounded text-[11px] font-bold">ランダム生成</button>
+            <input type="password" id="edit-member-password" placeholder="変更する場合のみ入力" class="w-full border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-2">
+            <button type="button" onclick="generateEditPassword()" class="bg-pickle-yellow text-slate-900 whitespace-nowrap px-2.5 rounded-xl font-black border-2 border-slate-800">生成</button>
           </div>
         </div>
         <div class="grid grid-cols-2 gap-2">
           <div>
             <label class="block text-slate-500 dark:text-slate-400 mb-1">学年</label>
-            <select id="edit-member-grade" class="w-full border dark:border-slate-600 dark:bg-slate-700 rounded p-2">
+            <select id="edit-member-grade" class="w-full border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-2">
               <option value="4年">4年</option>
               <option value="3年">3年</option>
               <option value="2年">2年</option>
@@ -104,7 +136,7 @@
           </div>
           <div>
             <label class="block text-slate-500 dark:text-slate-400 mb-1">役職</label>
-            <select id="edit-member-role" class="w-full border dark:border-slate-600 dark:bg-slate-700 rounded p-2">
+            <select id="edit-member-role" class="w-full border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-2">
               <option value="部員">一般部員</option>
               <option value="代表">代表</option>
               <option value="副代表">副代表</option>
@@ -114,37 +146,42 @@
           </div>
         </div>
       </div>
-      <div class="flex gap-2 pt-2 text-xs">
-        <button onclick="closeEditModal()" class="w-1/2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 font-bold py-2 rounded">キャンセル</button>
-        <button onclick="saveMemberEdit()" class="w-1/2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded">保存</button>
+      <div class="flex gap-2 pt-2 text-xs font-black">
+        <button onclick="closeEditModal()" class="w-1/2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 py-2 rounded-xl pop-border">キャンセル</button>
+        <button onclick="saveMemberEdit()" class="w-1/2 bg-pickle-lime text-slate-900 py-2 rounded-xl pop-border pop-shadow-sm">更新する</button>
       </div>
     </div>
   </div>
 
   <!-- Header -->
-  <header class="bg-blue-600 dark:bg-blue-800 text-white p-4 shadow-md sticky top-0 z-50">
+  <header class="bg-pickle-lime text-slate-900 p-4 pop-border border-t-0 border-x-0 sticky top-0 z-50">
     <div class="max-w-md mx-auto flex justify-between items-center">
-      <div>
-        <h1 class="text-xl font-bold tracking-tight">RUB Manager</h1>
-        <p class="text-xs text-blue-200">Circle OS v4.3</p>
-      </div>
       <div class="flex items-center gap-2">
-        <button onclick="toggleDarkMode()" class="p-1.5 rounded-lg bg-blue-700 dark:bg-blue-900 hover:bg-blue-800 transition text-white">
-          <i id="theme-icon" data-lucide="moon" class="w-4 h-4"></i>
+        <div class="bg-white p-1.5 rounded-2xl pop-border">
+          <i data-lucide="circle-dot" class="w-6 h-6 text-pickle-lime fill-pickle-yellow"></i>
+        </div>
+        <div>
+          <h1 class="text-xl font-black tracking-wider leading-none">RUB Picklers</h1>
+          <p class="text-[10px] font-extrabold text-slate-700">Rikkyo Pickleball Club</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-1.5 font-extrabold">
+        <button onclick="toggleDarkMode()" class="p-1.5 rounded-xl bg-white pop-border hover:bg-slate-100 transition">
+          <i id="theme-icon" data-lucide="moon" class="w-4 h-4 text-slate-900"></i>
         </button>
-        <button id="pwd-change-btn" onclick="openChangePasswordModal()" class="hidden p-1.5 rounded-lg bg-blue-700 dark:bg-blue-900 hover:bg-blue-800 transition text-white">
-          <i data-lucide="key" class="w-4 h-4"></i>
+        <button id="pwd-change-btn" onclick="openChangePasswordModal()" class="hidden p-1.5 rounded-xl bg-white pop-border hover:bg-slate-100 transition">
+          <i data-lucide="key" class="w-4 h-4 text-slate-900"></i>
         </button>
-        <span id="user-display-name" class="text-xs bg-blue-700 dark:bg-blue-900 px-2.5 py-1 rounded-full text-white font-medium border border-blue-400 dark:border-blue-600">未ログイン</span>
-        <button onclick="handleLogout()" id="logout-btn" class="hidden text-[10px] bg-blue-800 dark:bg-blue-950 hover:bg-blue-900 px-2 py-1 rounded border border-blue-500">ログアウト</button>
+        <span id="user-display-name" class="text-xs bg-pickle-yellow px-2.5 py-1 rounded-full text-slate-900 font-black pop-border">未ログイン</span>
+        <button onclick="handleLogout()" id="logout-btn" class="hidden text-[10px] bg-pickle-pink text-white px-2 py-1 rounded-xl pop-border font-black">退出</button>
       </div>
     </div>
     <!-- Role Switcher -->
-    <div class="max-w-md mx-auto mt-3 bg-blue-700/60 dark:bg-blue-900/60 p-2 rounded-lg flex items-center justify-between text-xs">
-      <span class="font-medium flex items-center gap-1">
-        <i data-lucide="shield" class="w-3.5 h-3.5"></i> 現在の表示役職:
+    <div class="max-w-md mx-auto mt-2 bg-white/80 dark:bg-slate-800/80 p-2 rounded-2xl pop-border flex items-center justify-between text-xs">
+      <span class="font-extrabold flex items-center gap-1 text-slate-800 dark:text-slate-100">
+        <i data-lucide="shield-check" class="w-4 h-4 text-pickle-blue"></i> 表示モード:
       </span>
-      <select id="role-selector" onchange="changeRole(this.value)" class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-bold rounded px-2 py-1 focus:outline-none">
+      <select id="role-selector" onchange="changeRole(this.value)" class="bg-pickle-yellow text-slate-900 font-black rounded-xl px-2 py-1 pop-border focus:outline-none">
         <option value="部員">一般部員</option>
       </select>
     </div>
@@ -156,87 +193,94 @@
     <!-- Tab 1: Home / AI / Announcements -->
     <div id="tab-home" class="tab-content space-y-4">
       
-      <!-- ★ 代表・副代表用 イベント・練習クイック作成ショートカットボタン ★ -->
-      <div id="home-admin-actions" class="hidden bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-3.5 rounded-xl shadow-sm flex items-center justify-between">
-        <div>
-          <span class="text-[10px] bg-white/20 px-2 py-0.5 rounded font-bold">全権限メニュー</span>
-          <p class="font-bold text-xs mt-1">イベント・練習予定の作成</p>
+      <!-- ★ 全権限持ち用: イベント作成 & 練習作成 分離ボタン ★ -->
+      <div id="home-admin-actions" class="hidden bg-white dark:bg-slate-800 p-4 rounded-3xl pop-border pop-shadow space-y-2">
+        <div class="flex items-center gap-1.5 text-xs font-black text-pickle-pink">
+          <i data-lucide="sparkles" class="w-4 h-4"></i> 全権限（代表・副代表）メニュー
         </div>
-        <button onclick="switchTab('gym')" class="bg-white text-blue-600 hover:bg-blue-50 text-xs font-bold px-3 py-2 rounded-lg shadow transition flex items-center gap-1">
-          <i data-lucide="plus-circle" class="w-4 h-4"></i> イベント作成
-        </button>
+        <div class="grid grid-cols-2 gap-2 text-xs font-black">
+          <!-- イベント作成ボタン -->
+          <button onclick="openCreateModal('event')" class="bg-pickle-pink text-white py-2.5 px-3 rounded-2xl pop-border pop-shadow-sm hover:opacity-90 transition flex items-center justify-center gap-1">
+            <i data-lucide="party-popper" class="w-4 h-4"></i> 新規イベント作成
+          </button>
+          <!-- 練習予定作成ボタン -->
+          <button onclick="openCreateModal('practice')" class="bg-pickle-lime text-slate-900 py-2.5 px-3 rounded-2xl pop-border pop-shadow-sm hover:opacity-90 transition flex items-center justify-center gap-1">
+            <i data-lucide="calendar-plus" class="w-4 h-4"></i> 練習日程の作成
+          </button>
+        </div>
       </div>
 
       <!-- お知らせ掲示板 -->
-      <div class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-3">
+      <div class="bg-white dark:bg-slate-800 p-4 rounded-3xl pop-border pop-shadow space-y-3">
         <div class="flex justify-between items-center">
-          <h2 class="font-bold text-slate-700 dark:text-slate-200 flex items-center gap-2 text-sm">
-            <i data-lucide="megaphone" class="w-4 h-4 text-amber-500"></i> お知らせ・連絡事項
+          <h2 class="font-black text-slate-800 dark:text-slate-100 flex items-center gap-2 text-sm">
+            <span class="p-1 bg-pickle-yellow rounded-xl pop-border"><i data-lucide="megaphone" class="w-4 h-4 text-slate-900"></i></span> お知らせ・連絡
           </h2>
-          <button id="announcement-add-toggle" onclick="toggleAnnouncementForm()" class="hidden text-xs bg-amber-50 dark:bg-amber-900/40 text-amber-600 dark:text-amber-300 px-2 py-1 rounded font-bold hover:bg-amber-100">
+          <button id="announcement-add-toggle" onclick="toggleAnnouncementForm()" class="hidden text-xs bg-pickle-yellow text-slate-900 px-2.5 py-1 rounded-xl font-black pop-border hover:bg-yellow-400">
             + 投稿
           </button>
         </div>
 
-        <!-- お知らせ作成フォーム (役職者用) -->
-        <div id="announcement-form" class="hidden space-y-2 border-t dark:border-slate-700 pt-2 text-xs">
-          <input type="text" id="announcement-title" placeholder="件名" class="w-full border dark:border-slate-600 dark:bg-slate-700 rounded p-2">
-          <textarea id="announcement-body" rows="2" placeholder="連絡内容を入力..." class="w-full border dark:border-slate-600 dark:bg-slate-700 rounded p-2"></textarea>
-          <button onclick="submitAnnouncement()" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-1.5 rounded">お知らせを投稿</button>
+        <!-- お知らせ作成フォーム -->
+        <div id="announcement-form" class="hidden space-y-2 border-t-2 border-slate-800 dark:border-slate-700 pt-2 text-xs font-bold">
+          <input type="text" id="announcement-title" placeholder="件名" class="w-full border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-2">
+          <textarea id="announcement-body" rows="2" placeholder="連絡内容を入力..." class="w-full border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-2"></textarea>
+          <button onclick="submitAnnouncement()" class="w-full bg-pickle-yellow text-slate-900 font-black py-2 rounded-xl pop-border pop-shadow-sm">投稿する</button>
         </div>
 
-        <div id="announcement-list" class="space-y-2 text-xs divide-y divide-slate-100 dark:divide-slate-700"></div>
+        <div id="announcement-list" class="space-y-2 text-xs divide-y-2 divide-slate-100 dark:divide-slate-700"></div>
+      </div>
+
+      <!-- 直近1週間の練習・イベント予定 -->
+      <div class="bg-white dark:bg-slate-800 p-4 rounded-3xl pop-border pop-shadow space-y-3">
+        <h2 class="font-black text-slate-800 dark:text-slate-100 text-sm flex items-center justify-between">
+          <span class="flex items-center gap-2">
+            <span class="p-1 bg-pickle-lime rounded-xl pop-border"><i data-lucide="calendar-days" class="w-4 h-4 text-slate-900"></i></span> 直近1週間の予定
+          </span>
+          <span id="weekly-count-badge" class="text-[10px] bg-pickle-lime text-slate-900 font-black px-2 py-0.5 rounded-full pop-border">0件</span>
+        </h2>
+        <!-- タップすると該当の出欠場所へ移動 -->
+        <div id="weekly-practice-list" class="space-y-2 text-xs font-bold"></div>
       </div>
 
       <!-- AI アシスタント -->
-      <div class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
-        <h2 class="font-bold text-slate-700 dark:text-slate-200 flex items-center gap-2 mb-2 text-sm">
-          <i data-lucide="bot" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i> サークルAIアシスタント
+      <div class="bg-white dark:bg-slate-800 p-4 rounded-3xl pop-border pop-shadow">
+        <h2 class="font-black text-slate-800 dark:text-slate-100 flex items-center gap-2 mb-2 text-sm">
+          <span class="p-1 bg-pickle-blue rounded-xl pop-border text-white"><i data-lucide="bot" class="w-4 h-4"></i></span> AIアシスタント
         </h2>
-        <div id="ai-advice" class="text-xs text-slate-600 dark:text-slate-300 bg-blue-50 dark:bg-slate-700/50 p-3 rounded-lg border border-blue-100 dark:border-slate-600 space-y-1">
+        <div id="ai-advice" class="text-xs font-bold text-slate-700 dark:text-slate-200 bg-cyan-50 dark:bg-slate-700/50 p-3 rounded-2xl border-2 border-slate-800 space-y-1">
         </div>
-      </div>
-
-      <!-- 直近1週間の練習予定 -->
-      <div class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-3">
-        <h2 class="font-bold text-slate-700 dark:text-slate-200 text-sm flex items-center justify-between">
-          <span class="flex items-center gap-2">
-            <i data-lucide="calendar-days" class="w-4 h-4 text-green-600 dark:text-green-400"></i> 直近1週間の練習予定
-          </span>
-          <span id="weekly-count-badge" class="text-[10px] bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 font-bold px-2 py-0.5 rounded-full">0件</span>
-        </h2>
-        <div id="weekly-practice-list" class="space-y-2 text-xs"></div>
       </div>
     </div>
 
     <!-- Tab 2: Members -->
     <div id="tab-members" class="tab-content hidden space-y-4">
-      <div id="member-add-box" class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 hidden">
-        <h2 class="font-bold text-slate-700 dark:text-slate-200 mb-3 text-sm flex items-center gap-2">
-          <i data-lucide="user-plus" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i> 新規部員登録 <span class="text-[10px] text-blue-600 dark:text-blue-400 font-normal">(代表専用)</span>
+      <div id="member-add-box" class="bg-white dark:bg-slate-800 p-4 rounded-3xl pop-border pop-shadow hidden">
+        <h2 class="font-black text-slate-800 dark:text-slate-100 mb-3 text-sm flex items-center gap-2">
+          <i data-lucide="user-plus" class="w-4 h-4 text-pickle-blue"></i> 新規部員登録 <span class="text-[10px] text-pickle-blue font-bold">(代表専用)</span>
         </h2>
-        <div class="space-y-2 text-xs">
+        <div class="space-y-2 text-xs font-bold">
           <div class="grid grid-cols-2 gap-2">
             <div>
               <label class="block text-slate-500 dark:text-slate-400 mb-1">氏名</label>
-              <input type="text" id="new-member-name" placeholder="例: 立教 太郎" class="w-full border dark:border-slate-600 dark:bg-slate-700 rounded p-2 focus:ring-1 focus:ring-blue-500">
+              <input type="text" id="new-member-name" placeholder="例: 立教 太郎" class="w-full border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-2">
             </div>
             <div>
               <label class="block text-slate-500 dark:text-slate-400 mb-1">学籍番号</label>
-              <input type="text" id="new-member-student-id" placeholder="例: 20AA000A" class="w-full border dark:border-slate-600 dark:bg-slate-700 rounded p-2 uppercase focus:ring-1 focus:ring-blue-500">
+              <input type="text" id="new-member-student-id" placeholder="例: 20AA000A" class="w-full border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-2 uppercase">
             </div>
           </div>
           <div>
-            <label class="block text-slate-500 dark:text-slate-400 mb-1">初期パスワード <span class="text-[10px] text-slate-400">(自動生成: 6桁数字)</span></label>
+            <label class="block text-slate-500 dark:text-slate-400 mb-1">初期パスワード</label>
             <div class="flex gap-2">
-              <input type="text" id="new-member-password" class="w-full border dark:border-slate-600 dark:bg-slate-700 rounded p-2 font-mono font-bold focus:ring-1 focus:ring-blue-500" readonly>
-              <button type="button" onclick="renewNewMemberPassword()" class="bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 whitespace-nowrap px-2 rounded text-[11px] font-bold">再生成</button>
+              <input type="text" id="new-member-password" class="w-full border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-2 font-mono" readonly>
+              <button type="button" onclick="renewNewMemberPassword()" class="bg-pickle-yellow text-slate-900 whitespace-nowrap px-2.5 rounded-xl font-black border-2 border-slate-800">再生成</button>
             </div>
           </div>
           <div class="grid grid-cols-2 gap-2">
             <div>
               <label class="block text-slate-500 dark:text-slate-400 mb-1">学年</label>
-              <select id="new-member-grade" class="w-full border dark:border-slate-600 dark:bg-slate-700 rounded p-2">
+              <select id="new-member-grade" class="w-full border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-2">
                 <option value="1年">1年</option>
                 <option value="2年">2年</option>
                 <option value="3年">3年</option>
@@ -246,7 +290,7 @@
             </div>
             <div>
               <label class="block text-slate-500 dark:text-slate-400 mb-1">役職</label>
-              <select id="new-member-role" class="w-full border dark:border-slate-600 dark:bg-slate-700 rounded p-2">
+              <select id="new-member-role" class="w-full border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-2">
                 <option value="部員">一般部員</option>
                 <option value="代表">代表 (最大2名)</option>
                 <option value="副代表">副代表 (最大1名)</option>
@@ -255,52 +299,52 @@
               </select>
             </div>
           </div>
-          <button onclick="addMember()" class="w-full bg-blue-600 text-white font-bold py-2 rounded-lg hover:bg-blue-700 mt-2">
-            部員を登録
+          <button onclick="addMember()" class="w-full bg-pickle-lime text-slate-900 font-black py-2.5 rounded-xl pop-border pop-shadow-sm mt-2">
+            登録する 🏓
           </button>
         </div>
       </div>
 
-      <div class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
-        <h2 class="font-bold text-slate-700 dark:text-slate-200 mb-3 text-sm flex items-center gap-2">
+      <div class="bg-white dark:bg-slate-800 p-4 rounded-3xl pop-border pop-shadow">
+        <h2 class="font-black text-slate-800 dark:text-slate-100 mb-3 text-sm flex items-center gap-2">
           <i data-lucide="users" class="w-4 h-4 text-slate-500"></i> 部員名簿
         </h2>
-        <div id="member-list" class="divide-y divide-slate-100 dark:divide-slate-700 text-xs"></div>
+        <div id="member-list" class="divide-y-2 divide-slate-100 dark:divide-slate-700 text-xs font-bold"></div>
       </div>
     </div>
 
     <!-- Tab 3: Gymnasium / Practice Schedule -->
     <div id="tab-gym" class="tab-content hidden space-y-4">
-      <div id="practice-create-box" class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 relative hidden">
-        <span class="absolute top-3 right-3 text-[10px] bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 font-bold px-2 py-0.5 rounded">管理権限</span>
-        <h2 class="font-bold text-slate-700 dark:text-slate-200 mb-3 text-sm">練習・イベントスケジュール作成</h2>
-        <div class="space-y-3 text-xs">
+      <div id="practice-create-box" class="bg-white dark:bg-slate-800 p-4 rounded-3xl pop-border pop-shadow relative hidden">
+        <span id="form-type-badge" class="absolute top-3 right-3 text-[10px] bg-pickle-lime text-slate-900 font-black px-2 py-0.5 rounded-full pop-border">練習作成</span>
+        <h2 id="form-type-title" class="font-black text-slate-800 dark:text-slate-100 mb-3 text-sm">練習・イベントスケジュール作成</h2>
+        <div class="space-y-3 text-xs font-bold">
           <div>
-            <label class="block text-slate-500 dark:text-slate-400 mb-1 font-medium">開催日</label>
-            <input type="date" id="practice-date" class="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 focus:ring-2 focus:ring-green-500 focus:outline-none text-sm bg-slate-50 dark:bg-slate-700">
+            <label class="block text-slate-500 dark:text-slate-400 mb-1">開催日</label>
+            <input type="date" id="practice-date" class="w-full border-2 border-slate-800 dark:border-slate-600 rounded-xl p-2.5 dark:bg-slate-700">
           </div>
           <div>
-            <label class="block text-slate-500 dark:text-slate-400 mb-1 font-medium">時間帯</label>
+            <label class="block text-slate-500 dark:text-slate-400 mb-1">時間帯</label>
             <div class="grid grid-cols-2 gap-2 items-center">
-              <input type="time" id="practice-start-time" class="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 text-sm bg-slate-50 dark:bg-slate-700">
+              <input type="time" id="practice-start-time" class="w-full border-2 border-slate-800 dark:border-slate-600 rounded-xl p-2.5 dark:bg-slate-700">
               <div class="flex items-center gap-1">
                 <span class="text-slate-400">〜</span>
-                <input type="time" id="practice-end-time" class="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 text-sm bg-slate-50 dark:bg-slate-700">
+                <input type="time" id="practice-end-time" class="w-full border-2 border-slate-800 dark:border-slate-600 rounded-xl p-2.5 dark:bg-slate-700">
               </div>
             </div>
           </div>
           <div class="grid grid-cols-2 gap-2">
             <div>
-              <label class="block text-slate-500 dark:text-slate-400 mb-1 font-medium">場所</label>
-              <select id="practice-location" onchange="handleLocationChange()" class="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 text-sm bg-slate-50 dark:bg-slate-700">
+              <label class="block text-slate-500 dark:text-slate-400 mb-1">場所 / 種別</label>
+              <select id="practice-location" onchange="handleLocationChange()" class="w-full border-2 border-slate-800 dark:border-slate-600 rounded-xl p-2.5 dark:bg-slate-700">
                 <option value="立教大学体育館(池袋)">立教大学体育館(池袋)</option>
                 <option value="立教大学体育館(新座)">立教大学体育館(新座)</option>
-                <option value="その他">その他</option>
+                <option value="その他">その他 (イベント/懇親会など)</option>
               </select>
             </div>
             <div id="court-side-container">
-              <label class="block text-slate-500 dark:text-slate-400 mb-1 font-medium">コート面</label>
-              <select id="practice-court-side" class="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 text-sm bg-slate-50 dark:bg-slate-700">
+              <label class="block text-slate-500 dark:text-slate-400 mb-1">コート面</label>
+              <select id="practice-court-side" class="w-full border-2 border-slate-800 dark:border-slate-600 rounded-xl p-2.5 dark:bg-slate-700">
                 <option value="手前">手前</option>
                 <option value="奥">奥</option>
                 <option value="両面">両面</option>
@@ -308,78 +352,78 @@
             </div>
           </div>
           <div id="custom-location-container" class="hidden">
-            <label class="block text-slate-500 dark:text-slate-400 mb-1 font-medium">場所の詳細を入力</label>
-            <input type="text" id="practice-custom-location" placeholder="例: 池袋スポーツセンター / ◯◯居酒屋" class="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 text-sm bg-slate-50 dark:bg-slate-700">
+            <label class="block text-slate-500 dark:text-slate-400 mb-1">場所・イベント名を入力</label>
+            <input type="text" id="practice-custom-location" placeholder="例: 池袋居酒屋 / 新歓ピックル体験会" class="w-full border-2 border-slate-800 dark:border-slate-600 rounded-xl p-2.5 dark:bg-slate-700">
           </div>
           <div>
-            <label class="block text-slate-500 dark:text-slate-400 mb-1 font-medium">メモ・持ち物</label>
-            <input type="text" id="practice-memo" placeholder="例: ボール持参 / 新歓コンパ" class="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 text-sm bg-slate-50 dark:bg-slate-700">
+            <label class="block text-slate-500 dark:text-slate-400 mb-1">メモ・詳細</label>
+            <input type="text" id="practice-memo" placeholder="例: マイパドル持参 / 会費1000円" class="w-full border-2 border-slate-800 dark:border-slate-600 rounded-xl p-2.5 dark:bg-slate-700">
           </div>
-          <button onclick="createPractice()" class="w-full bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition shadow-sm text-sm flex items-center justify-center gap-1">
-            <i data-lucide="plus-circle" class="w-4 h-4"></i> スケジュール作成
+          <button onclick="createPractice()" class="w-full bg-pickle-lime text-slate-900 font-black py-3 rounded-xl pop-border pop-shadow-sm flex items-center justify-center gap-1 text-sm">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i> スケジュールを追加する
           </button>
         </div>
       </div>
 
-      <div class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-3">
+      <div class="bg-white dark:bg-slate-800 p-4 rounded-3xl pop-border pop-shadow space-y-3">
         <div class="flex justify-between items-center">
-          <h2 class="font-bold text-slate-700 dark:text-slate-200 text-sm">全練習スケジュール & 出欠投票</h2>
-          <button onclick="exportAttendanceCSV()" class="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold px-2 py-1 rounded hover:bg-slate-200 flex items-center gap-1">
-            <i data-lucide="download" class="w-3.5 h-3.5"></i> CSV出力
+          <h2 class="font-black text-slate-800 dark:text-slate-100 text-sm">全予定 & 出欠投票</h2>
+          <button onclick="exportAttendanceCSV()" class="text-xs bg-pickle-yellow text-slate-900 font-black px-2.5 py-1 rounded-xl pop-border flex items-center gap-1">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i> CSV
           </button>
         </div>
-        <div id="practice-list" class="space-y-3 text-xs"></div>
+        <div id="practice-list" class="space-y-3 text-xs font-bold"></div>
       </div>
     </div>
 
     <!-- Tab 4: Feedback / Opinion Box -->
     <div id="tab-feedback" class="tab-content hidden space-y-4">
-      <div id="feedback-form-section" class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
-        <h2 class="font-bold text-slate-700 dark:text-slate-200 mb-2 text-sm flex items-center gap-2">
-          <i data-lucide="message-square-plus" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i> サークル意見箱 (送信)
+      <div id="feedback-form-section" class="bg-white dark:bg-slate-800 p-4 rounded-3xl pop-border pop-shadow">
+        <h2 class="font-black text-slate-800 dark:text-slate-100 mb-2 text-sm flex items-center gap-2">
+          <i data-lucide="message-square-plus" class="w-4 h-4 text-pickle-blue"></i> サークル意見箱 (送信)
         </h2>
-        <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">サークル運営への要望や意見を匿名で送信できます（役職者のみ確認できます）。</p>
-        <div class="space-y-3 text-xs">
+        <p class="text-xs text-slate-500 dark:text-slate-400 mb-3 font-bold">匿名の意見箱です。サークルへの要望や質問を気軽に送ってね！</p>
+        <div class="space-y-3 text-xs font-bold">
           <div>
-            <label class="block text-slate-500 dark:text-slate-400 mb-1 font-medium">お名前 (任意)</label>
-            <input type="text" id="feedback-sender" placeholder="匿名希望の場合は空欄" class="w-full border dark:border-slate-600 rounded-lg p-2.5 bg-slate-50 dark:bg-slate-700 focus:ring-1 focus:ring-blue-500">
+            <label class="block text-slate-500 dark:text-slate-400 mb-1">お名前 (任意)</label>
+            <input type="text" id="feedback-sender" placeholder="空欄で匿名送信" class="w-full border-2 border-slate-800 dark:border-slate-600 rounded-xl p-2.5 dark:bg-slate-700">
           </div>
           <div>
-            <label class="block text-slate-500 dark:text-slate-400 mb-1 font-medium">ご意見・ご要望</label>
-            <textarea id="feedback-content" rows="4" placeholder="例: イベントの開催頻度を増やしてほしいです。" class="w-full border dark:border-slate-600 rounded-lg p-2.5 bg-slate-50 dark:bg-slate-700 focus:ring-1 focus:ring-blue-500"></textarea>
+            <label class="block text-slate-500 dark:text-slate-400 mb-1">ご意見・メッセージ</label>
+            <textarea id="feedback-content" rows="4" placeholder="例: パドル増やしてほしいです！" class="w-full border-2 border-slate-800 dark:border-slate-600 rounded-xl p-2.5 dark:bg-slate-700"></textarea>
           </div>
-          <button onclick="submitFeedback()" class="w-full bg-blue-600 text-white font-bold py-2.5 rounded-lg hover:bg-blue-700 transition flex items-center justify-center gap-1">
-            <i data-lucide="send" class="w-4 h-4"></i> 意見を送信する
+          <button onclick="submitFeedback()" class="w-full bg-pickle-blue text-white font-black py-2.5 rounded-xl pop-border pop-shadow-sm flex items-center justify-center gap-1">
+            <i data-lucide="send" class="w-4 h-4"></i> メッセージを送る
           </button>
         </div>
       </div>
 
-      <div id="feedback-list-section" class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 hidden">
+      <div id="feedback-list-section" class="bg-white dark:bg-slate-800 p-4 rounded-3xl pop-border pop-shadow hidden">
         <div class="flex items-center justify-between mb-3">
-          <h2 class="font-bold text-slate-700 dark:text-slate-200 text-sm flex items-center gap-2">
-            <i data-lucide="inbox" class="w-4 h-4 text-purple-600 dark:text-purple-400"></i> 届いたご意見一覧
+          <h2 class="font-black text-slate-800 dark:text-slate-100 text-sm flex items-center gap-2">
+            <i data-lucide="inbox" class="w-4 h-4 text-pickle-pink"></i> 届いたご意見一覧
           </h2>
-          <span class="text-[10px] bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 font-bold px-2 py-0.5 rounded">役職者限定閲覧</span>
+          <span class="text-[10px] bg-pickle-pink text-white font-black px-2 py-0.5 rounded-full pop-border">役職者限定</span>
         </div>
-        <div id="feedback-list" class="space-y-2 text-xs divide-y divide-slate-100 dark:divide-slate-700"></div>
+        <div id="feedback-list" class="space-y-2 text-xs font-bold divide-y-2 divide-slate-100 dark:divide-slate-700"></div>
       </div>
     </div>
 
   </main>
 
-  <nav class="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 z-50">
-    <div class="max-w-md mx-auto grid grid-cols-4 text-center py-2 text-xs">
-      <button onclick="switchTab('home')" id="nav-home" class="nav-btn text-blue-600 dark:text-blue-400 font-bold flex flex-col items-center">
+  <nav class="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-800 pop-border border-b-0 border-x-0 z-50 py-2">
+    <div class="max-w-md mx-auto grid grid-cols-4 text-center text-xs font-black">
+      <button onclick="switchTab('home')" id="nav-home" class="nav-btn text-pickle-lime flex flex-col items-center">
         <i data-lucide="layout-grid" class="w-5 h-5"></i>
-        <span>ホーム/AI</span>
+        <span>ホーム</span>
       </button>
       <button onclick="switchTab('members')" id="nav-members" class="nav-btn text-slate-400 flex flex-col items-center">
         <i data-lucide="users" class="w-5 h-5"></i>
-        <span>部員</span>
+        <span>部員名簿</span>
       </button>
       <button onclick="switchTab('gym')" id="nav-gym" class="nav-btn text-slate-400 flex flex-col items-center">
         <i data-lucide="calendar" class="w-5 h-5"></i>
-        <span>体育館</span>
+        <span>日程/出欠</span>
       </button>
       <button onclick="switchTab('feedback')" id="nav-feedback" class="nav-btn text-slate-400 flex flex-col items-center">
         <i data-lucide="message-square" class="w-5 h-5"></i>
@@ -389,7 +433,6 @@
   </nav>
 
   <script>
-    // LocalStorage モックDB
     const STORAGE_KEY_USER = 'rub_manager_user';
     const STORAGE_KEY_MEMBERS = 'rub_manager_db_members';
     const STORAGE_KEY_PRACTICES = 'rub_manager_db_practices';
@@ -401,47 +444,24 @@
     let currentUser = null;
     let cachedMembers = [];
 
-    const ROLE_LIMITS = {
-      "代表": 2,
-      "副代表": 1,
-      "会計": 3,
-      "コート取り": 3
-    };
+    const ROLE_LIMITS = { "代表": 2, "副代表": 1, "会計": 3, "コート取り": 3 };
 
     function generate6DigitCode() {
       return Math.floor(100000 + Math.random() * 900000).toString();
     }
 
     const ADMIN_USER = {
-      id: 1,
-      student_id: "24CA074M",
-      password: generate6DigitCode(),
-      name: "代表者",
-      grade: "3年",
-      role: "代表"
+      id: 1, student_id: "24CA074M", password: generate6DigitCode(), name: "代表者", grade: "3年", role: "代表"
     };
 
     function escapeHTML(str) {
       if (!str) return '';
-      return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
     }
 
-    function getDB(key) {
-      return JSON.parse(localStorage.getItem(key) || '[]');
-    }
-    function setDB(key, data) {
-      localStorage.setItem(key, JSON.stringify(data));
-    }
-
-    function getTodayString() {
-      const today = new Date();
-      return today.toISOString().split('T')[0];
-    }
+    function getDB(key) { return JSON.parse(localStorage.getItem(key) || '[]'); }
+    function setDB(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
+    function getTodayString() { return new Date().toISOString().split('T')[0]; }
 
     function formatTime(date) {
       const hours = String(date.getHours()).padStart(2, '0');
@@ -449,23 +469,15 @@
       return `${hours}:${minutes}`;
     }
 
-    // フォーム初期表示用：現在日時を動的に初期セット
     function initPracticeFormDateTime() {
       const dateInput = document.getElementById("practice-date");
       const startTimeInput = document.getElementById("practice-start-time");
       const endTimeInput = document.getElementById("practice-end-time");
-
       const now = new Date();
-      if (dateInput) {
-        dateInput.value = getTodayString();
-      }
-
-      if (startTimeInput) {
-        startTimeInput.value = formatTime(now);
-      }
-
+      if (dateInput) dateInput.value = getTodayString();
+      if (startTimeInput) startTimeInput.value = formatTime(now);
       if (endTimeInput) {
-        const end = new Date(now.getTime() + 2 * 60 * 60 * 1000); // 2時間後
+        const end = new Date(now.getTime() + 2 * 60 * 60 * 1000);
         endTimeInput.value = formatTime(end);
       }
     }
@@ -487,26 +499,20 @@
 
     function renewNewMemberPassword() {
       const pwdInput = document.getElementById('new-member-password');
-      if (pwdInput) {
-        pwdInput.value = generate6DigitCode();
-      }
+      if (pwdInput) pwdInput.value = generate6DigitCode();
     }
 
     function generateEditPassword() {
       const editPwdInput = document.getElementById('edit-member-password');
-      if (editPwdInput) {
-        editPwdInput.value = generate6DigitCode();
-      }
+      if (editPwdInput) editPwdInput.value = generate6DigitCode();
     }
 
     function initTheme() {
       const isDark = localStorage.getItem('theme') === 'dark';
       if (isDark) {
         document.documentElement.classList.add('dark');
-        document.documentElement.classList.remove('light');
         document.getElementById('theme-icon').setAttribute('data-lucide', 'sun');
       } else {
-        document.documentElement.classList.add('light');
         document.documentElement.classList.remove('dark');
         document.getElementById('theme-icon').setAttribute('data-lucide', 'moon');
       }
@@ -517,12 +523,10 @@
       const isDark = document.documentElement.classList.contains('dark');
       if (isDark) {
         document.documentElement.classList.remove('dark');
-        document.documentElement.classList.add('light');
         localStorage.setItem('theme', 'light');
         document.getElementById('theme-icon').setAttribute('data-lucide', 'moon');
       } else {
         document.documentElement.classList.add('dark');
-        document.documentElement.classList.remove('light');
         localStorage.setItem('theme', 'dark');
         document.getElementById('theme-icon').setAttribute('data-lucide', 'sun');
       }
@@ -578,21 +582,10 @@
       const members = getDB(STORAGE_KEY_MEMBERS);
       let member = members.find(m => m.student_id && m.student_id.toUpperCase() === studentId);
 
-      if (!member) {
-        return alert('登録されている学籍番号が見つかりません。\n代表権限者に部員登録を依頼してください。');
-      }
+      if (!member) return alert('登録されている学籍番号が見つかりません。');
+      if (password !== member.password) return alert('パスワードが正しくありません。');
 
-      const userPassword = member.password;
-      if (password !== userPassword) {
-        return alert('パスワードが正しくありません。');
-      }
-
-      currentUser = {
-        name: member.name,
-        student_id: member.student_id,
-        role: member.role
-      };
-
+      currentUser = { name: member.name, student_id: member.student_id, role: member.role };
       localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(currentUser));
       document.getElementById('login-modal').classList.add('hidden');
       document.getElementById('login-password').value = '';
@@ -601,7 +594,7 @@
       document.getElementById('pwd-change-btn').classList.remove('hidden');
 
       updateRoleOptions();
-      alert(`おかえりなさい、${currentUser.name} さん！`);
+      alert(`コートイン！おかえりなさい、${currentUser.name} さん！🏓`);
     }
 
     function handleLogout() {
@@ -639,10 +632,7 @@
       const index = members.findIndex(m => m.student_id.toUpperCase() === currentUser.student_id.toUpperCase());
 
       if (index !== -1) {
-        const storedPwd = members[index].password;
-        if (currentPwd !== storedPwd) {
-          return alert('現在のパスワードが間違っています');
-        }
+        if (currentPwd !== members[index].password) return alert('現在のパスワードが間違っています');
         members[index].password = newPwd;
         setDB(STORAGE_KEY_MEMBERS, members);
         closeChangePasswordModal();
@@ -666,16 +656,13 @@
         selector.innerHTML = `
           <option value="代表">代表 (全権限)</option>
           <option value="副代表">副代表 (全権限)</option>
-          <option value="コート取り">コート取り (日程管理)</option>
-          <option value="会計">会計 (意見箱等)</option>
+          <option value="コート取り">コート取り</option>
+          <option value="会計">会計</option>
           <option value="部員">一般部員</option>
         `;
         selector.value = userRole;
       } else if (userRole !== "部員") {
-        selector.innerHTML = `
-          <option value="${userRole}">${userRole}</option>
-          <option value="部員">一般部員</option>
-        `;
+        selector.innerHTML = `<option value="${userRole}">${userRole}</option><option value="部員">一般部員</option>`;
         selector.value = userRole;
       } else {
         selector.innerHTML = '<option value="部員">一般部員</option>';
@@ -690,12 +677,33 @@
       document.getElementById(`tab-${tabName}`).classList.remove("hidden");
 
       document.querySelectorAll(".nav-btn").forEach(btn => {
-        btn.classList.remove("text-blue-600", "dark:text-blue-400", "font-bold");
+        btn.classList.remove("text-pickle-lime", "font-black");
         btn.classList.add("text-slate-400");
       });
       const activeBtn = document.getElementById(`nav-${tabName}`);
       activeBtn.classList.remove("text-slate-400");
-      activeBtn.classList.add("text-blue-600", "dark:text-blue-400", "font-bold");
+      activeBtn.classList.add("text-pickle-lime", "font-black");
+    }
+
+    /* ★ 全権限者用: イベント作成/練習作成分離モーダル切り替え ★ */
+    function openCreateModal(mode) {
+      switchTab('gym');
+      const badge = document.getElementById('form-type-badge');
+      const title = document.getElementById('form-type-title');
+      const locSelect = document.getElementById('practice-location');
+
+      if (mode === 'event') {
+        badge.innerText = "イベント作成";
+        badge.className = "absolute top-3 right-3 text-[10px] bg-pickle-pink text-white font-black px-2 py-0.5 rounded-full pop-border";
+        title.innerText = "新歓・コンパ・イベント作成 🏓";
+        locSelect.value = "その他";
+      } else {
+        badge.innerText = "練習作成";
+        badge.className = "absolute top-3 right-3 text-[10px] bg-pickle-lime text-slate-900 font-black px-2 py-0.5 rounded-full pop-border";
+        title.innerText = "練習スケジュール作成 🏓";
+        locSelect.value = "立教大学体育館(池袋)";
+      }
+      handleLocationChange();
     }
 
     function changeRole(role) {
@@ -707,27 +715,18 @@
       fetchFeedbacks();
     }
 
-    function hasAdminAccess() {
-      return currentRole === "代表" || currentRole === "副代表";
-    }
-
-    function isOfficerRole() {
-      return hasAdminAccess() || currentRole === "コート取り" || currentRole === "会計";
-    }
+    function hasAdminAccess() { return currentRole === "代表" || currentRole === "副代表"; }
+    function isOfficerRole() { return hasAdminAccess() || currentRole === "コート取り" || currentRole === "会計"; }
 
     function updateRoleVisibility() {
       const isRepresentative = currentRole === "代表";
       const isAdmin = hasAdminAccess();
       const isCourtOfficer = currentRole === "コート取り";
 
-      // ★ ホーム画面のイベント作成ショートカットボタンの表示制御 ★
       const homeAdminActions = document.getElementById("home-admin-actions");
       if (homeAdminActions) {
-        if (isAdmin) {
-          homeAdminActions.classList.remove("hidden");
-        } else {
-          homeAdminActions.classList.add("hidden");
-        }
+        if (isAdmin) homeAdminActions.classList.remove("hidden");
+        else homeAdminActions.classList.add("hidden");
       }
 
       const memberAddBox = document.getElementById("member-add-box");
@@ -738,11 +737,8 @@
 
       const practiceCreateBox = document.getElementById("practice-create-box");
       if (practiceCreateBox) {
-        if (isAdmin || isCourtOfficer) {
-          practiceCreateBox.classList.remove("hidden");
-        } else {
-          practiceCreateBox.classList.add("hidden");
-        }
+        if (isAdmin || isCourtOfficer) practiceCreateBox.classList.remove("hidden");
+        else practiceCreateBox.classList.add("hidden");
       }
 
       const isOfficer = isOfficerRole();
@@ -765,25 +761,18 @@
     }
 
     function toggleAnnouncementForm() {
-      const form = document.getElementById("announcement-form");
-      form.classList.toggle("hidden");
+      document.getElementById("announcement-form").classList.toggle("hidden");
     }
 
     function submitAnnouncement() {
       const title = document.getElementById("announcement-title").value.trim();
       const body = document.getElementById("announcement-body").value.trim();
-
       if (!title || !body) return alert("件名と本文を入力してください");
 
       let announcements = getDB(STORAGE_KEY_ANNOUNCEMENTS);
       announcements.unshift({
-        id: Date.now(),
-        title,
-        body,
-        author: currentUser ? currentUser.name : "役職者",
-        created_at: new Date().toISOString()
+        id: Date.now(), title, body, author: currentUser ? currentUser.name : "役職者", created_at: new Date().toISOString()
       });
-
       setDB(STORAGE_KEY_ANNOUNCEMENTS, announcements);
       document.getElementById("announcement-title").value = '';
       document.getElementById("announcement-body").value = '';
@@ -802,22 +791,21 @@
     function fetchAnnouncements() {
       const announcements = getDB(STORAGE_KEY_ANNOUNCEMENTS);
       const list = document.getElementById("announcement-list");
-
       if (announcements.length === 0) {
-        list.innerHTML = '<p class="text-slate-400 py-1">現在お知らせはありません。</p>';
+        list.innerHTML = '<p class="text-slate-400 py-1 font-bold">お知らせはありません。</p>';
         return;
       }
 
       list.innerHTML = announcements.map(a => `
-        <div class="pt-2 relative group">
-          <div class="flex justify-between items-center text-slate-500 mb-0.5">
-            <span class="font-bold text-slate-800 dark:text-slate-200 text-xs">${escapeHTML(a.title)}</span>
-            <span class="text-[10px]">${new Date(a.created_at).toLocaleDateString('ja-JP')}</span>
+        <div class="pt-2 relative">
+          <div class="flex justify-between items-center mb-0.5">
+            <span class="font-black text-slate-800 dark:text-slate-100 text-xs">${escapeHTML(a.title)}</span>
+            <span class="text-[10px] text-slate-400">${new Date(a.created_at).toLocaleDateString('ja-JP')}</span>
           </div>
           <p class="text-slate-600 dark:text-slate-300 text-[11px] whitespace-pre-wrap">${escapeHTML(a.body)}</p>
           <div class="text-[9px] text-slate-400 mt-0.5">投稿者: ${escapeHTML(a.author)}</div>
           ${isOfficerRole() ? `
-            <button onclick="deleteAnnouncement(${a.id})" class="absolute top-2 right-0 text-[10px] text-red-500 hover:text-red-700 bg-red-50 dark:bg-slate-700 px-1 rounded">
+            <button onclick="deleteAnnouncement(${a.id})" class="absolute top-2 right-0 text-[10px] text-pickle-pink hover:underline bg-rose-50 px-1 rounded pop-border">
               削除
             </button>
           ` : ''}
@@ -827,18 +815,15 @@
 
     function fetchAIAnalytics() {
       const adviceContainer = document.getElementById('ai-advice');
-      const adviceList = [
-        '今週の練習参加率予測: 85%',
-        '立教体育館のコート確保期限が近づいています。',
-        '意見箱に新しい提案が届いていないか定期的に確認しましょう。'
-      ];
-      adviceContainer.innerHTML = adviceList.map(a => `<p>• ${escapeHTML(a)}</p>`).join('');
+      adviceContainer.innerHTML = `
+        <p>• 今週の練習予想参加率: <span class="font-black text-pickle-lime">88%</span> 🏓</p>
+        <p>• 池袋体育館のコート確保予約期限が迫っています！</p>
+      `;
     }
 
     function getMemberSortPriority(member) {
       const roleOrder = { "代表": 1, "副代表": 2, "コート取り": 3, "会計": 4 };
       if (roleOrder[member.role]) return roleOrder[member.role] * 10;
-
       const gradeOrder = { "4年": 100, "3年": 101, "2年": 102, "1年": 103, "その他": 200 };
       return gradeOrder[member.grade] || 200;
     }
@@ -854,31 +839,23 @@
         return;
       }
 
-      if (currentUser) {
-        const matched = cachedMembers.find(m => m.student_id && m.student_id.toUpperCase() === currentUser.student_id.toUpperCase());
-        if (matched && matched.role !== currentUser.role) {
-          currentUser.role = matched.role;
-          localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(currentUser));
-        }
-      }
-
       cachedMembers.sort((a, b) => getMemberSortPriority(a) - getMemberSortPriority(b));
 
       list.innerHTML = cachedMembers.map(m => `
         <div class="py-2.5 flex items-center justify-between">
           <div>
-            <span class="font-bold text-slate-800 dark:text-slate-200">${escapeHTML(m.name)}</span>
-            <span class="ml-1 text-[10px] text-slate-500 dark:text-slate-400">(${escapeHTML(m.student_id)})</span>
-            <span class="ml-1 text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-1.5 py-0.5 rounded">${escapeHTML(m.grade)}</span>
-            <span class="ml-1 text-[10px] bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 px-1.5 py-0.5 rounded font-medium">${escapeHTML(m.role)}</span>
+            <span class="font-black text-slate-800 dark:text-slate-200">${escapeHTML(m.name)}</span>
+            <span class="ml-1 text-[10px] text-slate-400">(${escapeHTML(m.student_id)})</span>
+            <span class="ml-1 text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-1.5 py-0.5 rounded-full pop-border">${escapeHTML(m.grade)}</span>
+            <span class="ml-1 text-[10px] bg-pickle-yellow text-slate-900 px-1.5 py-0.5 rounded-full font-black pop-border">${escapeHTML(m.role)}</span>
           </div>
           ${isAdmin ? `
             <div class="flex gap-1">
-              <button onclick="openEditModal(${m.id})" class="text-xs text-blue-600 dark:text-blue-400 hover:underline bg-blue-50 dark:bg-slate-700 px-2 py-1 rounded">
+              <button onclick="openEditModal(${m.id})" class="text-xs text-slate-900 bg-pickle-blue text-white px-2 py-0.5 rounded-lg pop-border">
                 編集
               </button>
               ${isRepresentative ? `
-                <button onclick="deleteMember(${m.id})" class="text-xs text-red-500 hover:underline bg-red-50 dark:bg-slate-700 px-2 py-1 rounded">
+                <button onclick="deleteMember(${m.id})" class="text-xs bg-pickle-pink text-white px-2 py-0.5 rounded-lg pop-border">
                   削除
                 </button>
               ` : ''}
@@ -900,57 +877,37 @@
       if (!name || !student_id) return alert('氏名と学籍番号を入力してください。');
 
       let members = getDB(STORAGE_KEY_MEMBERS);
-
-      if (members.some(m => m.student_id === student_id)) {
-        return alert('この学籍番号は既に登録されています。');
-      }
+      if (members.some(m => m.student_id === student_id)) return alert('学籍番号が重複しています。');
 
       if (ROLE_LIMITS[role]) {
         const currentCount = members.filter(m => m.role === role).length;
-        if (currentCount >= ROLE_LIMITS[role]) {
-          return alert(`【登録不可】${role} の上限人数（${ROLE_LIMITS[role]}名）に達しています。`);
-        }
+        if (currentCount >= ROLE_LIMITS[role]) return alert(`【登録不可】${role} の上限人数（${ROLE_LIMITS[role]}名）に達しています。`);
       }
 
-      const newMember = {
-        id: Date.now(),
-        name,
-        student_id,
-        password,
-        grade,
-        role
-      };
-
-      members.push(newMember);
+      members.push({ id: Date.now(), name, student_id, password, grade, role });
       setDB(STORAGE_KEY_MEMBERS, members);
 
       document.getElementById('new-member-name').value = '';
       document.getElementById('new-member-student-id').value = '';
       renewNewMemberPassword();
       fetchMembers();
-      alert(`部員を登録しました！\n初期パスワード: ${password}\n（本人へ共有してください）`);
+      alert(`部員を登録しました！\n初期パスワード: ${password}`);
     }
 
     function openEditModal(id) {
       const member = cachedMembers.find(m => m.id === id);
       if (!member) return;
-
       document.getElementById('edit-member-id').value = member.id;
       document.getElementById('edit-member-name').value = member.name;
       document.getElementById('edit-member-student-id').value = member.student_id;
       document.getElementById('edit-member-password').value = '';
       document.getElementById('edit-member-grade').value = member.grade;
       document.getElementById('edit-member-role').value = member.role;
-
-      const roleSelect = document.getElementById('edit-member-role');
-      roleSelect.disabled = (currentRole !== "代表");
-
+      document.getElementById('edit-member-role').disabled = (currentRole !== "代表");
       document.getElementById('edit-member-modal').classList.remove('hidden');
     }
 
-    function closeEditModal() {
-      document.getElementById('edit-member-modal').classList.add('hidden');
-    }
+    function closeEditModal() { document.getElementById('edit-member-modal').classList.add('hidden'); }
 
     function saveMemberEdit() {
       const id = Number(document.getElementById('edit-member-id').value);
@@ -960,47 +917,51 @@
       const grade = document.getElementById('edit-member-grade').value;
       const role = document.getElementById('edit-member-role').value;
 
-      if (!name || !student_id) return alert('氏名と学籍番号を入力してください。');
-
       let members = getDB(STORAGE_KEY_MEMBERS);
       const index = members.findIndex(m => m.id === id);
 
       if (index !== -1) {
-        const updatedMember = { ...members[index], name, student_id, grade, role };
-        if (newPassword) {
-          updatedMember.password = newPassword;
-        }
-        members[index] = updatedMember;
+        const updated = { ...members[index], name, student_id, grade, role };
+        if (newPassword) updated.password = newPassword;
+        members[index] = updated;
         setDB(STORAGE_KEY_MEMBERS, members);
         closeEditModal();
         fetchMembers();
-        alert('部員情報を更新しました！');
+        alert('更新しました！');
       }
     }
 
     function deleteMember(id) {
       if (currentRole !== "代表") return alert("部員削除は代表のみ実行可能です。");
-      if (!confirm('本当にこの部員を削除しますか？')) return;
-
+      if (!confirm('本当に削除しますか？')) return;
       let members = getDB(STORAGE_KEY_MEMBERS);
-      members = members.filter(m => m.id !== id);
-      setDB(STORAGE_KEY_MEMBERS, members);
+      setDB(STORAGE_KEY_MEMBERS, members.filter(m => m.id !== id));
       fetchMembers();
     }
 
-    // 練習日時文字列（例 "2026-08-10 (14:30〜16:30)"）からDateオブジェクトを生成するヘルパー関数
     function parsePracticeDate(dateStr) {
       if (!dateStr) return new Date(0);
       const parts = dateStr.split(' ');
-      const datePart = parts[0]; // "2026-08-10"
+      const datePart = parts[0];
       let timePart = "00:00";
       if (parts[1]) {
         const timeMatch = parts[1].match(/\((.*?)[〜~]/);
-        if (timeMatch && timeMatch[1]) {
-          timePart = timeMatch[1];
-        }
+        if (timeMatch && timeMatch[1]) timePart = timeMatch[1];
       }
       return new Date(`${datePart}T${timePart}:00`);
+    }
+
+    /* ★ 直近予定タップで対象の出欠場所へジャンプする処理 ★ */
+    function scrollToPractice(practiceId) {
+      switchTab('gym');
+      setTimeout(() => {
+        const targetCard = document.getElementById(`practice-card-${practiceId}`);
+        if (targetCard) {
+          targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          targetCard.classList.add('ring-4', 'ring-pickle-yellow');
+          setTimeout(() => targetCard.classList.remove('ring-4', 'ring-pickle-yellow'), 2000);
+        }
+      }, 100);
     }
 
     function fetchPractices() {
@@ -1012,8 +973,8 @@
       const canDelete = hasAdminAccess() || currentRole === "コート取り";
 
       if (practices.length === 0) {
-        list.innerHTML = '<p class="text-slate-400 py-2">予定されている練習はありません。</p>';
-        weeklyList.innerHTML = '<p class="text-slate-400 py-1">直近1週間の練習予定はありません。</p>';
+        list.innerHTML = '<p class="text-slate-400 py-2">予定はありません。</p>';
+        weeklyList.innerHTML = '<p class="text-slate-400 py-1">直近1週間の予定はありません。</p>';
         document.getElementById('weekly-count-badge').innerText = '0件';
         return;
       }
@@ -1021,32 +982,24 @@
       const now = new Date();
       const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-      // 未来（今日含む）と過去に分離
       const upcomingPractices = [];
       const pastPractices = [];
 
       practices.forEach(p => {
         const pDate = parsePracticeDate(p.date);
         p._parsedDate = pDate;
-        if (pDate >= todayStart) {
-          upcomingPractices.push(p);
-        } else {
-          pastPractices.push(p);
-        }
+        if (pDate >= todayStart) upcomingPractices.push(p);
+        else pastPractices.push(p);
       });
 
-      // 今後の予定: 近い順（昇順）
       upcomingPractices.sort((a, b) => a._parsedDate - b._parsedDate);
-      // 過去の予定: 古い順（昇順：過去の古いものが下に並ぶ）
       pastPractices.sort((a, b) => a._parsedDate - b._parsedDate);
 
-      // 上に「今後の予定」、下に「過去の予定」を結合
       const sortedPractices = [...upcomingPractices, ...pastPractices];
 
       let html = '';
       let weeklyHtml = '';
       let weeklyCount = 0;
-
       const nextWeek = new Date(todayStart);
       nextWeek.setDate(todayStart.getDate() + 7);
 
@@ -1054,78 +1007,79 @@
         const isPast = p._parsedDate < todayStart;
         const attFilter = attendance.filter(a => a.practice_id === p.id);
         const attMap = { '参加': [], '不参加': [], '未定': [] };
-        attFilter.forEach(a => {
-          if (attMap[a.status]) attMap[a.status].push(a.member_name);
-        });
+        attFilter.forEach(a => { if (attMap[a.status]) attMap[a.status].push(a.member_name); });
 
-        // 過去の予定はグレー背景＆透過スタイルに設定
         const containerStyle = isPast 
-          ? "bg-slate-200/60 dark:bg-slate-800/60 border-slate-300 dark:border-slate-700/60 opacity-75"
-          : "bg-slate-50 dark:bg-slate-700/50 border-slate-200 dark:border-slate-700";
+          ? "bg-slate-200/60 dark:bg-slate-800/60 opacity-60"
+          : "bg-white dark:bg-slate-700/50";
 
         html += `
-          <div class="border rounded-lg p-3 ${containerStyle} space-y-2 transition-all">
+          <div id="practice-card-${p.id}" class="rounded-2xl p-3.5 ${containerStyle} pop-border pop-shadow space-y-2 transition-all">
             <div class="flex justify-between items-start">
               <div>
-                <div class="font-bold text-sm ${isPast ? 'text-slate-500 dark:text-slate-400 line-through' : 'text-slate-800 dark:text-slate-100'}">
+                <div class="font-black text-sm ${isPast ? 'text-slate-500 dark:text-slate-400 line-through' : 'text-slate-800 dark:text-slate-100'}">
                   ${escapeHTML(p.date)}
-                  ${isPast ? '<span class="no-underline ml-1 text-[10px] bg-slate-300 dark:bg-slate-700 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded font-normal">受付終了</span>' : ''}
+                  ${isPast ? '<span class="no-underline ml-1 text-[10px] bg-slate-300 text-slate-700 px-1.5 py-0.5 rounded-full pop-border">受付終了</span>' : ''}
                 </div>
-                <div class="${isPast ? 'text-slate-400 dark:text-slate-500' : 'text-slate-600 dark:text-slate-300'}">${escapeHTML(p.location)}</div>
-                ${p.memo ? `<div class="text-slate-400 dark:text-slate-500 text-[11px]">メモ: ${escapeHTML(p.memo)}</div>` : ''}
+                <div class="${isPast ? 'text-slate-400' : 'text-pickle-blue'} font-black text-xs">📍 ${escapeHTML(p.location)}</div>
+                ${p.memo ? `<div class="text-slate-500 text-[11px] mt-0.5">メモ: ${escapeHTML(p.memo)}</div>` : ''}
               </div>
               ${canDelete ? `
-                <button onclick="deletePractice(${p.id})" class="text-xs text-red-500 hover:text-red-700 bg-red-50 dark:bg-slate-700 px-2 py-1 rounded">
+                <button onclick="deletePractice(${p.id})" class="text-xs bg-pickle-pink text-white px-2 py-0.5 rounded-lg pop-border">
                   削除
                 </button>
               ` : ''}
             </div>
 
-            <div class="border-t dark:border-slate-600/60 pt-2 mt-2">
-              <p class="font-medium text-slate-500 dark:text-slate-400 mb-1">出欠投票 (${currentUser ? escapeHTML(currentUser.name) : '未ログイン'}):</p>
+            <div class="border-t-2 border-slate-800 dark:border-slate-600 pt-2 mt-2">
+              <p class="font-black text-slate-600 dark:text-slate-300 mb-1">出欠投票 (${currentUser ? escapeHTML(currentUser.name) : '未'})</p>
               
-              <!-- ★ 期限切れの場合はボタンを disabled にしてグレーアウト・無効化 ★ -->
-              <div class="flex gap-1 mb-2">
+              <div class="flex gap-1.5 mb-2 font-black">
                 <button ${isPast ? 'disabled' : `onclick="voteAttendance(${p.id}, '参加')"`} 
-                  class="flex-1 ${isPast ? 'bg-gray-400/50 text-gray-200 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600 text-white'} font-bold py-1.5 rounded text-xs transition">
-                  参加
+                  class="flex-1 ${isPast ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-pickle-lime text-slate-900'} py-1.5 rounded-xl pop-border pop-shadow-sm transition active:translate-y-0.5">
+                  参加 🏓
                 </button>
                 <button ${isPast ? 'disabled' : `onclick="voteAttendance(${p.id}, '不参加')"`} 
-                  class="flex-1 ${isPast ? 'bg-gray-400/50 text-gray-200 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600 text-white'} font-bold py-1.5 rounded text-xs transition">
+                  class="flex-1 ${isPast ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-pickle-pink text-white'} py-1.5 rounded-xl pop-border pop-shadow-sm transition active:translate-y-0.5">
                   不参加
                 </button>
                 <button ${isPast ? 'disabled' : `onclick="voteAttendance(${p.id}, '未定')"`} 
-                  class="flex-1 ${isPast ? 'bg-gray-400/50 text-gray-200 cursor-not-allowed' : 'bg-gray-400 hover:bg-gray-500 text-white'} font-bold py-1.5 rounded text-xs transition">
+                  class="flex-1 ${isPast ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-pickle-yellow text-slate-900'} py-1.5 rounded-xl pop-border pop-shadow-sm transition active:translate-y-0.5">
                   未定
                 </button>
               </div>
 
-              <div class="text-[11px] text-slate-500 dark:text-slate-400 bg-white/70 dark:bg-slate-800/80 p-2 rounded border dark:border-slate-700 space-y-0.5">
-                <div><span class="font-bold text-green-600 dark:text-green-400">参加 (${attMap.参加.length}名):</span> ${escapeHTML(attMap.参加.join(', ')) || 'なし'}</div>
-                <div><span class="font-bold text-red-600 dark:text-red-400">不参加 (${attMap.不参加.length}名):</span> ${escapeHTML(attMap.不参加.join(', ')) || 'なし'}</div>
-                <div><span class="font-bold text-gray-500 dark:text-slate-400">未定 (${attMap.未定.length}名):</span> ${escapeHTML(attMap.未定.join(', ')) || 'なし'}</div>
+              <div class="text-[11px] bg-slate-50 dark:bg-slate-800/80 p-2 rounded-xl pop-border space-y-0.5 font-bold">
+                <div><span class="font-black text-pickle-lime">参加 (${attMap.参加.length}名):</span> ${escapeHTML(attMap.参加.join(', ')) || 'なし'}</div>
+                <div><span class="font-black text-pickle-pink">不参加 (${attMap.不参加.length}名):</span> ${escapeHTML(attMap.不参加.join(', ')) || 'なし'}</div>
+                <div><span class="font-black text-slate-500">未定 (${attMap.未定.length}名):</span> ${escapeHTML(attMap.未定.join(', ')) || 'なし'}</div>
               </div>
             </div>
           </div>
         `;
 
+        /* ★ 直近1週間リスト（タップでスクロールする機能付き） ★ */
         if (!isPast && p._parsedDate <= nextWeek) {
           weeklyCount++;
           weeklyHtml += `
-            <div class="p-2.5 bg-slate-50 dark:bg-slate-700/50 border dark:border-slate-600 rounded-lg flex items-center justify-between">
+            <div onclick="scrollToPractice(${p.id})" class="p-2.5 bg-pickle-yellow/30 hover:bg-pickle-yellow/60 rounded-2xl pop-border flex items-center justify-between cursor-pointer transition active:scale-98">
               <div>
-                <div class="font-bold text-blue-600 dark:text-blue-400">${escapeHTML(p.date)}</div>
-                <div class="text-slate-500 dark:text-slate-400 text-[11px]">📍 ${escapeHTML(p.location)}</div>
+                <div class="font-black text-slate-900 dark:text-slate-100 flex items-center gap-1">
+                  ${escapeHTML(p.date)}
+                  <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+                </div>
+                <div class="text-slate-600 dark:text-slate-300 text-[11px]">📍 ${escapeHTML(p.location)}</div>
               </div>
-              <span class="bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 text-[10px] font-bold px-2 py-0.5 rounded">参加 ${attMap.参加.length}名</span>
+              <span class="bg-pickle-lime text-slate-900 text-[10px] font-black px-2 py-0.5 rounded-full pop-border">参加 ${attMap.参加.length}名</span>
             </div>
           `;
         }
       });
 
       list.innerHTML = html;
-      weeklyList.innerHTML = weeklyHtml || '<p class="text-slate-400 py-1">直近1週間の練習予定はありません。</p>';
+      weeklyList.innerHTML = weeklyHtml || '<p class="text-slate-400 py-1">直近1週間の予定はありません。</p>';
       document.getElementById('weekly-count-badge').innerText = `${weeklyCount}件`;
+      lucide.createIcons();
     }
 
     function createPractice() {
@@ -1135,12 +1089,12 @@
       const selectLoc = document.getElementById('practice-location').value;
       const memo = document.getElementById('practice-memo').value.trim();
 
-      if (!dateVal) return alert('練習日を選択してください。');
+      if (!dateVal) return alert('日付を選択してください。');
 
       let finalLocation = "";
       if (selectLoc === 'その他') {
         const customLoc = document.getElementById('practice-custom-location').value.trim();
-        if (!customLoc) return alert('「その他」を選択した場合は場所の詳細を入力してください。');
+        if (!customLoc) return alert('詳細な場所を入力してください。');
         finalLocation = customLoc;
       } else {
         const courtSide = document.getElementById('practice-court-side').value;
@@ -1148,33 +1102,24 @@
       }
 
       const fullDateStr = `${dateVal} (${startTime}〜${endTime})`;
-
       let practices = getDB(STORAGE_KEY_PRACTICES);
-      practices.push({
-        id: Date.now(),
-        date: fullDateStr,
-        location: finalLocation,
-        memo: memo
-      });
-
+      practices.push({ id: Date.now(), date: fullDateStr, location: finalLocation, memo });
       setDB(STORAGE_KEY_PRACTICES, practices);
 
       document.getElementById('practice-memo').value = '';
       document.getElementById('practice-custom-location').value = '';
       initPracticeFormDateTime();
       fetchPractices();
-      alert('スケジュールを作成しました！');
+      alert('スケジュールを追加しました！🏓');
     }
 
     function deletePractice(id) {
       if (!confirm('このスケジュールを削除しますか？')) return;
       let practices = getDB(STORAGE_KEY_PRACTICES);
-      practices = practices.filter(p => p.id !== id);
-      setDB(STORAGE_KEY_PRACTICES, practices);
+      setDB(STORAGE_KEY_PRACTICES, practices.filter(p => p.id !== id));
 
       let attendance = getDB(STORAGE_KEY_ATTENDANCE);
-      attendance = attendance.filter(a => a.practice_id !== id);
-      setDB(STORAGE_KEY_ATTENDANCE, attendance);
+      setDB(STORAGE_KEY_ATTENDANCE, attendance.filter(a => a.practice_id !== id));
 
       fetchPractices();
     }
@@ -1188,11 +1133,7 @@
       if (existingIndex !== -1) {
         attendance[existingIndex].status = status;
       } else {
-        attendance.push({
-          practice_id: practiceId,
-          member_name: currentUser.name,
-          status: status
-        });
+        attendance.push({ practice_id: practiceId, member_name: currentUser.name, status });
       }
 
       setDB(STORAGE_KEY_ATTENDANCE, attendance);
@@ -1203,13 +1144,9 @@
       const practices = getDB(STORAGE_KEY_PRACTICES);
       const attendance = getDB(STORAGE_KEY_ATTENDANCE);
 
-      if (practices.length === 0) {
-        return alert('出力対象の練習データがありません。');
-      }
+      if (practices.length === 0) return alert('データがありません。');
 
-      let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
-      csvContent += "日時,場所,部員名,出欠ステータス\n";
-
+      let csvContent = "data:text/csv;charset=utf-8,\uFEFF日時,場所,部員名,出欠ステータス\n";
       practices.forEach(p => {
         const atts = attendance.filter(a => a.practice_id === p.id);
         if (atts.length === 0) {
@@ -1235,21 +1172,15 @@
       const sender_name = inputSender || '匿名部員';
       const content = document.getElementById('feedback-content').value.trim();
 
-      if (!content) return alert('ご意見・ご要望を入力してください。');
+      if (!content) return alert('ご意見・メッセージを入力してください。');
 
       let feedbacks = getDB(STORAGE_KEY_FEEDBACKS);
-      feedbacks.unshift({
-        id: Date.now(),
-        sender_name,
-        content,
-        created_at: new Date().toISOString()
-      });
-
+      feedbacks.unshift({ id: Date.now(), sender_name, content, created_at: new Date().toISOString() });
       setDB(STORAGE_KEY_FEEDBACKS, feedbacks);
 
       document.getElementById('feedback-content').value = '';
       document.getElementById('feedback-sender').value = '';
-      alert('ご意見を送信しました。ありがとうございます！');
+      alert('メッセージを送信しました！');
       fetchFeedbacks();
     }
 
@@ -1258,19 +1189,19 @@
       const list = document.getElementById('feedback-list');
 
       if (feedbacks.length === 0) {
-        list.innerHTML = '<p class="text-slate-400 py-2">現在届いているご意見はありません。</p>';
+        list.innerHTML = '<p class="text-slate-400 py-2">届いているご意見はありません。</p>';
         return;
       }
 
       list.innerHTML = feedbacks.map(f => `
-        <div class="py-2.5 relative group">
-          <div class="flex justify-between items-center text-slate-500 dark:text-slate-400 mb-1 pr-12">
-            <span class="font-bold text-slate-700 dark:text-slate-200">${escapeHTML(f.sender_name)}</span>
-            <span class="text-[10px]">${new Date(f.created_at).toLocaleDateString('ja-JP')}</span>
+        <div class="py-2.5 relative">
+          <div class="flex justify-between items-center mb-1 pr-12">
+            <span class="font-black text-slate-800 dark:text-slate-200">${escapeHTML(f.sender_name)}</span>
+            <span class="text-[10px] text-slate-400">${new Date(f.created_at).toLocaleDateString('ja-JP')}</span>
           </div>
-          <p class="text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-700/50 p-2 rounded border border-slate-100 dark:border-slate-600 whitespace-pre-wrap">${escapeHTML(f.content)}</p>
+          <p class="text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-700/50 p-2 rounded-xl pop-border whitespace-pre-wrap">${escapeHTML(f.content)}</p>
           ${hasAdminAccess() ? `
-            <button onclick="deleteFeedback(${f.id})" class="absolute top-2 right-0 text-[10px] text-red-500 hover:text-red-700 bg-red-50 dark:bg-slate-700 border border-red-200 dark:border-slate-600 px-1.5 py-0.5 rounded font-bold">
+            <button onclick="deleteFeedback(${f.id})" class="absolute top-2 right-0 text-[10px] bg-pickle-pink text-white px-1.5 py-0.5 rounded-lg pop-border">
               削除
             </button>
           ` : ''}
@@ -1279,10 +1210,9 @@
     }
 
     function deleteFeedback(id) {
-      if (!confirm('このご意見を削除しますか？')) return;
+      if (!confirm('削除しますか？')) return;
       let feedbacks = getDB(STORAGE_KEY_FEEDBACKS);
-      feedbacks = feedbacks.filter(f => f.id !== id);
-      setDB(STORAGE_KEY_FEEDBACKS, feedbacks);
+      setDB(STORAGE_KEY_FEEDBACKS, feedbacks.filter(f => f.id !== id));
       fetchFeedbacks();
     }
   </script>
