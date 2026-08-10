@@ -32,9 +32,40 @@
           <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">学籍番号</label>
           <input type="text" id="login-student-id" placeholder="例: 20AA000A" class="w-full border dark:border-slate-600 dark:bg-slate-700 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none uppercase">
         </div>
+        <div>
+          <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">パスワード</label>
+          <input type="password" id="login-password" placeholder="パスワード（初期: 6桁数字）" class="w-full border dark:border-slate-600 dark:bg-slate-700 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+        </div>
         <button onclick="handleLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg text-sm transition">
           ログイン
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- パスワード変更モーダル -->
+  <div id="change-password-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] hidden flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-2xl p-5 shadow-xl space-y-3 text-slate-800 dark:text-slate-100">
+      <h3 class="font-bold text-sm flex items-center gap-1">
+        <i data-lucide="key" class="w-4 h-4 text-blue-600"></i> パスワードの変更
+      </h3>
+      <div class="space-y-2 text-xs">
+        <div>
+          <label class="block text-slate-500 dark:text-slate-400 mb-1">現在のパスワード</label>
+          <input type="password" id="pwd-current" class="w-full border dark:border-slate-600 dark:bg-slate-700 rounded p-2">
+        </div>
+        <div>
+          <label class="block text-slate-500 dark:text-slate-400 mb-1">新しいパスワード</label>
+          <input type="password" id="pwd-new" class="w-full border dark:border-slate-600 dark:bg-slate-700 rounded p-2">
+        </div>
+        <div>
+          <label class="block text-slate-500 dark:text-slate-400 mb-1">新しいパスワード (確認用)</label>
+          <input type="password" id="pwd-new-confirm" class="w-full border dark:border-slate-600 dark:bg-slate-700 rounded p-2">
+        </div>
+      </div>
+      <div class="flex gap-2 pt-2 text-xs">
+        <button onclick="closeChangePasswordModal()" class="w-1/2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 font-bold py-2 rounded">キャンセル</button>
+        <button onclick="submitPasswordChange()" class="w-1/2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded">保存</button>
       </div>
     </div>
   </div>
@@ -52,6 +83,13 @@
         <div>
           <label class="block text-slate-500 dark:text-slate-400 mb-1">学籍番号</label>
           <input type="text" id="edit-member-student-id" class="w-full border dark:border-slate-600 dark:bg-slate-700 rounded p-2 uppercase focus:ring-1 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block text-slate-500 dark:text-slate-400 mb-1">パスワードリセット <span class="text-[10px] text-blue-500">(代表用)</span></label>
+          <div class="flex gap-2">
+            <input type="password" id="edit-member-password" placeholder="変更する場合のみ入力" class="w-full border dark:border-slate-600 dark:bg-slate-700 rounded p-2 focus:ring-1 focus:ring-blue-500">
+            <button type="button" onclick="generateEditPassword()" class="bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 whitespace-nowrap px-2 rounded text-[11px] font-bold">ランダム生成</button>
+          </div>
         </div>
         <div class="grid grid-cols-2 gap-2">
           <div>
@@ -88,11 +126,14 @@
     <div class="max-w-md mx-auto flex justify-between items-center">
       <div>
         <h1 class="text-xl font-bold tracking-tight">RUB Manager</h1>
-        <p class="text-xs text-blue-200">Circle OS v3.7</p>
+        <p class="text-xs text-blue-200">Circle OS v4.2</p>
       </div>
       <div class="flex items-center gap-2">
         <button onclick="toggleDarkMode()" class="p-1.5 rounded-lg bg-blue-700 dark:bg-blue-900 hover:bg-blue-800 transition text-white">
           <i id="theme-icon" data-lucide="moon" class="w-4 h-4"></i>
+        </button>
+        <button id="pwd-change-btn" onclick="openChangePasswordModal()" class="hidden p-1.5 rounded-lg bg-blue-700 dark:bg-blue-900 hover:bg-blue-800 transition text-white">
+          <i data-lucide="key" class="w-4 h-4"></i>
         </button>
         <span id="user-display-name" class="text-xs bg-blue-700 dark:bg-blue-900 px-2.5 py-1 rounded-full text-white font-medium border border-blue-400 dark:border-blue-600">未ログイン</span>
         <button onclick="handleLogout()" id="logout-btn" class="hidden text-[10px] bg-blue-800 dark:bg-blue-950 hover:bg-blue-900 px-2 py-1 rounded border border-blue-500">ログアウト</button>
@@ -112,8 +153,31 @@
   <!-- Main Content Container -->
   <main class="max-w-md mx-auto p-4 space-y-4">
 
-    <!-- Tab 1: Home / AI -->
+    <!-- Tab 1: Home / AI / Announcements -->
     <div id="tab-home" class="tab-content space-y-4">
+      
+      <!-- お知らせ掲示板 -->
+      <div class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-3">
+        <div class="flex justify-between items-center">
+          <h2 class="font-bold text-slate-700 dark:text-slate-200 flex items-center gap-2 text-sm">
+            <i data-lucide="megaphone" class="w-4 h-4 text-amber-500"></i> お知らせ・連絡事項
+          </h2>
+          <button id="announcement-add-toggle" onclick="toggleAnnouncementForm()" class="hidden text-xs bg-amber-50 dark:bg-amber-900/40 text-amber-600 dark:text-amber-300 px-2 py-1 rounded font-bold hover:bg-amber-100">
+            + 投稿
+          </button>
+        </div>
+
+        <!-- お知らせ作成フォーム (役職者用) -->
+        <div id="announcement-form" class="hidden space-y-2 border-t dark:border-slate-700 pt-2 text-xs">
+          <input type="text" id="announcement-title" placeholder="件名" class="w-full border dark:border-slate-600 dark:bg-slate-700 rounded p-2">
+          <textarea id="announcement-body" rows="2" placeholder="連絡内容を入力..." class="w-full border dark:border-slate-600 dark:bg-slate-700 rounded p-2"></textarea>
+          <button onclick="submitAnnouncement()" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-1.5 rounded">お知らせを投稿</button>
+        </div>
+
+        <div id="announcement-list" class="space-y-2 text-xs divide-y divide-slate-100 dark:divide-slate-700"></div>
+      </div>
+
+      <!-- AI アシスタント -->
       <div class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
         <h2 class="font-bold text-slate-700 dark:text-slate-200 flex items-center gap-2 mb-2 text-sm">
           <i data-lucide="bot" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i> サークルAIアシスタント
@@ -149,6 +213,13 @@
             <div>
               <label class="block text-slate-500 dark:text-slate-400 mb-1">学籍番号</label>
               <input type="text" id="new-member-student-id" placeholder="例: 20AA000A" class="w-full border dark:border-slate-600 dark:bg-slate-700 rounded p-2 uppercase focus:ring-1 focus:ring-blue-500">
+            </div>
+          </div>
+          <div>
+            <label class="block text-slate-500 dark:text-slate-400 mb-1">初期パスワード <span class="text-[10px] text-slate-400">(自動生成: 6桁数字)</span></label>
+            <div class="flex gap-2">
+              <input type="text" id="new-member-password" class="w-full border dark:border-slate-600 dark:bg-slate-700 rounded p-2 font-mono font-bold focus:ring-1 focus:ring-blue-500" readonly>
+              <button type="button" onclick="renewNewMemberPassword()" class="bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 whitespace-nowrap px-2 rounded text-[11px] font-bold">再生成</button>
             </div>
           </div>
           <div class="grid grid-cols-2 gap-2">
@@ -200,10 +271,10 @@
           <div>
             <label class="block text-slate-500 dark:text-slate-400 mb-1 font-medium">時間帯</label>
             <div class="grid grid-cols-2 gap-2 items-center">
-              <input type="time" id="practice-start-time" value="18:00" class="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 text-sm bg-slate-50 dark:bg-slate-700">
+              <input type="time" id="practice-start-time" class="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 text-sm bg-slate-50 dark:bg-slate-700">
               <div class="flex items-center gap-1">
                 <span class="text-slate-400">〜</span>
-                <input type="time" id="practice-end-time" value="21:00" class="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 text-sm bg-slate-50 dark:bg-slate-700">
+                <input type="time" id="practice-end-time" class="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 text-sm bg-slate-50 dark:bg-slate-700">
               </div>
             </div>
           </div>
@@ -239,8 +310,13 @@
         </div>
       </div>
 
-      <div class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
-        <h2 class="font-bold text-slate-700 dark:text-slate-200 mb-3 text-sm">全練習スケジュール & 出欠投票</h2>
+      <div class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-3">
+        <div class="flex justify-between items-center">
+          <h2 class="font-bold text-slate-700 dark:text-slate-200 text-sm">全練習スケジュール & 出欠投票</h2>
+          <button onclick="exportAttendanceCSV()" class="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold px-2 py-1 rounded hover:bg-slate-200 flex items-center gap-1">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i> CSV出力
+          </button>
+        </div>
         <div id="practice-list" class="space-y-3 text-xs"></div>
       </div>
     </div>
@@ -308,6 +384,7 @@
     const STORAGE_KEY_PRACTICES = 'rub_manager_db_practices';
     const STORAGE_KEY_ATTENDANCE = 'rub_manager_db_attendance';
     const STORAGE_KEY_FEEDBACKS = 'rub_manager_db_feedbacks';
+    const STORAGE_KEY_ANNOUNCEMENTS = 'rub_manager_db_announcements';
 
     let currentRole = "部員";
     let currentUser = null;
@@ -320,9 +397,14 @@
       "コート取り": 3
     };
 
+    function generate6DigitCode() {
+      return Math.floor(100000 + Math.random() * 900000).toString();
+    }
+
     const ADMIN_USER = {
       id: 1,
       student_id: "24CA074M",
+      password: generate6DigitCode(),
       name: "代表者",
       grade: "3年",
       role: "代表"
@@ -350,24 +432,61 @@
       return today.toISOString().split('T')[0];
     }
 
+    function formatTime(date) {
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      return `${hours}:${minutes}`;
+    }
+
+    // フォーム初期表示用：現在日時を動的に初期セット
+    function initPracticeFormDateTime() {
+      const dateInput = document.getElementById("practice-date");
+      const startTimeInput = document.getElementById("practice-start-time");
+      const endTimeInput = document.getElementById("practice-end-time");
+
+      const now = new Date();
+      if (dateInput) {
+        dateInput.value = getTodayString();
+      }
+
+      if (startTimeInput) {
+        startTimeInput.value = formatTime(now);
+      }
+
+      if (endTimeInput) {
+        const end = new Date(now.getTime() + 2 * 60 * 60 * 1000); // 2時間後
+        endTimeInput.value = formatTime(end);
+      }
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
       initTheme();
       lucide.createIcons();
       ensureAdminRegistered();
       checkAuth();
+      renewNewMemberPassword();
+      fetchAnnouncements();
       fetchAIAnalytics();
       fetchMembers();
+      initPracticeFormDateTime();
       fetchPractices();
       fetchFeedbacks();
       handleLocationChange();
-
-      const todayStr = getTodayString();
-      const dateInput = document.getElementById("practice-date");
-      if (dateInput) {
-        dateInput.value = todayStr;
-        dateInput.min = todayStr;
-      }
     });
+
+    function renewNewMemberPassword() {
+      const pwdInput = document.getElementById('new-member-password');
+      if (pwdInput) {
+        pwdInput.value = generate6DigitCode();
+      }
+    }
+
+    function generateEditPassword() {
+      const editPwdInput = document.getElementById('edit-member-password');
+      if (editPwdInput) {
+        editPwdInput.value = generate6DigitCode();
+      }
+    }
 
     function initTheme() {
       const isDark = localStorage.getItem('theme') === 'dark';
@@ -429,23 +548,32 @@
         document.getElementById('login-modal').classList.add('hidden');
         document.getElementById('user-display-name').innerText = currentUser.name;
         document.getElementById('logout-btn').classList.remove('hidden');
+        document.getElementById('pwd-change-btn').classList.remove('hidden');
         updateRoleOptions();
       } else {
         document.getElementById('login-modal').classList.remove('hidden');
         document.getElementById('logout-btn').classList.add('hidden');
+        document.getElementById('pwd-change-btn').classList.add('hidden');
         updateRoleOptions();
       }
     }
 
     function handleLogin() {
       const studentId = document.getElementById('login-student-id').value.trim().toUpperCase();
-      if (!studentId) return alert('学籍番号を入力してください');
+      const password = document.getElementById('login-password').value;
+
+      if (!studentId || !password) return alert('学籍番号とパスワードを入力してください');
 
       const members = getDB(STORAGE_KEY_MEMBERS);
       let member = members.find(m => m.student_id && m.student_id.toUpperCase() === studentId);
 
       if (!member) {
         return alert('登録されている学籍番号が見つかりません。\n代表権限者に部員登録を依頼してください。');
+      }
+
+      const userPassword = member.password;
+      if (password !== userPassword) {
+        return alert('パスワードが正しくありません。');
       }
 
       currentUser = {
@@ -456,8 +584,10 @@
 
       localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(currentUser));
       document.getElementById('login-modal').classList.add('hidden');
+      document.getElementById('login-password').value = '';
       document.getElementById('user-display-name').innerText = currentUser.name;
       document.getElementById('logout-btn').classList.remove('hidden');
+      document.getElementById('pwd-change-btn').classList.remove('hidden');
 
       updateRoleOptions();
       alert(`おかえりなさい、${currentUser.name} さん！`);
@@ -469,8 +599,44 @@
       currentUser = null;
       document.getElementById('user-display-name').innerText = '未ログイン';
       document.getElementById('logout-btn').classList.add('hidden');
+      document.getElementById('pwd-change-btn').classList.add('hidden');
       document.getElementById('login-modal').classList.remove('hidden');
       updateRoleOptions();
+    }
+
+    function openChangePasswordModal() {
+      document.getElementById('pwd-current').value = '';
+      document.getElementById('pwd-new').value = '';
+      document.getElementById('pwd-new-confirm').value = '';
+      document.getElementById('change-password-modal').classList.remove('hidden');
+    }
+
+    function closeChangePasswordModal() {
+      document.getElementById('change-password-modal').classList.add('hidden');
+    }
+
+    function submitPasswordChange() {
+      if (!currentUser) return;
+      const currentPwd = document.getElementById('pwd-current').value;
+      const newPwd = document.getElementById('pwd-new').value;
+      const confirmPwd = document.getElementById('pwd-new-confirm').value;
+
+      if (!currentPwd || !newPwd) return alert('全ての欄を入力してください');
+      if (newPwd !== confirmPwd) return alert('新しいパスワードの確認入力が一致しません');
+
+      let members = getDB(STORAGE_KEY_MEMBERS);
+      const index = members.findIndex(m => m.student_id.toUpperCase() === currentUser.student_id.toUpperCase());
+
+      if (index !== -1) {
+        const storedPwd = members[index].password;
+        if (currentPwd !== storedPwd) {
+          return alert('現在のパスワードが間違っています');
+        }
+        members[index].password = newPwd;
+        setDB(STORAGE_KEY_MEMBERS, members);
+        closeChangePasswordModal();
+        alert('パスワードを変更しました！');
+      }
     }
 
     function updateRoleOptions() {
@@ -524,6 +690,7 @@
     function changeRole(role) {
       currentRole = role;
       updateRoleVisibility();
+      fetchAnnouncements();
       fetchPractices();
       fetchMembers();
       fetchFeedbacks();
@@ -531,6 +698,10 @@
 
     function hasAdminAccess() {
       return currentRole === "代表" || currentRole === "副代表";
+    }
+
+    function isOfficerRole() {
+      return hasAdminAccess() || currentRole === "コート取り" || currentRole === "会計";
     }
 
     function updateRoleVisibility() {
@@ -553,7 +724,13 @@
         }
       }
 
-      const isOfficer = isAdmin || isCourtOfficer || currentRole === "会計";
+      const isOfficer = isOfficerRole();
+      const annBtn = document.getElementById("announcement-add-toggle");
+      if (annBtn) {
+        if (isOfficer) annBtn.classList.remove("hidden");
+        else annBtn.classList.add("hidden");
+      }
+
       const feedbackFormSection = document.getElementById("feedback-form-section");
       const feedbackListSection = document.getElementById("feedback-list-section");
 
@@ -564,6 +741,67 @@
         feedbackFormSection.classList.remove("hidden");
         feedbackListSection.classList.add("hidden");
       }
+    }
+
+    function toggleAnnouncementForm() {
+      const form = document.getElementById("announcement-form");
+      form.classList.toggle("hidden");
+    }
+
+    function submitAnnouncement() {
+      const title = document.getElementById("announcement-title").value.trim();
+      const body = document.getElementById("announcement-body").value.trim();
+
+      if (!title || !body) return alert("件名と本文を入力してください");
+
+      let announcements = getDB(STORAGE_KEY_ANNOUNCEMENTS);
+      announcements.unshift({
+        id: Date.now(),
+        title,
+        body,
+        author: currentUser ? currentUser.name : "役職者",
+        created_at: new Date().toISOString()
+      });
+
+      setDB(STORAGE_KEY_ANNOUNCEMENTS, announcements);
+      document.getElementById("announcement-title").value = '';
+      document.getElementById("announcement-body").value = '';
+      toggleAnnouncementForm();
+      fetchAnnouncements();
+    }
+
+    function deleteAnnouncement(id) {
+      if (!confirm("このお知らせを削除しますか？")) return;
+      let announcements = getDB(STORAGE_KEY_ANNOUNCEMENTS);
+      announcements = announcements.filter(a => a.id !== id);
+      setDB(STORAGE_KEY_ANNOUNCEMENTS, announcements);
+      fetchAnnouncements();
+    }
+
+    function fetchAnnouncements() {
+      const announcements = getDB(STORAGE_KEY_ANNOUNCEMENTS);
+      const list = document.getElementById("announcement-list");
+
+      if (announcements.length === 0) {
+        list.innerHTML = '<p class="text-slate-400 py-1">現在お知らせはありません。</p>';
+        return;
+      }
+
+      list.innerHTML = announcements.map(a => `
+        <div class="pt-2 relative group">
+          <div class="flex justify-between items-center text-slate-500 mb-0.5">
+            <span class="font-bold text-slate-800 dark:text-slate-200 text-xs">${escapeHTML(a.title)}</span>
+            <span class="text-[10px]">${new Date(a.created_at).toLocaleDateString('ja-JP')}</span>
+          </div>
+          <p class="text-slate-600 dark:text-slate-300 text-[11px] whitespace-pre-wrap">${escapeHTML(a.body)}</p>
+          <div class="text-[9px] text-slate-400 mt-0.5">投稿者: ${escapeHTML(a.author)}</div>
+          ${isOfficerRole() ? `
+            <button onclick="deleteAnnouncement(${a.id})" class="absolute top-2 right-0 text-[10px] text-red-500 hover:text-red-700 bg-red-50 dark:bg-slate-700 px-1 rounded">
+              削除
+            </button>
+          ` : ''}
+        </div>
+      `).join('');
     }
 
     function fetchAIAnalytics() {
@@ -634,6 +872,7 @@
 
       const name = document.getElementById('new-member-name').value.trim();
       const student_id = document.getElementById('new-member-student-id').value.trim().toUpperCase();
+      const password = document.getElementById('new-member-password').value || generate6DigitCode();
       const grade = document.getElementById('new-member-grade').value;
       const role = document.getElementById('new-member-role').value;
 
@@ -656,6 +895,7 @@
         id: Date.now(),
         name,
         student_id,
+        password,
         grade,
         role
       };
@@ -665,8 +905,9 @@
 
       document.getElementById('new-member-name').value = '';
       document.getElementById('new-member-student-id').value = '';
+      renewNewMemberPassword();
       fetchMembers();
-      alert('部員を登録しました！');
+      alert(`部員を登録しました！\n初期パスワード: ${password}\n（本人へ共有してください）`);
     }
 
     function openEditModal(id) {
@@ -676,6 +917,7 @@
       document.getElementById('edit-member-id').value = member.id;
       document.getElementById('edit-member-name').value = member.name;
       document.getElementById('edit-member-student-id').value = member.student_id;
+      document.getElementById('edit-member-password').value = '';
       document.getElementById('edit-member-grade').value = member.grade;
       document.getElementById('edit-member-role').value = member.role;
 
@@ -693,6 +935,7 @@
       const id = Number(document.getElementById('edit-member-id').value);
       const name = document.getElementById('edit-member-name').value.trim();
       const student_id = document.getElementById('edit-member-student-id').value.trim().toUpperCase();
+      const newPassword = document.getElementById('edit-member-password').value.trim();
       const grade = document.getElementById('edit-member-grade').value;
       const role = document.getElementById('edit-member-role').value;
 
@@ -702,7 +945,11 @@
       const index = members.findIndex(m => m.id === id);
 
       if (index !== -1) {
-        members[index] = { ...members[index], name, student_id, grade, role };
+        const updatedMember = { ...members[index], name, student_id, grade, role };
+        if (newPassword) {
+          updatedMember.password = newPassword;
+        }
+        members[index] = updatedMember;
         setDB(STORAGE_KEY_MEMBERS, members);
         closeEditModal();
         fetchMembers();
@@ -720,6 +967,21 @@
       fetchMembers();
     }
 
+    // 練習日時文字列（例 "2026-08-10 (14:30〜16:30)"）からDateオブジェクトを生成するヘルパー関数
+    function parsePracticeDate(dateStr) {
+      if (!dateStr) return new Date(0);
+      const parts = dateStr.split(' ');
+      const datePart = parts[0]; // "2026-08-10"
+      let timePart = "00:00";
+      if (parts[1]) {
+        const timeMatch = parts[1].match(/\((.*?)[〜~]/);
+        if (timeMatch && timeMatch[1]) {
+          timePart = timeMatch[1];
+        }
+      }
+      return new Date(`${datePart}T${timePart}:00`);
+    }
+
     function fetchPractices() {
       let practices = getDB(STORAGE_KEY_PRACTICES);
       const attendance = getDB(STORAGE_KEY_ATTENDANCE);
@@ -735,35 +997,61 @@
         return;
       }
 
-      practices.sort((a, b) => {
-        const dateA = new Date(a.date.split(' ')[0]);
-        const dateB = new Date(b.date.split(' ')[0]);
-        return dateA - dateB;
+      const now = new Date();
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+      // 未来（今日含む）と過去に分離
+      const upcomingPractices = [];
+      const pastPractices = [];
+
+      practices.forEach(p => {
+        const pDate = parsePracticeDate(p.date);
+        p._parsedDate = pDate;
+        if (pDate >= todayStart) {
+          upcomingPractices.push(p);
+        } else {
+          pastPractices.push(p);
+        }
       });
+
+      // 今後の予定: 近い順（昇順）
+      upcomingPractices.sort((a, b) => a._parsedDate - b._parsedDate);
+      // 過去の予定: 古い順（昇順：過去の古いものが下に並ぶ）
+      pastPractices.sort((a, b) => a._parsedDate - b._parsedDate);
+
+      // 上に「今後の予定」、下に「過去の予定」を結合
+      const sortedPractices = [...upcomingPractices, ...pastPractices];
 
       let html = '';
       let weeklyHtml = '';
       let weeklyCount = 0;
 
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const nextWeek = new Date(today);
-      nextWeek.setDate(today.getDate() + 7);
+      const nextWeek = new Date(todayStart);
+      nextWeek.setDate(todayStart.getDate() + 7);
 
-      practices.forEach(p => {
+      sortedPractices.forEach(p => {
+        const isPast = p._parsedDate < todayStart;
         const attFilter = attendance.filter(a => a.practice_id === p.id);
         const attMap = { '参加': [], '不参加': [], '未定': [] };
         attFilter.forEach(a => {
           if (attMap[a.status]) attMap[a.status].push(a.member_name);
         });
 
+        // 過去の予定はグレー背景＆透過スタイルに設定
+        const containerStyle = isPast 
+          ? "bg-slate-200/60 dark:bg-slate-800/60 border-slate-300 dark:border-slate-700/60 opacity-75"
+          : "bg-slate-50 dark:bg-slate-700/50 border-slate-200 dark:border-slate-700";
+
         html += `
-          <div class="border dark:border-slate-700 rounded-lg p-3 bg-slate-50 dark:bg-slate-700/50 space-y-2">
+          <div class="border rounded-lg p-3 ${containerStyle} space-y-2 transition-all">
             <div class="flex justify-between items-start">
               <div>
-                <div class="font-bold text-sm text-slate-800 dark:text-slate-100">${escapeHTML(p.date)}</div>
-                <div class="text-slate-600 dark:text-slate-300">${escapeHTML(p.location)}</div>
-                ${p.memo ? `<div class="text-slate-500 dark:text-slate-400 text-[11px]">メモ: ${escapeHTML(p.memo)}</div>` : ''}
+                <div class="font-bold text-sm ${isPast ? 'text-slate-500 dark:text-slate-400 line-through' : 'text-slate-800 dark:text-slate-100'}">
+                  ${escapeHTML(p.date)}
+                  ${isPast ? '<span class="no-underline ml-1 text-[10px] bg-slate-300 dark:bg-slate-700 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded font-normal">終了</span>' : ''}
+                </div>
+                <div class="${isPast ? 'text-slate-400 dark:text-slate-500' : 'text-slate-600 dark:text-slate-300'}">${escapeHTML(p.location)}</div>
+                ${p.memo ? `<div class="text-slate-400 dark:text-slate-500 text-[11px]">メモ: ${escapeHTML(p.memo)}</div>` : ''}
               </div>
               ${canDelete ? `
                 <button onclick="deletePractice(${p.id})" class="text-xs text-red-500 hover:text-red-700 bg-red-50 dark:bg-slate-700 px-2 py-1 rounded">
@@ -772,14 +1060,14 @@
               ` : ''}
             </div>
 
-            <div class="border-t dark:border-slate-600 pt-2 mt-2">
-              <p class="font-medium text-slate-600 dark:text-slate-300 mb-1">出欠投票 (${currentUser ? escapeHTML(currentUser.name) : '未ログイン'}):</p>
+            <div class="border-t dark:border-slate-600/60 pt-2 mt-2">
+              <p class="font-medium text-slate-500 dark:text-slate-400 mb-1">出欠投票 (${currentUser ? escapeHTML(currentUser.name) : '未ログイン'}):</p>
               <div class="flex gap-1 mb-2">
-                <button onclick="voteAttendance(${p.id}, '参加')" class="flex-1 bg-green-500 text-white font-bold py-1.5 rounded hover:bg-green-600 text-xs">参加</button>
-                <button onclick="voteAttendance(${p.id}, '不参加')" class="flex-1 bg-red-500 text-white font-bold py-1.5 rounded hover:bg-red-600 text-xs">不参加</button>
-                <button onclick="voteAttendance(${p.id}, '未定')" class="flex-1 bg-gray-400 text-white font-bold py-1.5 rounded hover:bg-gray-500 text-xs">未定</button>
+                <button onclick="voteAttendance(${p.id}, '参加')" class="flex-1 ${isPast ? 'bg-green-600/50' : 'bg-green-500 hover:bg-green-600'} text-white font-bold py-1.5 rounded text-xs">参加</button>
+                <button onclick="voteAttendance(${p.id}, '不参加')" class="flex-1 ${isPast ? 'bg-red-600/50' : 'bg-red-500 hover:bg-red-600'} text-white font-bold py-1.5 rounded text-xs">不参加</button>
+                <button onclick="voteAttendance(${p.id}, '未定')" class="flex-1 ${isPast ? 'bg-gray-500/50' : 'bg-gray-400 hover:bg-gray-500'} text-white font-bold py-1.5 rounded text-xs">未定</button>
               </div>
-              <div class="text-[11px] text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 p-2 rounded border dark:border-slate-600 space-y-0.5">
+              <div class="text-[11px] text-slate-500 dark:text-slate-400 bg-white/70 dark:bg-slate-800/80 p-2 rounded border dark:border-slate-700 space-y-0.5">
                 <div><span class="font-bold text-green-600 dark:text-green-400">参加 (${attMap.参加.length}名):</span> ${escapeHTML(attMap.参加.join(', ')) || 'なし'}</div>
                 <div><span class="font-bold text-red-600 dark:text-red-400">不参加 (${attMap.不参加.length}名):</span> ${escapeHTML(attMap.不参加.join(', ')) || 'なし'}</div>
                 <div><span class="font-bold text-gray-500 dark:text-slate-400">未定 (${attMap.未定.length}名):</span> ${escapeHTML(attMap.未定.join(', ')) || 'なし'}</div>
@@ -788,8 +1076,7 @@
           </div>
         `;
 
-        const pDateParsed = new Date(p.date.split(' ')[0]);
-        if (!isNaN(pDateParsed) && pDateParsed >= today && pDateParsed <= nextWeek) {
+        if (!isPast && p._parsedDate <= nextWeek) {
           weeklyCount++;
           weeklyHtml += `
             <div class="p-2.5 bg-slate-50 dark:bg-slate-700/50 border dark:border-slate-600 rounded-lg flex items-center justify-between">
@@ -810,8 +1097,8 @@
 
     function createPractice() {
       const dateVal = document.getElementById('practice-date').value;
-      const startTime = document.getElementById('practice-start-time').value;
-      const endTime = document.getElementById('practice-end-time').value;
+      const startTime = document.getElementById('practice-start-time').value || "18:00";
+      const endTime = document.getElementById('practice-end-time').value || "21:00";
       const selectLoc = document.getElementById('practice-location').value;
       const memo = document.getElementById('practice-memo').value.trim();
 
@@ -841,6 +1128,7 @@
 
       document.getElementById('practice-memo').value = '';
       document.getElementById('practice-custom-location').value = '';
+      initPracticeFormDateTime();
       fetchPractices();
       alert('練習スケジュールを作成しました！');
     }
@@ -876,6 +1164,37 @@
 
       setDB(STORAGE_KEY_ATTENDANCE, attendance);
       fetchPractices();
+    }
+
+    function exportAttendanceCSV() {
+      const practices = getDB(STORAGE_KEY_PRACTICES);
+      const attendance = getDB(STORAGE_KEY_ATTENDANCE);
+
+      if (practices.length === 0) {
+        return alert('出力対象の練習データがありません。');
+      }
+
+      let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+      csvContent += "練習日時,場所,部員名,出欠ステータス\n";
+
+      practices.forEach(p => {
+        const atts = attendance.filter(a => a.practice_id === p.id);
+        if (atts.length === 0) {
+          csvContent += `"${p.date}","${p.location}","回答なし","-"\n`;
+        } else {
+          atts.forEach(a => {
+            csvContent += `"${p.date}","${p.location}","${a.member_name}","${a.status}"\n`;
+          });
+        }
+      });
+
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `出欠一覧_${getTodayString()}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
 
     function submitFeedback() {
