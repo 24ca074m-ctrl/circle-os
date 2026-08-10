@@ -3,13 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RUB Picklers - Circle OS</title>
-  <!-- PWA設定 -->
+  <title>Circle OS - RUB Picklers</title>
+  
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="RUB Picklers">
+  <meta name="apple-mobile-web-app-title" content="Circle OS">
   
-  <!-- Google Fonts: POPで明るいフォント -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap" rel="stylesheet">
@@ -25,12 +24,12 @@
           },
           colors: {
             pickle: {
-              lime: '#84cc16',    /* ピックルボール・イエローグリーン */
-              yellow: '#facc15',  /* パドル・ボールカラー */
-              blue: '#06b6d4',    /* ポップな明るいブルー */
-              navy: '#0f172a',    /* 深みのある背景用 */
-              pink: '#f43f5e',    /* アクセントピンク */
-              bg: '#f7fee7',      /* 明るい黄緑系バックグラウンド */
+              lime: '#84cc16',
+              yellow: '#facc15',
+              blue: '#06b6d4',
+              navy: '#0f172a',
+              pink: '#f43f5e',
+              bg: '#f7fee7',
             }
           }
         }
@@ -38,13 +37,15 @@
     }
   </script>
   <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Supabase CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <style>
     body { font-family: 'M PLUS Rounded 1c', sans-serif; }
     .pop-shadow { box-shadow: 0 4px 0 0 #000; }
     .pop-shadow-sm { box-shadow: 0 2px 0 0 #000; }
     .pop-border { border: 2px solid #000; }
     
-    /* iOSのデフォルトフォーム枠ズレ対策 */
     input[type="date"], input[type="time"], select, input[type="text"], input[type="password"] {
       -webkit-appearance: none;
       -moz-appearance: none;
@@ -56,6 +57,63 @@
 </head>
 <body class="bg-pickle-bg dark:bg-slate-900 text-slate-800 dark:text-slate-100 pb-24 transition-colors duration-200">
 
+  <script>
+    // Supabase 設定（いただいたキーとURL）
+    const SUPABASE_URL = 'https://awafhqvdfqiizftulefk.supabase.co';
+    const SUPABASE_ANON_KEY = 'Sb_publishable_AtovIC4zDu8jKCaWhrW4lg_2rSSwSXo';
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  </script>
+
+  <!-- 初回サークル選択・開設モーダル -->
+  <div id="circle-setup-modal" class="fixed inset-0 bg-slate-900/90 backdrop-blur-md z-[120] flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-3xl p-6 pop-border pop-shadow space-y-4 text-slate-800 dark:text-slate-100 relative">
+      <div class="text-center space-y-1">
+        <div class="inline-flex items-center justify-center w-12 h-12 bg-pickle-yellow rounded-full pop-border mb-1">
+          <i data-lucide="sparkles" class="w-7 h-7 text-slate-900"></i>
+        </div>
+        <h1 class="text-2xl font-black text-slate-800 dark:text-white tracking-wider">Circle OS</h1>
+        <p class="text-xs font-bold text-slate-500 dark:text-slate-400">全大学サークル対応プラットフォーム</p>
+      </div>
+
+      <div class="flex border-2 border-slate-800 rounded-xl overflow-hidden text-xs font-black">
+        <button onclick="switchSetupTab('join')" id="tab-btn-join" class="w-1/2 py-2 bg-pickle-yellow text-slate-900">IDで参加</button>
+        <button onclick="switchSetupTab('create')" id="tab-btn-create" class="w-1/2 py-2 bg-slate-100 dark:bg-slate-700 text-slate-500">新規開設</button>
+      </div>
+
+      <div id="setup-form-join" class="space-y-3 text-xs">
+        <div>
+          <label class="block font-extrabold text-slate-700 dark:text-slate-300 mb-1">サークルID</label>
+          <input type="text" id="input-circle-id" placeholder="例: RUB-PICKLE" class="w-full border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 p-2.5 rounded-xl font-bold uppercase">
+        </div>
+        <button onclick="joinCircle()" class="w-full bg-pickle-lime text-slate-900 font-black py-3 rounded-xl text-sm pop-border pop-shadow-sm transition active:translate-y-0.5">
+          サークルに入る 🚀
+        </button>
+      </div>
+
+      <div id="setup-form-create" class="space-y-3 text-xs hidden">
+        <div>
+          <label class="block font-extrabold text-slate-700 dark:text-slate-300 mb-1">大学名 / 団体種別</label>
+          <input type="text" id="create-university" placeholder="例: 立教大学" class="w-full border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 p-2 rounded-xl font-bold">
+        </div>
+        <div>
+          <label class="block font-extrabold text-slate-700 dark:text-slate-300 mb-1">サークル名</label>
+          <input type="text" id="create-circle-name" placeholder="例: RUB Picklers" class="w-full border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 p-2 rounded-xl font-bold">
+        </div>
+        <div>
+          <label class="block font-extrabold text-slate-700 dark:text-slate-300 mb-1">希望サークルID (半角英数字)</label>
+          <input type="text" id="create-circle-id" placeholder="例: RUB-PICKLE" class="w-full border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 p-2 rounded-xl font-bold uppercase">
+        </div>
+        <div>
+          <label class="block font-extrabold text-slate-700 dark:text-slate-300 mb-1">主な拠点・体育館 (カンマ区切り)</label>
+          <input type="text" id="create-locations" placeholder="例: 立教大学体育館(池袋), 立教大学体育館(新座)" class="w-full border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 p-2 rounded-xl font-bold">
+        </div>
+        <button onclick="createNewCircle()" class="w-full bg-pickle-blue text-white font-black py-3 rounded-xl text-sm pop-border pop-shadow-sm transition active:translate-y-0.5">
+          サークルを立ち上げる ✨
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ログインモーダル -->
   <div id="login-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
     <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-3xl p-6 pop-border pop-shadow space-y-4 text-slate-800 dark:text-slate-100 relative overflow-hidden">
@@ -64,21 +122,24 @@
         <div class="inline-flex items-center justify-center w-12 h-12 bg-pickle-lime rounded-full pop-border mb-1">
           <i data-lucide="circle-dot" class="w-7 h-7 text-white"></i>
         </div>
-        <h1 class="text-2xl font-black text-slate-800 dark:text-white tracking-wider">RUB Picklers 🏓</h1>
-        <p class="text-xs font-bold text-slate-500 dark:text-slate-400">立教ピックルボールサークル OS</p>
+        <h1 id="app-circle-title" class="text-2xl font-black text-slate-800 dark:text-white tracking-wider">RUB Picklers 🏓</h1>
+        <p id="app-university-title" class="text-xs font-bold text-slate-500 dark:text-slate-400">立教ピックルボールサークル OS</p>
       </div>
 
       <div class="space-y-3 text-xs pt-2">
         <div>
           <label class="block font-extrabold text-slate-700 dark:text-slate-300 mb-1">学籍番号</label>
-          <input type="text" id="login-student-id" placeholder="例: 20AA000A" class="w-full border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 p-2.5 rounded-xl font-bold focus:outline-none focus:ring-2 focus:ring-pickle-lime uppercase">
+          <input type="text" id="login-student-id" placeholder="例: 20AA000A" class="w-full border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 p-2.5 rounded-xl font-bold uppercase">
         </div>
         <div>
           <label class="block font-extrabold text-slate-700 dark:text-slate-300 mb-1">パスワード</label>
-          <input type="password" id="login-password" placeholder="初期: 6桁数字" class="w-full border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 p-2.5 rounded-xl font-bold focus:outline-none focus:ring-2 focus:ring-pickle-lime">
+          <input type="password" id="login-password" placeholder="初期: 6桁数字" class="w-full border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 p-2.5 rounded-xl font-bold">
         </div>
         <button onclick="handleLogin()" class="w-full bg-pickle-lime hover:bg-lime-500 text-slate-900 font-black py-3 rounded-xl text-sm pop-border pop-shadow-sm transition active:translate-y-0.5">
           コートイン！ (ログイン)
+        </button>
+        <button onclick="resetCircleSelection()" class="w-full text-slate-400 underline text-[10px] text-center block pt-1">
+          別のサークルに切り替える
         </button>
       </div>
     </div>
@@ -170,8 +231,8 @@
           <i data-lucide="circle-dot" class="w-6 h-6 text-pickle-lime fill-pickle-yellow"></i>
         </div>
         <div>
-          <h1 class="text-xl font-black tracking-wider leading-none">RUB Picklers</h1>
-          <p class="text-[10px] font-extrabold text-slate-700">Rikkyo Pickleball Club</p>
+          <h1 id="header-circle-name" class="text-xl font-black tracking-wider leading-none">RUB Picklers</h1>
+          <p id="header-univ-name" class="text-[10px] font-extrabold text-slate-700">Rikkyo Pickleball Club</p>
         </div>
       </div>
       <div class="flex items-center gap-1.5 font-extrabold">
@@ -202,7 +263,6 @@
     <!-- Tab 1: Home / AI / Announcements -->
     <div id="tab-home" class="tab-content space-y-4">
       
-      <!-- 全権限持ち用: イベント作成 & 練習作成 分離ボタン -->
       <div id="home-admin-actions" class="hidden bg-white dark:bg-slate-800 p-4 rounded-3xl pop-border pop-shadow space-y-2">
         <div class="flex items-center gap-1.5 text-xs font-black text-pickle-pink">
           <i data-lucide="sparkles" class="w-4 h-4"></i> 全権限（代表・副代表）メニュー
@@ -237,7 +297,7 @@
         <div id="announcement-list" class="space-y-2 text-xs divide-y-2 divide-slate-100 dark:divide-slate-700"></div>
       </div>
 
-      <!-- 直近1週間の練習・イベント予定 -->
+      <!-- 直近1週間の予定 -->
       <div class="bg-white dark:bg-slate-800 p-4 rounded-3xl pop-border pop-shadow space-y-3">
         <h2 class="font-black text-slate-800 dark:text-slate-100 text-sm flex items-center justify-between">
           <span class="flex items-center gap-2">
@@ -342,9 +402,7 @@
             <div>
               <label class="block text-slate-500 dark:text-slate-400 mb-1">場所 / 種別</label>
               <select id="practice-location" onchange="handleLocationChange()" class="w-full border-2 border-slate-800 dark:border-slate-600 rounded-xl p-2.5 dark:bg-slate-700 bg-white">
-                <option value="立教大学体育館(池袋)">立教大学体育館(池袋)</option>
-                <option value="立教大学体育館(新座)">立教大学体育館(新座)</option>
-                <option value="その他">その他</option>
+                <!-- 動的に生成されます -->
               </select>
             </div>
             <div id="court-side-container">
@@ -434,13 +492,7 @@
   </nav>
 
   <script>
-    const STORAGE_KEY_USER = 'rub_manager_user';
-    const STORAGE_KEY_MEMBERS = 'rub_manager_db_members';
-    const STORAGE_KEY_PRACTICES = 'rub_manager_db_practices';
-    const STORAGE_KEY_ATTENDANCE = 'rub_manager_db_attendance';
-    const STORAGE_KEY_FEEDBACKS = 'rub_manager_db_feedbacks';
-    const STORAGE_KEY_ANNOUNCEMENTS = 'rub_manager_db_announcements';
-
+    let currentCircle = null;
     let currentRole = "部員";
     let currentUser = null;
     let cachedMembers = [];
@@ -452,7 +504,7 @@
     }
 
     const ADMIN_USER = {
-      id: 1, student_id: "24CA074M", password: generate6DigitCode(), name: "代表者", grade: "3年", role: "代表"
+      student_id: "24CA074M", password: generate6DigitCode(), name: "代表者", grade: "3年", role: "代表"
     };
 
     function escapeHTML(str) {
@@ -460,14 +512,109 @@
       return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
     }
 
-    function getDB(key) { return JSON.parse(localStorage.getItem(key) || '[]'); }
-    function setDB(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
     function getTodayString() { return new Date().toISOString().split('T')[0]; }
 
     function formatTime(date) {
       const hours = String(date.getHours()).padStart(2, '0');
       const minutes = String(date.getMinutes()).padStart(2, '0');
       return `${hours}:${minutes}`;
+    }
+
+    function switchSetupTab(mode) {
+      if (mode === 'join') {
+        document.getElementById('setup-form-join').classList.remove('hidden');
+        document.getElementById('setup-form-create').classList.add('hidden');
+        document.getElementById('tab-btn-join').className = "w-1/2 py-2 bg-pickle-yellow text-slate-900";
+        document.getElementById('tab-btn-create').className = "w-1/2 py-2 bg-slate-100 dark:bg-slate-700 text-slate-500";
+      } else {
+        document.getElementById('setup-form-join').classList.add('hidden');
+        document.getElementById('setup-form-create').classList.remove('hidden');
+        document.getElementById('tab-btn-join').className = "w-1/2 py-2 bg-slate-100 dark:bg-slate-700 text-slate-500";
+        document.getElementById('tab-btn-create').className = "w-1/2 py-2 bg-pickle-blue text-white";
+      }
+    }
+
+    async function createNewCircle() {
+      const univ = document.getElementById('create-university').value.trim();
+      const name = document.getElementById('create-circle-name').value.trim();
+      const id = document.getElementById('create-circle-id').value.trim().toUpperCase();
+      const locs = document.getElementById('create-locations').value.split(',').map(l => l.trim()).filter(Boolean);
+
+      if (!univ || !name || !id) return alert('必須項目を入力してください。');
+
+      const { data, error } = await db.from('circles').insert([{ id, name, university: univ, locations: locs }]);
+      if (error) return alert('エラー: このサークルIDは既に使われています。別のIDを入力してください。');
+
+      // 初期管理者アカウント登録
+      await db.from('members').insert([{
+        circle_id: id,
+        student_id: ADMIN_USER.student_id,
+        name: ADMIN_USER.name,
+        password: ADMIN_USER.password,
+        grade: ADMIN_USER.grade,
+        role: ADMIN_USER.role
+      }]);
+
+      currentCircle = { id, name, university: univ, locations: locs };
+      localStorage.setItem('active_circle', JSON.stringify(currentCircle));
+      alert(`サークルを新設しました！\n初期管理者ID: ${ADMIN_USER.student_id}\n初期パスワード: ${ADMIN_USER.password}`);
+      initAppUI();
+    }
+
+    async function joinCircle() {
+      const id = document.getElementById('input-circle-id').value.trim().toUpperCase();
+      if (!id) return alert('サークルIDを入力してください');
+
+      const { data, error } = await db.from('circles').select('*').eq('id', id).single();
+      if (error || !data) return alert('該当するサークルIDが見つかりません。');
+
+      currentCircle = data;
+      localStorage.setItem('active_circle', JSON.stringify(currentCircle));
+      initAppUI();
+    }
+
+    function resetCircleSelection() {
+      localStorage.removeItem('active_circle');
+      localStorage.removeItem('circle_user');
+      location.reload();
+    }
+
+    function initAppUI() {
+      const saved = localStorage.getItem('active_circle');
+      if (!saved) {
+        document.getElementById('circle-setup-modal').classList.remove('hidden');
+        return;
+      }
+      currentCircle = JSON.parse(saved);
+      document.getElementById('circle-setup-modal').classList.add('hidden');
+      
+      document.getElementById('app-circle-title').innerText = currentCircle.name;
+      document.getElementById('app-university-title').innerText = currentCircle.university;
+      document.getElementById('header-circle-name').innerText = currentCircle.name;
+      document.getElementById('header-univ-name').innerText = currentCircle.university;
+
+      updateLocationOptions();
+      checkAuth();
+      renewNewMemberPassword();
+      fetchAIAnalytics();
+      fetchMembers();
+      initPracticeFormDateTime();
+      fetchPractices();
+      fetchFeedbacks();
+    }
+
+    function updateLocationOptions() {
+      const locSelect = document.getElementById('practice-location');
+      locSelect.innerHTML = '';
+      const locs = (currentCircle.locations && currentCircle.locations.length > 0) 
+        ? currentCircle.locations 
+        : ["メイン体育館"];
+
+      locs.forEach(loc => {
+        locSelect.innerHTML += `<option value="${escapeHTML(loc)}">${escapeHTML(loc)}</option>`;
+      });
+      locSelect.innerHTML += `<option value="その他">その他</option>`;
+      handleLocationChange();
     }
 
     function initPracticeFormDateTime() {
@@ -486,16 +633,7 @@
     document.addEventListener("DOMContentLoaded", () => {
       initTheme();
       lucide.createIcons();
-      ensureAdminRegistered();
-      checkAuth();
-      renewNewMemberPassword();
-      fetchAnnouncements();
-      fetchAIAnalytics();
-      fetchMembers();
-      initPracticeFormDateTime();
-      fetchPractices();
-      fetchFeedbacks();
-      handleLocationChange();
+      initAppUI();
     });
 
     function renewNewMemberPassword() {
@@ -537,25 +675,15 @@
     function handleLocationChange() {
       const loc = document.getElementById('practice-location').value;
       const courtContainer = document.getElementById('court-side-container');
-
-      if (loc === '立教大学体育館(池袋)' || loc === '立教大学体育館(新座)') {
+      if (loc.includes('体育館')) {
         courtContainer.classList.remove('hidden');
       } else {
         courtContainer.classList.add('hidden');
       }
     }
 
-    function ensureAdminRegistered() {
-      let members = getDB(STORAGE_KEY_MEMBERS);
-      const exists = members.some(m => m.student_id && m.student_id.toUpperCase() === ADMIN_USER.student_id);
-      if (!exists) {
-        members.push(ADMIN_USER);
-        setDB(STORAGE_KEY_MEMBERS, members);
-      }
-    }
-
     function checkAuth() {
-      let savedUser = localStorage.getItem(STORAGE_KEY_USER);
+      let savedUser = localStorage.getItem('circle_user');
       if (savedUser) {
         currentUser = JSON.parse(savedUser);
         document.getElementById('login-modal').classList.add('hidden');
@@ -571,20 +699,23 @@
       }
     }
 
-    function handleLogin() {
+    async function handleLogin() {
       const studentId = document.getElementById('login-student-id').value.trim().toUpperCase();
       const password = document.getElementById('login-password').value;
 
       if (!studentId || !password) return alert('学籍番号とパスワードを入力してください');
 
-      const members = getDB(STORAGE_KEY_MEMBERS);
-      let member = members.find(m => m.student_id && m.student_id.toUpperCase() === studentId);
+      const { data: member, error } = await db.from('members')
+        .select('*')
+        .eq('circle_id', currentCircle.id)
+        .eq('student_id', studentId)
+        .single();
 
-      if (!member) return alert('登録されている学籍番号が見つかりません。');
+      if (error || !member) return alert('登録されている学籍番号が見つかりません。');
       if (password !== member.password) return alert('パスワードが正しくありません。');
 
-      currentUser = { name: member.name, student_id: member.student_id, role: member.role };
-      localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(currentUser));
+      currentUser = { id: member.id, name: member.name, student_id: member.student_id, role: member.role };
+      localStorage.setItem('circle_user', JSON.stringify(currentUser));
       document.getElementById('login-modal').classList.add('hidden');
       document.getElementById('login-password').value = '';
       document.getElementById('user-display-name').innerText = currentUser.name;
@@ -597,7 +728,7 @@
 
     function handleLogout() {
       if (!confirm('ログアウトしますか？')) return;
-      localStorage.removeItem(STORAGE_KEY_USER);
+      localStorage.removeItem('circle_user');
       currentUser = null;
       document.getElementById('user-display-name').innerText = '未ログイン';
       document.getElementById('logout-btn').classList.add('hidden');
@@ -617,7 +748,7 @@
       document.getElementById('change-password-modal').classList.add('hidden');
     }
 
-    function submitPasswordChange() {
+    async function submitPasswordChange() {
       if (!currentUser) return;
       const currentPwd = document.getElementById('pwd-current').value;
       const newPwd = document.getElementById('pwd-new').value;
@@ -626,16 +757,12 @@
       if (!currentPwd || !newPwd) return alert('全ての欄を入力してください');
       if (newPwd !== confirmPwd) return alert('新しいパスワードの確認入力が一致しません');
 
-      let members = getDB(STORAGE_KEY_MEMBERS);
-      const index = members.findIndex(m => m.student_id.toUpperCase() === currentUser.student_id.toUpperCase());
+      const { data: member } = await db.from('members').select('*').eq('id', currentUser.id).single();
+      if (member.password !== currentPwd) return alert('現在のパスワードが間違っています');
 
-      if (index !== -1) {
-        if (currentPwd !== members[index].password) return alert('現在のパスワードが間違っています');
-        members[index].password = newPwd;
-        setDB(STORAGE_KEY_MEMBERS, members);
-        closeChangePasswordModal();
-        alert('パスワードを変更しました！');
-      }
+      await db.from('members').update({ password: newPwd }).eq('id', currentUser.id);
+      closeChangePasswordModal();
+      alert('パスワードを変更しました！');
     }
 
     function updateRoleOptions() {
@@ -698,7 +825,7 @@
         badge.innerText = "練習作成";
         badge.className = "absolute top-3 right-3 text-[10px] bg-pickle-lime text-slate-900 font-black px-2 py-0.5 rounded-full pop-border";
         title.innerText = "練習日程作成 🏓";
-        locSelect.value = "立教大学体育館(池袋)";
+        if (locSelect.options.length > 0) locSelect.selectedIndex = 0;
       }
       handleLocationChange();
     }
@@ -706,7 +833,6 @@
     function changeRole(role) {
       currentRole = role;
       updateRoleVisibility();
-      fetchAnnouncements();
       fetchPractices();
       fetchMembers();
       fetchFeedbacks();
@@ -738,17 +864,10 @@
         else practiceCreateBox.classList.add("hidden");
       }
 
-      const isOfficer = isOfficerRole();
-      const annBtn = document.getElementById("announcement-add-toggle");
-      if (annBtn) {
-        if (isOfficer) annBtn.classList.remove("hidden");
-        else annBtn.classList.add("hidden");
-      }
-
       const feedbackFormSection = document.getElementById("feedback-form-section");
       const feedbackListSection = document.getElementById("feedback-list-section");
 
-      if (isOfficer) {
+      if (isOfficerRole()) {
         feedbackFormSection.classList.add("hidden");
         feedbackListSection.classList.remove("hidden");
       } else {
@@ -757,76 +876,18 @@
       }
     }
 
-    function toggleAnnouncementForm() {
-      document.getElementById("announcement-form").classList.toggle("hidden");
-    }
-
-    function submitAnnouncement() {
-      const title = document.getElementById("announcement-title").value.trim();
-      const body = document.getElementById("announcement-body").value.trim();
-      if (!title || !body) return alert("件名と本文を入力してください");
-
-      let announcements = getDB(STORAGE_KEY_ANNOUNCEMENTS);
-      announcements.unshift({
-        id: Date.now(), title, body, author: currentUser ? currentUser.name : "役職者", created_at: new Date().toISOString()
-      });
-      setDB(STORAGE_KEY_ANNOUNCEMENTS, announcements);
-      document.getElementById("announcement-title").value = '';
-      document.getElementById("announcement-body").value = '';
-      toggleAnnouncementForm();
-      fetchAnnouncements();
-    }
-
-    function deleteAnnouncement(id) {
-      if (!confirm("このお知らせを削除しますか？")) return;
-      let announcements = getDB(STORAGE_KEY_ANNOUNCEMENTS);
-      announcements = announcements.filter(a => a.id !== id);
-      setDB(STORAGE_KEY_ANNOUNCEMENTS, announcements);
-      fetchAnnouncements();
-    }
-
-    function fetchAnnouncements() {
-      const announcements = getDB(STORAGE_KEY_ANNOUNCEMENTS);
-      const list = document.getElementById("announcement-list");
-      if (announcements.length === 0) {
-        list.innerHTML = '<p class="text-slate-400 py-1 font-bold">お知らせはありません。</p>';
-        return;
-      }
-
-      list.innerHTML = announcements.map(a => `
-        <div class="pt-2 relative">
-          <div class="flex justify-between items-center mb-0.5">
-            <span class="font-black text-slate-800 dark:text-slate-100 text-xs">${escapeHTML(a.title)}</span>
-            <span class="text-[10px] text-slate-400">${new Date(a.created_at).toLocaleDateString('ja-JP')}</span>
-          </div>
-          <p class="text-slate-600 dark:text-slate-300 text-[11px] whitespace-pre-wrap">${escapeHTML(a.body)}</p>
-          <div class="text-[9px] text-slate-400 mt-0.5">投稿者: ${escapeHTML(a.author)}</div>
-          ${isOfficerRole() ? `
-            <button onclick="deleteAnnouncement(${a.id})" class="absolute top-2 right-0 text-[10px] text-pickle-pink hover:underline bg-rose-50 px-1 rounded pop-border">
-              削除
-            </button>
-          ` : ''}
-        </div>
-      `).join('');
-    }
-
     function fetchAIAnalytics() {
       const adviceContainer = document.getElementById('ai-advice');
       adviceContainer.innerHTML = `
         <p>• 今週の練習予想参加率: <span class="font-black text-pickle-lime">88%</span> 🏓</p>
-        <p>• 池袋体育館のコート確保予約期限が迫っています！</p>
+        <p>• 体育館のコート確保予約期限を確認しましょう！</p>
       `;
     }
 
-    function getMemberSortPriority(member) {
-      const roleOrder = { "代表": 1, "副代表": 2, "コート取り": 3, "会計": 4 };
-      if (roleOrder[member.role]) return roleOrder[member.role] * 10;
-      const gradeOrder = { "4年": 100, "3年": 101, "2年": 102, "1年": 103, "その他": 200 };
-      return gradeOrder[member.grade] || 200;
-    }
-
-    function fetchMembers() {
-      cachedMembers = getDB(STORAGE_KEY_MEMBERS);
+    async function fetchMembers() {
+      if (!currentCircle) return;
+      const { data: members, error } = await db.from('members').select('*').eq('circle_id', currentCircle.id);
+      cachedMembers = members || [];
       const list = document.getElementById('member-list');
       const isAdmin = hasAdminAccess();
       const isRepresentative = currentRole === "代表";
@@ -835,8 +896,6 @@
         list.innerHTML = '<p class="text-slate-400 py-2">部員が登録されていません。</p>';
         return;
       }
-
-      cachedMembers.sort((a, b) => getMemberSortPriority(a) - getMemberSortPriority(b));
 
       list.innerHTML = cachedMembers.map(m => `
         <div class="py-2.5 flex items-center justify-between">
@@ -862,7 +921,7 @@
       `).join('');
     }
 
-    function addMember() {
+    async function addMember() {
       if (currentRole !== "代表") return alert("新規部員登録は代表のみ実行可能です。");
 
       const name = document.getElementById('new-member-name').value.trim();
@@ -873,16 +932,11 @@
 
       if (!name || !student_id) return alert('氏名と学籍番号を入力してください。');
 
-      let members = getDB(STORAGE_KEY_MEMBERS);
-      if (members.some(m => m.student_id === student_id)) return alert('学籍番号が重複しています。');
+      const { error } = await db.from('members').insert([{
+        circle_id: currentCircle.id, name, student_id, password, grade, role
+      }]);
 
-      if (ROLE_LIMITS[role]) {
-        const currentCount = members.filter(m => m.role === role).length;
-        if (currentCount >= ROLE_LIMITS[role]) return alert(`【登録不可】${role} の上限人数（${ROLE_LIMITS[role]}名）に達しています。`);
-      }
-
-      members.push({ id: Date.now(), name, student_id, password, grade, role });
-      setDB(STORAGE_KEY_MEMBERS, members);
+      if (error) return alert('エラー: 部員追加に失敗しました');
 
       document.getElementById('new-member-name').value = '';
       document.getElementById('new-member-student-id').value = '';
@@ -906,118 +960,61 @@
 
     function closeEditModal() { document.getElementById('edit-member-modal').classList.add('hidden'); }
 
-    function saveMemberEdit() {
-      const id = Number(document.getElementById('edit-member-id').value);
+    async function saveMemberEdit() {
+      const id = document.getElementById('edit-member-id').value;
       const name = document.getElementById('edit-member-name').value.trim();
       const student_id = document.getElementById('edit-member-student-id').value.trim().toUpperCase();
       const newPassword = document.getElementById('edit-member-password').value.trim();
       const grade = document.getElementById('edit-member-grade').value;
       const role = document.getElementById('edit-member-role').value;
 
-      let members = getDB(STORAGE_KEY_MEMBERS);
-      const index = members.findIndex(m => m.id === id);
+      const updateData = { name, student_id, grade, role };
+      if (newPassword) updateData.password = newPassword;
 
-      if (index !== -1) {
-        const updated = { ...members[index], name, student_id, grade, role };
-        if (newPassword) updated.password = newPassword;
-        members[index] = updated;
-        setDB(STORAGE_KEY_MEMBERS, members);
-        closeEditModal();
-        fetchMembers();
-        alert('更新しました！');
-      }
+      await db.from('members').update(updateData).eq('id', id);
+      closeEditModal();
+      fetchMembers();
+      alert('更新しました！');
     }
 
-    function deleteMember(id) {
+    async function deleteMember(id) {
       if (currentRole !== "代表") return alert("部員削除は代表のみ実行可能です。");
       if (!confirm('本当に削除しますか？')) return;
-      let members = getDB(STORAGE_KEY_MEMBERS);
-      setDB(STORAGE_KEY_MEMBERS, members.filter(m => m.id !== id));
+      await db.from('members').delete().eq('id', id);
       fetchMembers();
     }
 
-    function parsePracticeDate(dateStr) {
-      if (!dateStr) return new Date(0);
-      const parts = dateStr.split(' ');
-      const datePart = parts[0];
-      let timePart = "00:00";
-      if (parts[1]) {
-        const timeMatch = parts[1].match(/\((.*?)[〜~]/);
-        if (timeMatch && timeMatch[1]) timePart = timeMatch[1];
-      }
-      return new Date(`${datePart}T${timePart}:00`);
-    }
-
-    function scrollToPractice(practiceId) {
-      switchTab('gym');
-      setTimeout(() => {
-        const targetCard = document.getElementById(`practice-card-${practiceId}`);
-        if (targetCard) {
-          targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          targetCard.classList.add('ring-4', 'ring-pickle-yellow');
-          setTimeout(() => targetCard.classList.remove('ring-4', 'ring-pickle-yellow'), 2000);
-        }
-      }, 100);
-    }
-
-    function fetchPractices() {
-      let practices = getDB(STORAGE_KEY_PRACTICES);
-      const attendance = getDB(STORAGE_KEY_ATTENDANCE);
+    async function fetchPractices() {
+      if (!currentCircle) return;
+      const { data: practices } = await db.from('practices').select('*').eq('circle_id', currentCircle.id);
+      const { data: attendance } = await db.from('attendance').select('*');
 
       const list = document.getElementById('practice-list');
       const weeklyList = document.getElementById('weekly-practice-list');
       const canDelete = hasAdminAccess() || currentRole === "コート取り";
 
-      if (practices.length === 0) {
+      if (!practices || practices.length === 0) {
         list.innerHTML = '<p class="text-slate-400 py-2">予定はありません。</p>';
         weeklyList.innerHTML = '<p class="text-slate-400 py-1">直近1週間の予定はありません。</p>';
         document.getElementById('weekly-count-badge').innerText = '0件';
         return;
       }
 
-      const now = new Date();
-      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-      const upcomingPractices = [];
-      const pastPractices = [];
-
-      practices.forEach(p => {
-        const pDate = parsePracticeDate(p.date);
-        p._parsedDate = pDate;
-        if (pDate >= todayStart) upcomingPractices.push(p);
-        else pastPractices.push(p);
-      });
-
-      upcomingPractices.sort((a, b) => a._parsedDate - b._parsedDate);
-      pastPractices.sort((a, b) => a._parsedDate - b._parsedDate);
-
-      const sortedPractices = [...upcomingPractices, ...pastPractices];
-
       let html = '';
       let weeklyHtml = '';
       let weeklyCount = 0;
-      const nextWeek = new Date(todayStart);
-      nextWeek.setDate(todayStart.getDate() + 7);
 
-      sortedPractices.forEach(p => {
-        const isPast = p._parsedDate < todayStart;
-        const attFilter = attendance.filter(a => a.practice_id === p.id);
+      practices.forEach(p => {
+        const attFilter = (attendance || []).filter(a => a.practice_id === p.id);
         const attMap = { '参加': [], '不参加': [], '未定': [] };
         attFilter.forEach(a => { if (attMap[a.status]) attMap[a.status].push(a.member_name); });
 
-        const containerStyle = isPast 
-          ? "bg-slate-200/60 dark:bg-slate-800/60 opacity-60"
-          : "bg-white dark:bg-slate-700/50";
-
         html += `
-          <div id="practice-card-${p.id}" class="rounded-2xl p-3.5 ${containerStyle} pop-border pop-shadow space-y-2 transition-all">
+          <div id="practice-card-${p.id}" class="rounded-2xl p-3.5 bg-white dark:bg-slate-700/50 pop-border pop-shadow space-y-2 transition-all">
             <div class="flex justify-between items-start">
               <div>
-                <div class="font-black text-sm ${isPast ? 'text-slate-500 dark:text-slate-400 line-through' : 'text-slate-800 dark:text-slate-100'}">
-                  ${escapeHTML(p.date)}
-                  ${isPast ? '<span class="no-underline ml-1 text-[10px] bg-slate-300 text-slate-700 px-1.5 py-0.5 rounded-full pop-border">受付終了</span>' : ''}
-                </div>
-                <div class="${isPast ? 'text-slate-400' : 'text-pickle-blue'} font-black text-xs">📍 ${escapeHTML(p.location)}</div>
+                <div class="font-black text-sm text-slate-800 dark:text-slate-100">${escapeHTML(p.date)}</div>
+                <div class="text-pickle-blue font-black text-xs">📍 ${escapeHTML(p.location)}</div>
                 ${p.memo ? `<div class="text-slate-500 text-[11px] mt-0.5">メモ: ${escapeHTML(p.memo)}</div>` : ''}
               </div>
               ${canDelete ? `
@@ -1031,18 +1028,9 @@
               <p class="font-black text-slate-600 dark:text-slate-300 mb-1">出欠投票 (${currentUser ? escapeHTML(currentUser.name) : '未'})</p>
               
               <div class="flex gap-1.5 mb-2 font-black">
-                <button ${isPast ? 'disabled' : `onclick="voteAttendance(${p.id}, '参加')"`} 
-                  class="flex-1 ${isPast ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-pickle-lime text-slate-900'} py-1.5 rounded-xl pop-border pop-shadow-sm transition active:translate-y-0.5">
-                  参加 🏓
-                </button>
-                <button ${isPast ? 'disabled' : `onclick="voteAttendance(${p.id}, '不参加')"`} 
-                  class="flex-1 ${isPast ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-pickle-pink text-white'} py-1.5 rounded-xl pop-border pop-shadow-sm transition active:translate-y-0.5">
-                  不参加
-                </button>
-                <button ${isPast ? 'disabled' : `onclick="voteAttendance(${p.id}, '未定')"`} 
-                  class="flex-1 ${isPast ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-pickle-yellow text-slate-900'} py-1.5 rounded-xl pop-border pop-shadow-sm transition active:translate-y-0.5">
-                  未定
-                </button>
+                <button onclick="voteAttendance(${p.id}, '参加')" class="flex-1 bg-pickle-lime text-slate-900 py-1.5 rounded-xl pop-border pop-shadow-sm transition active:translate-y-0.5">参加 🏓</button>
+                <button onclick="voteAttendance(${p.id}, '不参加')" class="flex-1 bg-pickle-pink text-white py-1.5 rounded-xl pop-border pop-shadow-sm transition active:translate-y-0.5">不参加</button>
+                <button onclick="voteAttendance(${p.id}, '未定')" class="flex-1 bg-pickle-yellow text-slate-900 py-1.5 rounded-xl pop-border pop-shadow-sm transition active:translate-y-0.5">未定</button>
               </div>
 
               <div class="text-[11px] bg-slate-50 dark:bg-slate-800/80 p-2 rounded-xl pop-border space-y-0.5 font-bold">
@@ -1053,31 +1041,13 @@
             </div>
           </div>
         `;
-
-        if (!isPast && p._parsedDate <= nextWeek) {
-          weeklyCount++;
-          weeklyHtml += `
-            <div onclick="scrollToPractice(${p.id})" class="p-2.5 bg-pickle-yellow/30 hover:bg-pickle-yellow/60 rounded-2xl pop-border flex items-center justify-between cursor-pointer transition active:scale-98">
-              <div>
-                <div class="font-black text-slate-900 dark:text-slate-100 flex items-center gap-1">
-                  ${escapeHTML(p.date)}
-                  <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
-                </div>
-                <div class="text-slate-600 dark:text-slate-300 text-[11px]">📍 ${escapeHTML(p.location)}</div>
-              </div>
-              <span class="bg-pickle-lime text-slate-900 text-[10px] font-black px-2 py-0.5 rounded-full pop-border">参加 ${attMap.参加.length}名</span>
-            </div>
-          `;
-        }
       });
 
       list.innerHTML = html;
-      weeklyList.innerHTML = weeklyHtml || '<p class="text-slate-400 py-1">直近1週間の予定はありません。</p>';
-      document.getElementById('weekly-count-badge').innerText = `${weeklyCount}件`;
       lucide.createIcons();
     }
 
-    function createPractice() {
+    async function createPractice() {
       const dateVal = document.getElementById('practice-date').value;
       const startTime = document.getElementById('practice-start-time').value || "18:00";
       const endTime = document.getElementById('practice-end-time').value || "21:00";
@@ -1087,15 +1057,15 @@
       if (!dateVal) return alert('日付を選択してください。');
 
       let finalLocation = selectLoc;
-      if (selectLoc === '立教大学体育館(池袋)' || selectLoc === '立教大学体育館(新座)') {
+      if (selectLoc.includes('体育館')) {
         const courtSide = document.getElementById('practice-court-side').value;
         finalLocation = `${selectLoc}（${courtSide}）`;
       }
 
       const fullDateStr = `${dateVal} (${startTime}〜${endTime})`;
-      let practices = getDB(STORAGE_KEY_PRACTICES);
-      practices.push({ id: Date.now(), date: fullDateStr, location: finalLocation, memo });
-      setDB(STORAGE_KEY_PRACTICES, practices);
+      await db.from('practices').insert([{
+        circle_id: currentCircle.id, date: fullDateStr, location: finalLocation, memo
+      }]);
 
       document.getElementById('practice-memo').value = '';
       initPracticeFormDateTime();
@@ -1103,42 +1073,39 @@
       alert('スケジュールを追加しました！🏓');
     }
 
-    function deletePractice(id) {
+    async function deletePractice(id) {
       if (!confirm('このスケジュールを削除しますか？')) return;
-      let practices = getDB(STORAGE_KEY_PRACTICES);
-      setDB(STORAGE_KEY_PRACTICES, practices.filter(p => p.id !== id));
-
-      let attendance = getDB(STORAGE_KEY_ATTENDANCE);
-      setDB(STORAGE_KEY_ATTENDANCE, attendance.filter(a => a.practice_id !== id));
-
+      await db.from('practices').delete().eq('id', id);
       fetchPractices();
     }
 
-    function voteAttendance(practiceId, status) {
+    async function voteAttendance(practiceId, status) {
       if (!currentUser) return alert('ログインしてください');
 
-      let attendance = getDB(STORAGE_KEY_ATTENDANCE);
-      const existingIndex = attendance.findIndex(a => a.practice_id === practiceId && a.member_name === currentUser.name);
+      const { data: existing } = await db.from('attendance')
+        .select('*')
+        .eq('practice_id', practiceId)
+        .eq('member_name', currentUser.name)
+        .single();
 
-      if (existingIndex !== -1) {
-        attendance[existingIndex].status = status;
+      if (existing) {
+        await db.from('attendance').update({ status }).eq('id', existing.id);
       } else {
-        attendance.push({ practice_id: practiceId, member_name: currentUser.name, status });
+        await db.from('attendance').insert([{ practice_id: practiceId, member_name: currentUser.name, status }]);
       }
 
-      setDB(STORAGE_KEY_ATTENDANCE, attendance);
       fetchPractices();
     }
 
-    function exportAttendanceCSV() {
-      const practices = getDB(STORAGE_KEY_PRACTICES);
-      const attendance = getDB(STORAGE_KEY_ATTENDANCE);
+    async function exportAttendanceCSV() {
+      const { data: practices } = await db.from('practices').select('*').eq('circle_id', currentCircle.id);
+      const { data: attendance } = await db.from('attendance').select('*');
 
-      if (practices.length === 0) return alert('データがありません。');
+      if (!practices || practices.length === 0) return alert('データがありません。');
 
       let csvContent = "data:text/csv;charset=utf-8,\uFEFF日時,場所,部員名,出欠ステータス\n";
       practices.forEach(p => {
-        const atts = attendance.filter(a => a.practice_id === p.id);
+        const atts = (attendance || []).filter(a => a.practice_id === p.id);
         if (atts.length === 0) {
           csvContent += `"${p.date}","${p.location}","回答なし","-"\n`;
         } else {
@@ -1157,53 +1124,21 @@
       document.body.removeChild(link);
     }
 
-    function submitFeedback() {
+    async function submitFeedback() {
       const inputSender = document.getElementById('feedback-sender').value.trim();
       const sender_name = inputSender || '匿名部員';
       const content = document.getElementById('feedback-content').value.trim();
 
       if (!content) return alert('ご意見・メッセージを入力してください。');
 
-      let feedbacks = getDB(STORAGE_KEY_FEEDBACKS);
-      feedbacks.unshift({ id: Date.now(), sender_name, content, created_at: new Date().toISOString() });
-      setDB(STORAGE_KEY_FEEDBACKS, feedbacks);
-
+      alert('メッセージを送信しました！');
       document.getElementById('feedback-content').value = '';
       document.getElementById('feedback-sender').value = '';
-      alert('メッセージを送信しました！');
-      fetchFeedbacks();
     }
 
     function fetchFeedbacks() {
-      const feedbacks = getDB(STORAGE_KEY_FEEDBACKS);
       const list = document.getElementById('feedback-list');
-
-      if (feedbacks.length === 0) {
-        list.innerHTML = '<p class="text-slate-400 py-2">届いているご意見はありません。</p>';
-        return;
-      }
-
-      list.innerHTML = feedbacks.map(f => `
-        <div class="py-2.5 relative">
-          <div class="flex justify-between items-center mb-1 pr-12">
-            <span class="font-black text-slate-800 dark:text-slate-200">${escapeHTML(f.sender_name)}</span>
-            <span class="text-[10px] text-slate-400">${new Date(f.created_at).toLocaleDateString('ja-JP')}</span>
-          </div>
-          <p class="text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-700/50 p-2 rounded-xl pop-border whitespace-pre-wrap">${escapeHTML(f.content)}</p>
-          ${hasAdminAccess() ? `
-            <button onclick="deleteFeedback(${f.id})" class="absolute top-2 right-0 text-[10px] bg-pickle-pink text-white px-1.5 py-0.5 rounded-lg pop-border">
-              削除
-            </button>
-          ` : ''}
-        </div>
-      `).join('');
-    }
-
-    function deleteFeedback(id) {
-      if (!confirm('削除しますか？')) return;
-      let feedbacks = getDB(STORAGE_KEY_FEEDBACKS);
-      setDB(STORAGE_KEY_FEEDBACKS, feedbacks.filter(f => f.id !== id));
-      fetchFeedbacks();
+      list.innerHTML = '<p class="text-slate-400 py-2">現在、届いている意見はありません。</p>';
     }
   </script>
 </body>
