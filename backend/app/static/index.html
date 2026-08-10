@@ -43,6 +43,15 @@
     .pop-shadow { box-shadow: 0 4px 0 0 #000; }
     .pop-shadow-sm { box-shadow: 0 2px 0 0 #000; }
     .pop-border { border: 2px solid #000; }
+    
+    /* iOSのデフォルトフォーム枠ズレ対策 */
+    input[type="date"], input[type="time"], select, input[type="text"], input[type="password"] {
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      box-sizing: border-box;
+      max-width: 100%;
+    }
   </style>
 </head>
 <body class="bg-pickle-bg dark:bg-slate-900 text-slate-800 dark:text-slate-100 pb-24 transition-colors duration-200">
@@ -193,17 +202,15 @@
     <!-- Tab 1: Home / AI / Announcements -->
     <div id="tab-home" class="tab-content space-y-4">
       
-      <!-- ★ 全権限持ち用: イベント作成 & 練習作成 分離ボタン ★ -->
+      <!-- 全権限持ち用: イベント作成 & 練習作成 分離ボタン -->
       <div id="home-admin-actions" class="hidden bg-white dark:bg-slate-800 p-4 rounded-3xl pop-border pop-shadow space-y-2">
         <div class="flex items-center gap-1.5 text-xs font-black text-pickle-pink">
           <i data-lucide="sparkles" class="w-4 h-4"></i> 全権限（代表・副代表）メニュー
         </div>
         <div class="grid grid-cols-2 gap-2 text-xs font-black">
-          <!-- イベント作成ボタン -->
           <button onclick="openCreateModal('event')" class="bg-pickle-pink text-white py-2.5 px-3 rounded-2xl pop-border pop-shadow-sm hover:opacity-90 transition flex items-center justify-center gap-1">
             <i data-lucide="party-popper" class="w-4 h-4"></i> 新規イベント作成
           </button>
-          <!-- 練習予定作成ボタン -->
           <button onclick="openCreateModal('practice')" class="bg-pickle-lime text-slate-900 py-2.5 px-3 rounded-2xl pop-border pop-shadow-sm hover:opacity-90 transition flex items-center justify-center gap-1">
             <i data-lucide="calendar-plus" class="w-4 h-4"></i> 練習日程の作成
           </button>
@@ -221,7 +228,6 @@
           </button>
         </div>
 
-        <!-- お知らせ作成フォーム -->
         <div id="announcement-form" class="hidden space-y-2 border-t-2 border-slate-800 dark:border-slate-700 pt-2 text-xs font-bold">
           <input type="text" id="announcement-title" placeholder="件名" class="w-full border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-2">
           <textarea id="announcement-body" rows="2" placeholder="連絡内容を入力..." class="w-full border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-2"></textarea>
@@ -239,7 +245,6 @@
           </span>
           <span id="weekly-count-badge" class="text-[10px] bg-pickle-lime text-slate-900 font-black px-2 py-0.5 rounded-full pop-border">0件</span>
         </h2>
-        <!-- タップすると該当の出欠場所へ移動 -->
         <div id="weekly-practice-list" class="space-y-2 text-xs font-bold"></div>
       </div>
 
@@ -313,51 +318,47 @@
       </div>
     </div>
 
-    <!-- Tab 3: Gymnasium / Practice Schedule -->
+    <!-- Tab 3: Schedule & Attendance -->
     <div id="tab-gym" class="tab-content hidden space-y-4">
       <div id="practice-create-box" class="bg-white dark:bg-slate-800 p-4 rounded-3xl pop-border pop-shadow relative hidden">
         <span id="form-type-badge" class="absolute top-3 right-3 text-[10px] bg-pickle-lime text-slate-900 font-black px-2 py-0.5 rounded-full pop-border">練習作成</span>
-        <h2 id="form-type-title" class="font-black text-slate-800 dark:text-slate-100 mb-3 text-sm">練習・イベントスケジュール作成</h2>
+        <h2 id="form-type-title" class="font-black text-slate-800 dark:text-slate-100 mb-3 text-sm">練習日程作成 🏓</h2>
         <div class="space-y-3 text-xs font-bold">
           <div>
             <label class="block text-slate-500 dark:text-slate-400 mb-1">開催日</label>
-            <input type="date" id="practice-date" class="w-full border-2 border-slate-800 dark:border-slate-600 rounded-xl p-2.5 dark:bg-slate-700">
+            <input type="date" id="practice-date" class="w-full border-2 border-slate-800 dark:border-slate-600 rounded-xl p-2.5 dark:bg-slate-700 bg-white">
           </div>
           <div>
             <label class="block text-slate-500 dark:text-slate-400 mb-1">時間帯</label>
             <div class="grid grid-cols-2 gap-2 items-center">
-              <input type="time" id="practice-start-time" class="w-full border-2 border-slate-800 dark:border-slate-600 rounded-xl p-2.5 dark:bg-slate-700">
+              <input type="time" id="practice-start-time" class="w-full border-2 border-slate-800 dark:border-slate-600 rounded-xl p-2.5 dark:bg-slate-700 bg-white">
               <div class="flex items-center gap-1">
                 <span class="text-slate-400">〜</span>
-                <input type="time" id="practice-end-time" class="w-full border-2 border-slate-800 dark:border-slate-600 rounded-xl p-2.5 dark:bg-slate-700">
+                <input type="time" id="practice-end-time" class="w-full border-2 border-slate-800 dark:border-slate-600 rounded-xl p-2.5 dark:bg-slate-700 bg-white">
               </div>
             </div>
           </div>
           <div class="grid grid-cols-2 gap-2">
             <div>
               <label class="block text-slate-500 dark:text-slate-400 mb-1">場所 / 種別</label>
-              <select id="practice-location" onchange="handleLocationChange()" class="w-full border-2 border-slate-800 dark:border-slate-600 rounded-xl p-2.5 dark:bg-slate-700">
+              <select id="practice-location" onchange="handleLocationChange()" class="w-full border-2 border-slate-800 dark:border-slate-600 rounded-xl p-2.5 dark:bg-slate-700 bg-white">
                 <option value="立教大学体育館(池袋)">立教大学体育館(池袋)</option>
                 <option value="立教大学体育館(新座)">立教大学体育館(新座)</option>
-                <option value="その他">その他 (イベント/懇親会など)</option>
+                <option value="その他">その他</option>
               </select>
             </div>
             <div id="court-side-container">
               <label class="block text-slate-500 dark:text-slate-400 mb-1">コート面</label>
-              <select id="practice-court-side" class="w-full border-2 border-slate-800 dark:border-slate-600 rounded-xl p-2.5 dark:bg-slate-700">
+              <select id="practice-court-side" class="w-full border-2 border-slate-800 dark:border-slate-600 rounded-xl p-2.5 dark:bg-slate-700 bg-white">
                 <option value="手前">手前</option>
                 <option value="奥">奥</option>
                 <option value="両面">両面</option>
               </select>
             </div>
           </div>
-          <div id="custom-location-container" class="hidden">
-            <label class="block text-slate-500 dark:text-slate-400 mb-1">場所・イベント名を入力</label>
-            <input type="text" id="practice-custom-location" placeholder="例: 池袋居酒屋 / 新歓ピックル体験会" class="w-full border-2 border-slate-800 dark:border-slate-600 rounded-xl p-2.5 dark:bg-slate-700">
-          </div>
           <div>
             <label class="block text-slate-500 dark:text-slate-400 mb-1">メモ・詳細</label>
-            <input type="text" id="practice-memo" placeholder="例: マイパドル持参 / 会費1000円" class="w-full border-2 border-slate-800 dark:border-slate-600 rounded-xl p-2.5 dark:bg-slate-700">
+            <input type="text" id="practice-memo" placeholder="例: マイパドル持参 / 会費1000円" class="w-full border-2 border-slate-800 dark:border-slate-600 rounded-xl p-2.5 dark:bg-slate-700 bg-white">
           </div>
           <button onclick="createPractice()" class="w-full bg-pickle-lime text-slate-900 font-black py-3 rounded-xl pop-border pop-shadow-sm flex items-center justify-center gap-1 text-sm">
             <i data-lucide="plus-circle" class="w-4 h-4"></i> スケジュールを追加する
@@ -386,11 +387,11 @@
         <div class="space-y-3 text-xs font-bold">
           <div>
             <label class="block text-slate-500 dark:text-slate-400 mb-1">お名前 (任意)</label>
-            <input type="text" id="feedback-sender" placeholder="空欄で匿名送信" class="w-full border-2 border-slate-800 dark:border-slate-600 rounded-xl p-2.5 dark:bg-slate-700">
+            <input type="text" id="feedback-sender" placeholder="空欄で匿名送信" class="w-full border-2 border-slate-800 dark:border-slate-600 rounded-xl p-2.5 dark:bg-slate-700 bg-white">
           </div>
           <div>
             <label class="block text-slate-500 dark:text-slate-400 mb-1">ご意見・メッセージ</label>
-            <textarea id="feedback-content" rows="4" placeholder="例: パドル増やしてほしいです！" class="w-full border-2 border-slate-800 dark:border-slate-600 rounded-xl p-2.5 dark:bg-slate-700"></textarea>
+            <textarea id="feedback-content" rows="4" placeholder="例: パドル増やしてほしいです！" class="w-full border-2 border-slate-800 dark:border-slate-600 rounded-xl p-2.5 dark:bg-slate-700 bg-white"></textarea>
           </div>
           <button onclick="submitFeedback()" class="w-full bg-pickle-blue text-white font-black py-2.5 rounded-xl pop-border pop-shadow-sm flex items-center justify-center gap-1">
             <i data-lucide="send" class="w-4 h-4"></i> メッセージを送る
@@ -536,14 +537,11 @@
     function handleLocationChange() {
       const loc = document.getElementById('practice-location').value;
       const courtContainer = document.getElementById('court-side-container');
-      const customContainer = document.getElementById('custom-location-container');
 
       if (loc === '立教大学体育館(池袋)' || loc === '立教大学体育館(新座)') {
         courtContainer.classList.remove('hidden');
-        customContainer.classList.add('hidden');
       } else {
         courtContainer.classList.add('hidden');
-        customContainer.classList.remove('hidden');
       }
     }
 
@@ -685,7 +683,6 @@
       activeBtn.classList.add("text-pickle-lime", "font-black");
     }
 
-    /* ★ 全権限者用: イベント作成/練習作成分離モーダル切り替え ★ */
     function openCreateModal(mode) {
       switchTab('gym');
       const badge = document.getElementById('form-type-badge');
@@ -695,12 +692,12 @@
       if (mode === 'event') {
         badge.innerText = "イベント作成";
         badge.className = "absolute top-3 right-3 text-[10px] bg-pickle-pink text-white font-black px-2 py-0.5 rounded-full pop-border";
-        title.innerText = "新歓・コンパ・イベント作成 🏓";
+        title.innerText = "新規イベント作成 🏓";
         locSelect.value = "その他";
       } else {
         badge.innerText = "練習作成";
         badge.className = "absolute top-3 right-3 text-[10px] bg-pickle-lime text-slate-900 font-black px-2 py-0.5 rounded-full pop-border";
-        title.innerText = "練習スケジュール作成 🏓";
+        title.innerText = "練習日程作成 🏓";
         locSelect.value = "立教大学体育館(池袋)";
       }
       handleLocationChange();
@@ -951,7 +948,6 @@
       return new Date(`${datePart}T${timePart}:00`);
     }
 
-    /* ★ 直近予定タップで対象の出欠場所へジャンプする処理 ★ */
     function scrollToPractice(practiceId) {
       switchTab('gym');
       setTimeout(() => {
@@ -1058,7 +1054,6 @@
           </div>
         `;
 
-        /* ★ 直近1週間リスト（タップでスクロールする機能付き） ★ */
         if (!isPast && p._parsedDate <= nextWeek) {
           weeklyCount++;
           weeklyHtml += `
@@ -1091,12 +1086,8 @@
 
       if (!dateVal) return alert('日付を選択してください。');
 
-      let finalLocation = "";
-      if (selectLoc === 'その他') {
-        const customLoc = document.getElementById('practice-custom-location').value.trim();
-        if (!customLoc) return alert('詳細な場所を入力してください。');
-        finalLocation = customLoc;
-      } else {
+      let finalLocation = selectLoc;
+      if (selectLoc === '立教大学体育館(池袋)' || selectLoc === '立教大学体育館(新座)') {
         const courtSide = document.getElementById('practice-court-side').value;
         finalLocation = `${selectLoc}（${courtSide}）`;
       }
@@ -1107,7 +1098,6 @@
       setDB(STORAGE_KEY_PRACTICES, practices);
 
       document.getElementById('practice-memo').value = '';
-      document.getElementById('practice-custom-location').value = '';
       initPracticeFormDateTime();
       fetchPractices();
       alert('スケジュールを追加しました！🏓');
