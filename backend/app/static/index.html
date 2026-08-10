@@ -126,7 +126,7 @@
     <div class="max-w-md mx-auto flex justify-between items-center">
       <div>
         <h1 class="text-xl font-bold tracking-tight">RUB Manager</h1>
-        <p class="text-xs text-blue-200">Circle OS v4.2</p>
+        <p class="text-xs text-blue-200">Circle OS v4.3</p>
       </div>
       <div class="flex items-center gap-2">
         <button onclick="toggleDarkMode()" class="p-1.5 rounded-lg bg-blue-700 dark:bg-blue-900 hover:bg-blue-800 transition text-white">
@@ -156,6 +156,17 @@
     <!-- Tab 1: Home / AI / Announcements -->
     <div id="tab-home" class="tab-content space-y-4">
       
+      <!-- ★ 代表・副代表用 イベント・練習クイック作成ショートカットボタン ★ -->
+      <div id="home-admin-actions" class="hidden bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-3.5 rounded-xl shadow-sm flex items-center justify-between">
+        <div>
+          <span class="text-[10px] bg-white/20 px-2 py-0.5 rounded font-bold">全権限メニュー</span>
+          <p class="font-bold text-xs mt-1">イベント・練習予定の作成</p>
+        </div>
+        <button onclick="switchTab('gym')" class="bg-white text-blue-600 hover:bg-blue-50 text-xs font-bold px-3 py-2 rounded-lg shadow transition flex items-center gap-1">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i> イベント作成
+        </button>
+      </div>
+
       <!-- お知らせ掲示板 -->
       <div class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-3">
         <div class="flex justify-between items-center">
@@ -262,10 +273,10 @@
     <div id="tab-gym" class="tab-content hidden space-y-4">
       <div id="practice-create-box" class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 relative hidden">
         <span class="absolute top-3 right-3 text-[10px] bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 font-bold px-2 py-0.5 rounded">管理権限</span>
-        <h2 class="font-bold text-slate-700 dark:text-slate-200 mb-3 text-sm">練習スケジュール作成</h2>
+        <h2 class="font-bold text-slate-700 dark:text-slate-200 mb-3 text-sm">練習・イベントスケジュール作成</h2>
         <div class="space-y-3 text-xs">
           <div>
-            <label class="block text-slate-500 dark:text-slate-400 mb-1 font-medium">練習日</label>
+            <label class="block text-slate-500 dark:text-slate-400 mb-1 font-medium">開催日</label>
             <input type="date" id="practice-date" class="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 focus:ring-2 focus:ring-green-500 focus:outline-none text-sm bg-slate-50 dark:bg-slate-700">
           </div>
           <div>
@@ -298,11 +309,11 @@
           </div>
           <div id="custom-location-container" class="hidden">
             <label class="block text-slate-500 dark:text-slate-400 mb-1 font-medium">場所の詳細を入力</label>
-            <input type="text" id="practice-custom-location" placeholder="例: 池袋スポーツセンター" class="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 text-sm bg-slate-50 dark:bg-slate-700">
+            <input type="text" id="practice-custom-location" placeholder="例: 池袋スポーツセンター / ◯◯居酒屋" class="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 text-sm bg-slate-50 dark:bg-slate-700">
           </div>
           <div>
             <label class="block text-slate-500 dark:text-slate-400 mb-1 font-medium">メモ・持ち物</label>
-            <input type="text" id="practice-memo" placeholder="例: ボール持参" class="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 text-sm bg-slate-50 dark:bg-slate-700">
+            <input type="text" id="practice-memo" placeholder="例: ボール持参 / 新歓コンパ" class="w-full border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 text-sm bg-slate-50 dark:bg-slate-700">
           </div>
           <button onclick="createPractice()" class="w-full bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition shadow-sm text-sm flex items-center justify-center gap-1">
             <i data-lucide="plus-circle" class="w-4 h-4"></i> スケジュール作成
@@ -709,6 +720,16 @@
       const isAdmin = hasAdminAccess();
       const isCourtOfficer = currentRole === "コート取り";
 
+      // ★ ホーム画面のイベント作成ショートカットボタンの表示制御 ★
+      const homeAdminActions = document.getElementById("home-admin-actions");
+      if (homeAdminActions) {
+        if (isAdmin) {
+          homeAdminActions.classList.remove("hidden");
+        } else {
+          homeAdminActions.classList.add("hidden");
+        }
+      }
+
       const memberAddBox = document.getElementById("member-add-box");
       if (memberAddBox) {
         if (isRepresentative) memberAddBox.classList.remove("hidden");
@@ -1048,7 +1069,7 @@
               <div>
                 <div class="font-bold text-sm ${isPast ? 'text-slate-500 dark:text-slate-400 line-through' : 'text-slate-800 dark:text-slate-100'}">
                   ${escapeHTML(p.date)}
-                  ${isPast ? '<span class="no-underline ml-1 text-[10px] bg-slate-300 dark:bg-slate-700 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded font-normal">終了</span>' : ''}
+                  ${isPast ? '<span class="no-underline ml-1 text-[10px] bg-slate-300 dark:bg-slate-700 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded font-normal">受付終了</span>' : ''}
                 </div>
                 <div class="${isPast ? 'text-slate-400 dark:text-slate-500' : 'text-slate-600 dark:text-slate-300'}">${escapeHTML(p.location)}</div>
                 ${p.memo ? `<div class="text-slate-400 dark:text-slate-500 text-[11px]">メモ: ${escapeHTML(p.memo)}</div>` : ''}
@@ -1062,11 +1083,23 @@
 
             <div class="border-t dark:border-slate-600/60 pt-2 mt-2">
               <p class="font-medium text-slate-500 dark:text-slate-400 mb-1">出欠投票 (${currentUser ? escapeHTML(currentUser.name) : '未ログイン'}):</p>
+              
+              <!-- ★ 期限切れの場合はボタンを disabled にしてグレーアウト・無効化 ★ -->
               <div class="flex gap-1 mb-2">
-                <button onclick="voteAttendance(${p.id}, '参加')" class="flex-1 ${isPast ? 'bg-green-600/50' : 'bg-green-500 hover:bg-green-600'} text-white font-bold py-1.5 rounded text-xs">参加</button>
-                <button onclick="voteAttendance(${p.id}, '不参加')" class="flex-1 ${isPast ? 'bg-red-600/50' : 'bg-red-500 hover:bg-red-600'} text-white font-bold py-1.5 rounded text-xs">不参加</button>
-                <button onclick="voteAttendance(${p.id}, '未定')" class="flex-1 ${isPast ? 'bg-gray-500/50' : 'bg-gray-400 hover:bg-gray-500'} text-white font-bold py-1.5 rounded text-xs">未定</button>
+                <button ${isPast ? 'disabled' : `onclick="voteAttendance(${p.id}, '参加')"`} 
+                  class="flex-1 ${isPast ? 'bg-gray-400/50 text-gray-200 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600 text-white'} font-bold py-1.5 rounded text-xs transition">
+                  参加
+                </button>
+                <button ${isPast ? 'disabled' : `onclick="voteAttendance(${p.id}, '不参加')"`} 
+                  class="flex-1 ${isPast ? 'bg-gray-400/50 text-gray-200 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600 text-white'} font-bold py-1.5 rounded text-xs transition">
+                  不参加
+                </button>
+                <button ${isPast ? 'disabled' : `onclick="voteAttendance(${p.id}, '未定')"`} 
+                  class="flex-1 ${isPast ? 'bg-gray-400/50 text-gray-200 cursor-not-allowed' : 'bg-gray-400 hover:bg-gray-500 text-white'} font-bold py-1.5 rounded text-xs transition">
+                  未定
+                </button>
               </div>
+
               <div class="text-[11px] text-slate-500 dark:text-slate-400 bg-white/70 dark:bg-slate-800/80 p-2 rounded border dark:border-slate-700 space-y-0.5">
                 <div><span class="font-bold text-green-600 dark:text-green-400">参加 (${attMap.参加.length}名):</span> ${escapeHTML(attMap.参加.join(', ')) || 'なし'}</div>
                 <div><span class="font-bold text-red-600 dark:text-red-400">不参加 (${attMap.不参加.length}名):</span> ${escapeHTML(attMap.不参加.join(', ')) || 'なし'}</div>
@@ -1130,11 +1163,11 @@
       document.getElementById('practice-custom-location').value = '';
       initPracticeFormDateTime();
       fetchPractices();
-      alert('練習スケジュールを作成しました！');
+      alert('スケジュールを作成しました！');
     }
 
     function deletePractice(id) {
-      if (!confirm('この練習スケジュールを削除しますか？')) return;
+      if (!confirm('このスケジュールを削除しますか？')) return;
       let practices = getDB(STORAGE_KEY_PRACTICES);
       practices = practices.filter(p => p.id !== id);
       setDB(STORAGE_KEY_PRACTICES, practices);
@@ -1175,7 +1208,7 @@
       }
 
       let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
-      csvContent += "練習日時,場所,部員名,出欠ステータス\n";
+      csvContent += "日時,場所,部員名,出欠ステータス\n";
 
       practices.forEach(p => {
         const atts = attendance.filter(a => a.practice_id === p.id);
