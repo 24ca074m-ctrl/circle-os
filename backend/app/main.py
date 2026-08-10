@@ -1,177 +1,198 @@
-from fastapi import FastAPI, Depends, HTTPException
+import os
+from datetime import datetime, timedelta
+from typing import Optional
+from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-from sqlalchemy.orm import Session
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel
-from typing import List, Optional
-import os
+from sqlalchemy import create_engine, Column, Integer, String, Text, ForeignKey
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, Session
+from passlib.context import CryptContext
+from jose import JWTError, jwt
 
-from . import models
-from .database import engine, get_db
+# --- セキュリティ設定 ---
+SECRET_KEY = os.getenv("SECRET_KEY", "circle-os-super-secret-key-2026")
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 1週間有効
 
-models.Base.metadata.create_all(bind=engine)
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
-app = FastAPI(title="RUB Manager - Circle OS")
+# --- DB接続設定 ---
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./test.db")
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-# Pydantic Schemas
-class MemberCreate(BaseModel):
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
+
+# --- DB Models ---
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(String(50), unique=True, index=True, nullable=False)
+    name = Column(String(100), nullable=False)
+    hashed_password = Column(String(200), nullable=False)
+    role = Column(String(50), default="部員")
+
+class Practice(Base):
+    __tablename__ = "practices"
+    id = Column(Integer, primary_key=True, index=True)
+    date = Column(String(100), nullable=False)
+    location = Column(String(100), nullable=False)
+    memo = Column(Text, nullable=True)
+
+class Attendance(Base):
+    __tablename__ = "attendances"
+    id = Column(Integer, primary_key=True, index=True)
+    practice_id = Column(Integer, ForeignKey("practices.id"), nullable=False)
+    member_name = Column(String(100), nullable=False)
+    status = Column(String(20), nullable=False)
+
+Base.metadata.create_all(bind=engine)
+
+# --- FastAPI App ---
+app = FastAPI(title="Circle OS API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+STATIC_DIR = os.path.join(BASE_DIR, "static")
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+# --- 認証ユーティリティ ---
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
+
+def get_password_hash(password):
+    return pwd_context.hash(password)
+
+def create_access_token(data: dict):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="認証資格情報を検証できませんでした",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        student_id: str = payload.get("sub")
+        if student_id is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+    user = db.query(User).filter(User.student_id == student_id).first()
+    if user is None:
+        raise credentials_exception
+    return user
+
+# --- Pydantic Schemas ---
+class UserRegister(BaseModel):
+    student_id: str
     name: str
-    student_id: Optional[str] = ""
-    grade: str
+    password: str
     role: str = "部員"
-
-class MemberResponse(MemberCreate):
-    id: int
-    class Config:
-        from_attributes = True
 
 class PracticeCreate(BaseModel):
     date: str
     location: str
-    memo: Optional[str] = ""
+    memo: str = ""
 
-class PracticeResponse(PracticeCreate):
-    id: int
-    class Config:
-        from_attributes = True
-
-class AttendanceCreate(BaseModel):
+class AttendanceVote(BaseModel):
     practice_id: int
-    member_name: str
     status: str
 
-class FeedbackCreate(BaseModel):
-    sender_name: Optional[str] = "匿名"
-    content: str
+# --- Endpoints ---
+@app.get("/")
+def read_index():
+    index_path = os.path.join(STATIC_DIR, "index.html")
+    if os.path.exists(index_path):
+        return FileResponse(index_path)
+    return {"message": "index.html not found"}
 
-# API Routes
-@app.get("/api/members", response_model=List[MemberResponse])
-def get_members(db: Session = Depends(get_db)):
-    return db.query(models.Member).all()
-
-@app.post("/api/members", response_model=MemberResponse)
-def create_member(member: MemberCreate, db: Session = Depends(get_db)):
-    db_member = models.Member(
-        name=member.name,
-        grade=member.grade,
-        position=member.student_id or "",  # 学籍番号を保存
-        role=member.role
+@app.post("/api/auth/register")
+def register(user: UserRegister, db: Session = Depends(get_db)):
+    db_user = db.query(User).filter(User.student_id == user.student_id.upper()).first()
+    if db_user:
+        raise HTTPException(status_code=400, detail="この学籍番号は既に登録されています")
+    hashed_pwd = get_password_hash(user.password)
+    new_user = User(
+        student_id=user.student_id.upper(),
+        name=user.name,
+        hashed_password=hashed_pwd,
+        role=user.role
     )
-    db.add(db_member)
+    db.add(new_user)
     db.commit()
-    db.refresh(db_member)
-    return db_member
+    db.refresh(new_user)
+    return {"message": "ユーザー登録が完了しました"}
 
-@app.delete("/api/members/{member_id}")
-def delete_member(member_id: int, db: Session = Depends(get_db)):
-    m = db.query(models.Member).filter(models.Member.id == member_id).first()
-    if not m:
-        raise HTTPException(status_code=404, detail="Member not found")
-    db.delete(m)
-    db.commit()
-    return {"message": "Member deleted"}
-
-@app.get("/api/practices", response_model=List[PracticeResponse])
-def get_practices(db: Session = Depends(get_db)):
-    return db.query(models.Practice).all()
-
-@app.post("/api/practices", response_model=PracticeResponse)
-def create_practice(practice: PracticeCreate, db: Session = Depends(get_db)):
-    db_practice = models.Practice(
-        date=practice.date,
-        location=practice.location,
-        memo=practice.memo or ""
-    )
-    db.add(db_practice)
-    db.commit()
-    db.refresh(db_practice)
-    return db_practice
-
-@app.delete("/api/practices/{practice_id}")
-def delete_practice(practice_id: int, db: Session = Depends(get_db)):
-    p = db.query(models.Practice).filter(models.Practice.id == practice_id).first()
-    if not p:
-        raise HTTPException(status_code=404, detail="Practice not found")
-    db.delete(p)
-    db.commit()
-    return {"message": "Practice deleted"}
-
-# 出欠API
-@app.post("/api/attendance")
-def vote_attendance(att: AttendanceCreate, db: Session = Depends(get_db)):
-    existing = db.query(models.Attendance).filter(
-        models.Attendance.practice_id == att.practice_id,
-        models.Attendance.member_name == att.member_name
-    ).first()
+@app.post("/api/auth/login")
+def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.student_id == form_data.username.upper()).first()
+    if not user or not verify_password(form_data.password, user.hashed_password):
+        raise HTTPException(status_code=400, detail="学籍番号またはパスワードが正しくありません")
     
-    if existing:
-        existing.status = att.status
-    else:
-        new_att = models.Attendance(**att.dict())
-        db.add(new_att)
-    
-    db.commit()
-    return {"message": "Attendance recorded"}
-
-@app.get("/api/attendance/{practice_id}")
-def get_attendance(practice_id: int, db: Session = Depends(get_db)):
-    atts = db.query(models.Attendance).filter(models.Attendance.practice_id == practice_id).all()
-    summary = {"参加": [], "不参加": [], "未定": []}
-    for a in atts:
-        if a.status in summary:
-            summary[a.status].append(a.member_name)
-    return summary
-
-# 意見箱API
-@app.post("/api/feedbacks")
-def create_feedback(fb: FeedbackCreate, db: Session = Depends(get_db)):
-    new_fb = models.Feedback(**fb.dict())
-    db.add(new_fb)
-    db.commit()
-    return {"message": "Feedback submitted"}
-
-@app.get("/api/feedbacks")
-def get_feedbacks(db: Session = Depends(get_db)):
-    fbs = db.query(models.Feedback).order_by(models.Feedback.created_at.desc()).all()
-    return fbs
-
-@app.delete("/api/feedbacks/{feedback_id}")
-def delete_feedback(feedback_id: int, db: Session = Depends(get_db)):
-    fb = db.query(models.Feedback).filter(models.Feedback.id == feedback_id).first()
-    if not fb:
-        raise HTTPException(status_code=404, detail="Feedback not found")
-    db.delete(fb)
-    db.commit()
-    return {"message": "Feedback deleted"}
-
-# AI アナリティクス
-@app.get("/api/ai/analytics")
-def get_ai_analytics(db: Session = Depends(get_db)):
-    member_count = db.query(models.Member).count()
-    predicted = int(member_count * 0.7) if member_count > 0 else 0
-    advices = [
-        f"現在の登録部員数は {member_count} 名です。",
-        f"次回の予想参加人数は約 {predicted} 名です。",
-        "コート予約枠が不足しないよう、早めにコート取り担当へ共有してください。"
-    ]
+    access_token = create_access_token(data={"sub": user.student_id})
     return {
-        "member_count": member_count,
-        "predicted_attendance": predicted,
-        "advice_list": advices
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user_name": user.name,
+        "role": user.role
     }
 
-# 静的ファイル配信
-static_dir = os.path.join(os.path.dirname(__file__), "static")
-if os.path.exists(static_dir):
-    app.mount("/static", StaticFiles(directory=static_dir), name="static")
+@app.get("/api/auth/me")
+def get_me(current_user: User = Depends(get_current_user)):
+    return {
+        "student_id": current_user.student_id,
+        "name": current_user.name,
+        "role": current_user.role
+    }
 
-@app.get("/app")
-def read_app():
-    html_path = os.path.join(static_dir, "index.html")
-    if os.path.exists(html_path):
-        return FileResponse(html_path)
-    return {"error": "index.html not found"}
+@app.get("/api/practices/")
+def get_practices(db: Session = Depends(get_db)):
+    return db.query(Practice).all()
 
-@app.get("/")
-def read_root():
-    return {"message": "Circle OS Backend with FastApi & SQLite"}
+@app.post("/api/practices/")
+def create_practice(practice: PracticeCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    new_p = Practice(date=practice.date, location=practice.location, memo=practice.memo)
+    db.add(new_p)
+    db.commit()
+    db.refresh(new_p)
+    return new_p
+
+@app.post("/api/attendance/")
+def vote_attendance(vote: AttendanceVote, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    att = db.query(Attendance).filter(
+        Attendance.practice_id == vote.practice_id,
+        Attendance.member_name == current_user.name
+    ).first()
+    if att:
+        att.status = vote.status
+    else:
+        att = Attendance(practice_id=vote.practice_id, member_name=current_user.name, status=vote.status)
+        db.add(att)
+    db.commit()
+    return {"message": "Success"}
