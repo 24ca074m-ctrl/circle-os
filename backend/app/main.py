@@ -1,216 +1,177 @@
-import os
-from datetime import datetime
-from typing import Optional, List
-from fastapi import FastAPI, HTTPException, Depends, status
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, Depends, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from sqlalchemy.orm import Session
 from pydantic import BaseModel
-from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session
+from typing import List, Optional
+import os
 
-# --- DB接続設定 ---
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./test.db")
-if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+from . import models
+from .database import engine, get_db
 
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
+models.Base.metadata.create_all(bind=engine)
 
-# --- DB Models ---
-class MemberDB(Base):
-    __tablename__ = "members"
-    id = Column(Integer, primary_key=True, index=True)
-    student_id = Column(String(50), unique=True, index=True, nullable=False)
-    name = Column(String(100), nullable=False)
-    grade = Column(String(20), nullable=False)
-    role = Column(String(50), nullable=False)
+app = FastAPI(title="RUB Manager - Circle OS")
 
-class PracticeDB(Base):
-    __tablename__ = "practices"
-    id = Column(Integer, primary_key=True, index=True)
-    date = Column(String(100), nullable=False)
-    location = Column(String(100), nullable=False)
-    memo = Column(Text, nullable=True)
-
-class AttendanceDB(Base):
-    __tablename__ = "attendances"
-    id = Column(Integer, primary_key=True, index=True)
-    practice_id = Column(Integer, nullable=False)
-    member_name = Column(String(100), nullable=False)
-    status = Column(String(20), nullable=False)
-
-class FeedbackDB(Base):
-    __tablename__ = "feedbacks"
-    id = Column(Integer, primary_key=True, index=True)
-    sender_name = Column(String(100), default="匿名部員")
-    content = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-Base.metadata.create_all(bind=engine)
-
-# --- FastAPI App ---
-app = FastAPI(title="RUB Manager API")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-STATIC_DIR = os.path.join(BASE_DIR, "static")
-app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-# 初期代表者の自動登録チェック
-def init_admin():
-    db = SessionLocal()
-    try:
-        admin = db.query(MemberDB).filter(MemberDB.student_id == "24CA074M").first()
-        if not admin:
-            new_admin = MemberDB(
-                student_id="24CA074M",
-                name="代表者",
-                grade="3年",
-                role="代表"
-            )
-            db.add(new_admin)
-            db.commit()
-    finally:
-        db.close()
-
-init_admin()
-
-# --- Schemas ---
+# Pydantic Schemas
 class MemberCreate(BaseModel):
-    student_id: str
     name: str
+    student_id: Optional[str] = ""
     grade: str
-    role: str
+    role: str = "部員"
+
+class MemberResponse(MemberCreate):
+    id: int
+    class Config:
+        from_attributes = True
 
 class PracticeCreate(BaseModel):
     date: str
     location: str
-    memo: str = ""
+    memo: Optional[str] = ""
 
-class AttendanceVote(BaseModel):
+class PracticeResponse(PracticeCreate):
+    id: int
+    class Config:
+        from_attributes = True
+
+class AttendanceCreate(BaseModel):
     practice_id: int
     member_name: str
     status: str
 
 class FeedbackCreate(BaseModel):
-    sender_name: Optional[str] = "匿名部員"
+    sender_name: Optional[str] = "匿名"
     content: str
 
-# --- Routes ---
-@app.get("/")
-def read_index():
-    index_path = os.path.join(STATIC_DIR, "index.html")
-    if os.path.exists(index_path):
-        return FileResponse(index_path)
-    return {"message": "index.html not found"}
-
-# 部員 API
-@app.get("/api/members/")
+# API Routes
+@app.get("/api/members", response_model=List[MemberResponse])
 def get_members(db: Session = Depends(get_db)):
-    return db.query(MemberDB).all()
+    return db.query(models.Member).all()
 
-@app.post("/api/members/")
+@app.post("/api/members", response_model=MemberResponse)
 def create_member(member: MemberCreate, db: Session = Depends(get_db)):
-    db_m = db.query(MemberDB).filter(MemberDB.student_id == member.student_id.upper()).first()
-    if db_m:
-        raise HTTPException(status_code=400, detail="学籍番号が既に登録されています")
-    new_m = MemberDB(
-        student_id=member.student_id.upper(),
+    db_member = models.Member(
         name=member.name,
         grade=member.grade,
+        position=member.student_id or "",  # 学籍番号を保存
         role=member.role
     )
-    db.add(new_m)
+    db.add(db_member)
     db.commit()
-    db.refresh(new_m)
-    return new_m
+    db.refresh(db_member)
+    return db_member
 
 @app.delete("/api/members/{member_id}")
 def delete_member(member_id: int, db: Session = Depends(get_db)):
-    m = db.query(MemberDB).filter(MemberDB.id == member_id).first()
+    m = db.query(models.Member).filter(models.Member.id == member_id).first()
     if not m:
-        raise HTTPException(status_code=404, detail="部員が見つかりません")
+        raise HTTPException(status_code=404, detail="Member not found")
     db.delete(m)
     db.commit()
-    return {"message": "Deleted"}
+    return {"message": "Member deleted"}
 
-# 練習 API
-@app.get("/api/practices/")
+@app.get("/api/practices", response_model=List[PracticeResponse])
 def get_practices(db: Session = Depends(get_db)):
-    return db.query(PracticeDB).all()
+    return db.query(models.Practice).all()
 
-@app.post("/api/practices/")
+@app.post("/api/practices", response_model=PracticeResponse)
 def create_practice(practice: PracticeCreate, db: Session = Depends(get_db)):
-    new_p = PracticeDB(date=practice.date, location=practice.location, memo=practice.memo)
-    db.add(new_p)
+    db_practice = models.Practice(
+        date=practice.date,
+        location=practice.location,
+        memo=practice.memo or ""
+    )
+    db.add(db_practice)
     db.commit()
-    db.refresh(new_p)
-    return new_p
+    db.refresh(db_practice)
+    return db_practice
 
 @app.delete("/api/practices/{practice_id}")
 def delete_practice(practice_id: int, db: Session = Depends(get_db)):
-    p = db.query(PracticeDB).filter(PracticeDB.id == practice_id).first()
+    p = db.query(models.Practice).filter(models.Practice.id == practice_id).first()
     if not p:
-        raise HTTPException(status_code=404, detail="練習が見つかりません")
+        raise HTTPException(status_code=404, detail="Practice not found")
     db.delete(p)
     db.commit()
-    return {"message": "Deleted"}
+    return {"message": "Practice deleted"}
 
-# 出欠 API
-@app.get("/api/attendance/")
-def get_attendance(db: Session = Depends(get_db)):
-    return db.query(AttendanceDB).all()
-
-@app.post("/api/attendance/")
-def vote_attendance(vote: AttendanceVote, db: Session = Depends(get_db)):
-    att = db.query(AttendanceDB).filter(
-        AttendanceDB.practice_id == vote.practice_id,
-        AttendanceDB.member_name == vote.member_name
+# 出欠API
+@app.post("/api/attendance")
+def vote_attendance(att: AttendanceCreate, db: Session = Depends(get_db)):
+    existing = db.query(models.Attendance).filter(
+        models.Attendance.practice_id == att.practice_id,
+        models.Attendance.member_name == att.member_name
     ).first()
-    if att:
-        att.status = vote.status
+    
+    if existing:
+        existing.status = att.status
     else:
-        att = AttendanceDB(practice_id=vote.practice_id, member_name=vote.member_name, status=vote.status)
-        db.add(att)
+        new_att = models.Attendance(**att.dict())
+        db.add(new_att)
+    
     db.commit()
-    return {"message": "Success"}
+    return {"message": "Attendance recorded"}
 
-# 意見箱 API
-@app.get("/api/feedbacks/")
-def get_feedbacks(db: Session = Depends(get_db)):
-    return db.query(FeedbackDB).order_by(FeedbackDB.created_at.desc()).all()
+@app.get("/api/attendance/{practice_id}")
+def get_attendance(practice_id: int, db: Session = Depends(get_db)):
+    atts = db.query(models.Attendance).filter(models.Attendance.practice_id == practice_id).all()
+    summary = {"参加": [], "不参加": [], "未定": []}
+    for a in atts:
+        if a.status in summary:
+            summary[a.status].append(a.member_name)
+    return summary
 
-@app.post("/api/feedbacks/")
+# 意見箱API
+@app.post("/api/feedbacks")
 def create_feedback(fb: FeedbackCreate, db: Session = Depends(get_db)):
-    sender = fb.sender_name if fb.sender_name else "匿名部員"
-    new_fb = FeedbackDB(sender_name=sender, content=fb.content)
+    new_fb = models.Feedback(**fb.dict())
     db.add(new_fb)
     db.commit()
-    db.refresh(new_fb)
-    return new_fb
+    return {"message": "Feedback submitted"}
+
+@app.get("/api/feedbacks")
+def get_feedbacks(db: Session = Depends(get_db)):
+    fbs = db.query(models.Feedback).order_by(models.Feedback.created_at.desc()).all()
+    return fbs
 
 @app.delete("/api/feedbacks/{feedback_id}")
 def delete_feedback(feedback_id: int, db: Session = Depends(get_db)):
-    f = db.query(FeedbackDB).filter(FeedbackDB.id == feedback_id).first()
-    if not f:
-        raise HTTPException(status_code=404, detail="意見が見つかりません")
-    db.delete(f)
+    fb = db.query(models.Feedback).filter(models.Feedback.id == feedback_id).first()
+    if not fb:
+        raise HTTPException(status_code=404, detail="Feedback not found")
+    db.delete(fb)
     db.commit()
-    return {"message": "Deleted"}
+    return {"message": "Feedback deleted"}
+
+# AI アナリティクス
+@app.get("/api/ai/analytics")
+def get_ai_analytics(db: Session = Depends(get_db)):
+    member_count = db.query(models.Member).count()
+    predicted = int(member_count * 0.7) if member_count > 0 else 0
+    advices = [
+        f"現在の登録部員数は {member_count} 名です。",
+        f"次回の予想参加人数は約 {predicted} 名です。",
+        "コート予約枠が不足しないよう、早めにコート取り担当へ共有してください。"
+    ]
+    return {
+        "member_count": member_count,
+        "predicted_attendance": predicted,
+        "advice_list": advices
+    }
+
+# 静的ファイル配信
+static_dir = os.path.join(os.path.dirname(__file__), "static")
+if os.path.exists(static_dir):
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+@app.get("/app")
+def read_app():
+    html_path = os.path.join(static_dir, "index.html")
+    if os.path.exists(html_path):
+        return FileResponse(html_path)
+    return {"error": "index.html not found"}
+
+@app.get("/")
+def read_root():
+    return {"message": "Circle OS Backend with FastApi & SQLite"}
