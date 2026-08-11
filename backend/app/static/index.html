@@ -318,7 +318,7 @@
     <!-- Tab 1: Home / AI / Announcements -->
     <div id="tab-home" class="tab-content space-y-4">
       
-      <!-- 役職者メニュー (場所・拠点管理ボタン削除) -->
+      <!-- 役職者メニュー -->
       <div id="home-admin-actions" class="hidden bg-white dark:bg-slate-800 p-4 rounded-3xl pop-border pop-shadow space-y-2">
         <div class="flex items-center gap-1.5 text-xs font-black text-pickle-pink">
           <i data-lucide="sparkles" class="w-4 h-4"></i> 役職者メニュー
@@ -327,6 +327,56 @@
           <button onclick="openEventModal()" class="w-full bg-pickle-pink text-white py-2.5 px-2 rounded-2xl pop-border pop-shadow-sm hover:opacity-90 transition flex items-center justify-center gap-1 text-xs font-black">
             <i data-lucide="party-popper" class="w-4 h-4"></i> イベント作成
           </button>
+        </div>
+      </div>
+
+      <!-- ① カウントダウン & My出欠ワンタップカード -->
+      <div id="next-practice-card" class="bg-gradient-to-br from-lime-100 to-yellow-100 dark:from-slate-800 dark:to-slate-700 p-4 rounded-3xl pop-border pop-shadow space-y-3">
+        <div class="flex justify-between items-center">
+          <span class="text-xs font-black bg-pickle-lime text-slate-900 px-2.5 py-0.5 rounded-full pop-border flex items-center gap-1">
+            <i data-lucide="timer" class="w-3.5 h-3.5"></i> 次の練習・イベント
+          </span>
+          <span id="next-countdown-badge" class="text-xs font-black text-pickle-pink bg-white dark:bg-slate-800 px-2 py-0.5 rounded-full pop-border">
+            計算中...
+          </span>
+        </div>
+        
+        <div id="next-practice-details" class="space-y-1">
+          <p class="text-slate-400 text-xs font-bold">次回予定を読み込み中...</p>
+        </div>
+
+        <!-- ワンタップ出欠ボタン -->
+        <div id="next-vote-actions" class="pt-1 border-t-2 border-slate-800/20 dark:border-slate-600/50 hidden">
+          <div class="flex justify-between items-center mb-1.5">
+            <span class="text-[11px] font-black text-slate-700 dark:text-slate-300">My 出欠ステータス:</span>
+            <span id="my-current-status-badge" class="text-[10px] font-black bg-slate-200 dark:bg-slate-600 px-2 py-0.5 rounded-full pop-border">未回答</span>
+          </div>
+          <div class="flex gap-2">
+            <button id="quick-btn-join" onclick="quickVote('参加')" class="flex-1 bg-pickle-lime text-slate-900 font-black py-1.5 text-xs rounded-xl pop-border pop-shadow-sm transition active:translate-y-0.5">参加 🏓</button>
+            <button id="quick-btn-decline" onclick="quickVote('不参加')" class="flex-1 bg-pickle-pink text-white font-black py-1.5 text-xs rounded-xl pop-border pop-shadow-sm transition active:translate-y-0.5">不参加</button>
+            <button id="quick-btn-pending" onclick="quickVote('未定')" class="flex-1 bg-pickle-yellow text-slate-900 font-black py-1.5 text-xs rounded-xl pop-border pop-shadow-sm transition active:translate-y-0.5">未定</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ② サークルアクティビティ & My実績カード -->
+      <div class="bg-white dark:bg-slate-800 p-4 rounded-3xl pop-border pop-shadow space-y-3">
+        <h2 class="font-black text-slate-800 dark:text-slate-100 text-sm flex items-center gap-2">
+          <span class="p-1 bg-pickle-yellow rounded-xl pop-border"><i data-lucide="trophy" class="w-4 h-4 text-slate-900"></i></span> サークルアクティビティ 📊
+        </h2>
+        <div class="grid grid-cols-3 gap-2 text-center">
+          <div class="bg-slate-50 dark:bg-slate-700/50 p-2.5 rounded-2xl pop-border space-y-0.5">
+            <p class="text-[10px] font-bold text-slate-400">今月の参加数</p>
+            <p id="stat-my-count" class="text-lg font-black text-pickle-lime">0回</p>
+          </div>
+          <div class="bg-slate-50 dark:bg-slate-700/50 p-2.5 rounded-2xl pop-border space-y-0.5">
+            <p class="text-[10px] font-bold text-slate-400">自分の参加率</p>
+            <p id="stat-my-rate" class="text-lg font-black text-pickle-blue">0%</p>
+          </div>
+          <div class="bg-slate-50 dark:bg-slate-700/50 p-2.5 rounded-2xl pop-border space-y-0.5">
+            <p class="text-[10px] font-bold text-slate-400">今週のサークル参加者</p>
+            <p id="stat-weekly-total" class="text-lg font-black text-pickle-pink">0名</p>
+          </div>
         </div>
       </div>
 
@@ -353,7 +403,7 @@
         <div id="weekly-practice-list" class="space-y-2 text-xs font-bold"></div>
       </div>
 
-      <!-- AI アシスタント (役職者限定 & 相談チャット搭載) -->
+      <!-- AI アシスタント (役職者限定) -->
       <div id="ai-assistant-section" class="bg-white dark:bg-slate-800 p-4 rounded-3xl pop-border pop-shadow hidden space-y-3">
         <h2 class="font-black text-slate-800 dark:text-slate-100 flex items-center gap-2 text-sm">
           <span class="p-1 bg-pickle-blue rounded-xl pop-border text-white"><i data-lucide="bot" class="w-4 h-4"></i></span> 運営AI相談アシスタント
@@ -364,7 +414,6 @@
           <p>• 体育館のコート確保予約期限を確認しましょう！</p>
         </div>
 
-        <!-- AI相談フォーム -->
         <div class="space-y-2 pt-1">
           <div id="ai-chat-history" class="space-y-2 text-xs max-h-40 overflow-y-auto pr-1 hidden"></div>
           <div class="flex gap-2">
@@ -558,6 +607,7 @@
     let currentRole = "部員";
     let currentUser = null;
     let cachedMembers = [];
+    let nextUpcomingPracticeId = null; // 次回予定のID保持用
 
     function generate6DigitCode() {
       return Math.floor(100000 + Math.random() * 900000).toString();
@@ -1034,7 +1084,6 @@
         else locationManageBtn.classList.add("hidden");
       }
 
-      // AI アシスタント表示制御（役職者のみ表示）
       const aiSection = document.getElementById("ai-assistant-section");
       if (aiSection) {
         if (isOfficerRole()) aiSection.classList.remove("hidden");
@@ -1065,7 +1114,6 @@
       }
     }
 
-    // AI相談アシスタント機能
     function askAIAssistant() {
       const input = document.getElementById('ai-prompt-input');
       const text = input.value.trim();
@@ -1074,7 +1122,6 @@
       const historyContainer = document.getElementById('ai-chat-history');
       historyContainer.classList.remove('hidden');
 
-      // ユーザー発言
       historyContainer.innerHTML += `
         <div class="bg-slate-200 dark:bg-slate-700 p-2 rounded-xl text-right font-bold text-slate-800 dark:text-slate-100">
           🗣️ ${escapeHTML(text)}
@@ -1083,7 +1130,6 @@
 
       input.value = '';
 
-      // AI応答生成（運営用アドバイスロジック）
       setTimeout(() => {
         let aiReply = "ご相談ありがとうございます！役職者の皆様のサークル運営をサポートします。";
         if (text.includes("新歓") || text.includes("イベント")) {
@@ -1219,6 +1265,7 @@
         list.innerHTML = '<p class="text-slate-400 py-2">予定はありません。</p>';
         weeklyList.innerHTML = '<p class="text-slate-400 py-1">直近1週間の予定はありません。</p>';
         document.getElementById('weekly-count-badge').innerText = '0件';
+        updateCountdownAndStats([], []);
         return;
       }
 
@@ -1343,7 +1390,126 @@
         }).join('');
       }
 
+      // カウントダウンと統計データの更新実行
+      updateCountdownAndStats(futurePractices, practices, attendance || []);
+
       lucide.createIcons();
+    }
+
+    // ① カウントダウン & ② 統計の更新計算ロジック
+    function updateCountdownAndStats(futurePractices, allPractices, attendanceList) {
+      const detailsContainer = document.getElementById('next-practice-details');
+      const badge = document.getElementById('next-countdown-badge');
+      const voteActions = document.getElementById('next-vote-actions');
+      const statusBadge = document.getElementById('my-current-status-badge');
+
+      if (futurePractices.length === 0) {
+        detailsContainer.innerHTML = '<p class="text-slate-500 dark:text-slate-400 text-xs font-bold">現在予定されている未来の練習はありません ☕</p>';
+        badge.innerText = '予定なし';
+        badge.className = "text-xs font-black text-slate-500 bg-slate-200 px-2 py-0.5 rounded-full pop-border";
+        voteActions.classList.add('hidden');
+        nextUpcomingPracticeId = null;
+      } else {
+        const nextP = futurePractices[0]; // 直近の未来予定
+        nextUpcomingPracticeId = nextP.id;
+
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        const pDate = parseScheduleDate(nextP.date);
+        pDate.setHours(0,0,0,0);
+
+        const diffTime = pDate - today;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays === 0) {
+          badge.innerText = '🔥 本日開催！';
+          badge.className = "text-xs font-black text-white bg-pickle-pink px-2 py-0.5 rounded-full pop-border";
+        } else {
+          badge.innerText = `あと ${diffDays} 日`;
+          badge.className = "text-xs font-black text-slate-900 bg-pickle-yellow px-2 py-0.5 rounded-full pop-border";
+        }
+
+        let title = "定期練習";
+        if (nextP.memo && nextP.memo.includes('[イベント')) {
+          const match = nextP.memo.match(/\[イベント:\s*(.*?)\]/);
+          title = (match && match[1]) ? match[1] : "イベント";
+        }
+
+        detailsContainer.innerHTML = `
+          <h3 class="font-black text-base text-slate-800 dark:text-white flex items-center gap-1.5">
+            🏓 ${escapeHTML(title)}
+          </h3>
+          <p class="text-xs font-extrabold text-slate-700 dark:text-slate-200">📅 ${escapeHTML(nextP.date)}</p>
+          <p class="text-xs font-black text-pickle-blue">📍 ${escapeHTML(nextP.location)}</p>
+        `;
+
+        if (currentUser) {
+          voteActions.classList.remove('hidden');
+          const myAtt = attendanceList.find(a => a.practice_id === nextP.id && a.member_name === currentUser.name);
+          const status = myAtt ? myAtt.status : '未回答';
+
+          statusBadge.innerText = status;
+          if (status === '参加') statusBadge.className = "text-[10px] font-black bg-pickle-lime text-slate-900 px-2.5 py-0.5 rounded-full pop-border";
+          else if (status === '不参加') statusBadge.className = "text-[10px] font-black bg-pickle-pink text-white px-2.5 py-0.5 rounded-full pop-border";
+          else if (status === '未定') statusBadge.className = "text-[10px] font-black bg-pickle-yellow text-slate-900 px-2.5 py-0.5 rounded-full pop-border";
+          else statusBadge.className = "text-[10px] font-black bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full pop-border";
+        } else {
+          voteActions.classList.add('hidden');
+        }
+      }
+
+      // ② 統計データの算出
+      if (!currentUser) {
+        document.getElementById('stat-my-count').innerText = "0回";
+        document.getElementById('stat-my-rate').innerText = "0%";
+        document.getElementById('stat-weekly-total').innerText = "0名";
+        return;
+      }
+
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentMonth = now.getMonth();
+
+      // 今月開催された/開催予定の練習
+      const thisMonthPractices = allPractices.filter(p => {
+        const d = parseScheduleDate(p.date);
+        return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
+      });
+
+      // 今月自分が「参加」と回答した回数
+      let myMonthJoinCount = 0;
+      thisMonthPractices.forEach(p => {
+        const joined = attendanceList.some(a => a.practice_id === p.id && a.member_name === currentUser.name && a.status === '参加');
+        if (joined) myMonthJoinCount++;
+      });
+
+      const rate = thisMonthPractices.length > 0 
+        ? Math.round((myMonthJoinCount / thisMonthPractices.length) * 100) 
+        : 0;
+
+      // 今週参加予定の全サークル部員の合計数
+      const nowToday = new Date();
+      nowToday.setHours(0,0,0,0);
+      const nextWeekDate = new Date(nowToday.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+      let weeklyJoinTotal = 0;
+      allPractices.forEach(p => {
+        const pDate = parseScheduleDate(p.date);
+        if (pDate >= nowToday && pDate <= nextWeekDate) {
+          const joinedList = attendanceList.filter(a => a.practice_id === p.id && a.status === '参加');
+          weeklyJoinTotal += joinedList.length;
+        }
+      });
+
+      document.getElementById('stat-my-count').innerText = `${myMonthJoinCount}回`;
+      document.getElementById('stat-my-rate').innerText = `${rate}%`;
+      document.getElementById('stat-weekly-total').innerText = `${weeklyJoinTotal}名`;
+    }
+
+    // ホームからのクイック出欠投票
+    async function quickVote(status) {
+      if (!nextUpcomingPracticeId) return alert('投票対象の次回予定がありません');
+      await voteAttendance(nextUpcomingPracticeId, status);
     }
 
     async function createPractice() {
