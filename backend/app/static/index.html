@@ -176,6 +176,30 @@
     </div>
   </div>
 
+  <!-- 【新機能】場所・拠点管理モーダル（権限所有者専用） -->
+  <div id="manage-locations-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] hidden flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-3xl p-5 pop-border pop-shadow space-y-3 text-slate-800 dark:text-slate-100">
+      <h3 class="font-extrabold text-sm flex items-center gap-1.5 text-pickle-blue">
+        <i data-lucide="map-pin" class="w-4 h-4"></i> 拠点・場所の管理 📍
+      </h3>
+      <p class="text-[11px] text-slate-500 dark:text-slate-400 font-bold">練習日程で選択できる場所を追加・管理できます。</p>
+      
+      <div class="space-y-2 text-xs font-bold">
+        <div class="flex gap-2">
+          <input type="text" id="new-location-input" placeholder="例: 池袋スポーツセンター" class="flex-1 border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-2">
+          <button onclick="addNewLocation()" class="bg-pickle-blue text-white px-3 rounded-xl font-black pop-border whitespace-nowrap">追加</button>
+        </div>
+        <div class="mt-3">
+          <label class="block text-slate-500 dark:text-slate-400 mb-1">現在の登録場所一覧</label>
+          <div id="location-manage-list" class="space-y-1.5 max-h-40 overflow-y-auto pr-1"></div>
+        </div>
+      </div>
+      <div class="pt-2 text-xs font-black">
+        <button onclick="closeManageLocationsModal()" class="w-full bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 py-2.5 rounded-xl pop-border">閉じる</button>
+      </div>
+    </div>
+  </div>
+
   <!-- パスワード変更モーダル -->
   <div id="change-password-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] hidden flex items-center justify-center p-4">
     <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-3xl p-5 pop-border pop-shadow space-y-3 text-slate-800 dark:text-slate-100">
@@ -297,11 +321,16 @@
       <!-- 代表専用のアクション -->
       <div id="home-admin-actions" class="hidden bg-white dark:bg-slate-800 p-4 rounded-3xl pop-border pop-shadow space-y-2">
         <div class="flex items-center gap-1.5 text-xs font-black text-pickle-pink">
-          <i data-lucide="sparkles" class="w-4 h-4"></i> 代表・副代表メニュー
+          <i data-lucide="sparkles" class="w-4 h-4"></i> 役職者メニュー
         </div>
-        <button onclick="openEventModal()" class="w-full bg-pickle-pink text-white py-2.5 px-3 rounded-2xl pop-border pop-shadow-sm hover:opacity-90 transition flex items-center justify-center gap-1.5 text-xs font-black">
-          <i data-lucide="party-popper" class="w-4 h-4"></i> 新規イベント作成 (専用フォーム)
-        </button>
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="openEventModal()" class="bg-pickle-pink text-white py-2.5 px-2 rounded-2xl pop-border pop-shadow-sm hover:opacity-90 transition flex items-center justify-center gap-1 text-xs font-black">
+            <i data-lucide="party-popper" class="w-4 h-4"></i> イベント作成
+          </button>
+          <button onclick="openManageLocationsModal()" class="bg-pickle-blue text-white py-2.5 px-2 rounded-2xl pop-border pop-shadow-sm hover:opacity-90 transition flex items-center justify-center gap-1 text-xs font-black">
+            <i data-lucide="map-pin" class="w-4 h-4"></i> 場所・拠点管理
+          </button>
+        </div>
       </div>
 
       <!-- お知らせ掲示板 -->
@@ -316,11 +345,11 @@
         </div>
       </div>
 
-      <!-- 直近の予定 -->
+      <!-- 直近の予定 (開催順) -->
       <div class="bg-white dark:bg-slate-800 p-4 rounded-3xl pop-border pop-shadow space-y-3">
         <h2 class="font-black text-slate-800 dark:text-slate-100 text-sm flex items-center justify-between">
           <span class="flex items-center gap-2">
-            <span class="p-1 bg-pickle-lime rounded-xl pop-border"><i data-lucide="calendar-days" class="w-4 h-4 text-slate-900"></i></span> 直近の予定 (押すと出欠に飛ぶ)
+            <span class="p-1 bg-pickle-lime rounded-xl pop-border"><i data-lucide="calendar-days" class="w-4 h-4 text-slate-900"></i></span> 近い予定順 (押すと出欠に飛ぶ)
           </span>
           <span id="weekly-count-badge" class="text-[10px] bg-pickle-lime text-slate-900 font-black px-2 py-0.5 rounded-full pop-border">0件</span>
         </h2>
@@ -402,7 +431,12 @@
     <!-- Tab 3: Schedule & Attendance (シンプルな練習日程作成) -->
     <div id="tab-gym" class="tab-content hidden space-y-4">
       <div id="practice-create-box" class="bg-white dark:bg-slate-800 p-4 rounded-3xl pop-border pop-shadow hidden">
-        <h2 class="font-black text-slate-800 dark:text-slate-100 mb-3 text-sm">練習日程作成 🏓</h2>
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="font-black text-slate-800 dark:text-slate-100 text-sm">練習日程作成 🏓</h2>
+          <button id="location-manage-btn" onclick="openManageLocationsModal()" class="hidden text-[10px] bg-pickle-blue text-white font-black px-2 py-1 rounded-xl pop-border flex items-center gap-1">
+            <i data-lucide="map-pin" class="w-3 h-3"></i> 場所の追加・変更
+          </button>
+        </div>
         <div class="space-y-3 text-xs font-bold">
           <div>
             <label class="block text-slate-500 dark:text-slate-400 mb-1">開催日</label>
@@ -537,6 +571,16 @@
       return `${hours}:${minutes}`;
     }
 
+    // 日付文字列 (例: "2026-08-15 (18:00〜21:00)" または "2026-08-15") から Dateオブジェクトを取得
+    function parseScheduleDate(dateStr) {
+      if (!dateStr) return new Date(0);
+      const match = dateStr.match(/\d{4}-\d{2}-\d{2}/);
+      if (match) {
+        return new Date(match[0] + "T23:59:59");
+      }
+      return new Date(dateStr);
+    }
+
     function switchSetupTab(mode) {
       if (mode === 'join') {
         document.getElementById('setup-form-join').classList.remove('hidden');
@@ -630,6 +674,72 @@
       });
       locSelect.innerHTML += `<option value="その他">その他</option>`;
       handleLocationChange();
+    }
+
+    // 【新機能】場所管理モーダルの制御
+    function openManageLocationsModal() {
+      if (!isOfficerRole()) return alert("場所の変更権限がありません。");
+      renderLocationManageList();
+      document.getElementById('manage-locations-modal').classList.remove('hidden');
+    }
+
+    function closeManageLocationsModal() {
+      document.getElementById('manage-locations-modal').classList.add('hidden');
+    }
+
+    function renderLocationManageList() {
+      const listContainer = document.getElementById('location-manage-list');
+      const locs = currentCircle.locations || [];
+
+      if (locs.length === 0) {
+        listContainer.innerHTML = '<p class="text-slate-400 py-1 text-[11px]">登録された場所はありません。</p>';
+        return;
+      }
+
+      listContainer.innerHTML = locs.map((loc, idx) => `
+        <div class="flex justify-between items-center bg-slate-100 dark:bg-slate-700 p-2 rounded-xl border border-slate-800">
+          <span class="font-bold text-slate-800 dark:text-slate-100">${escapeHTML(loc)}</span>
+          <button onclick="removeLocation(${idx})" class="text-[10px] bg-pickle-pink text-white px-2 py-0.5 rounded-lg pop-border">削除</button>
+        </div>
+      `).join('');
+    }
+
+    async function addNewLocation() {
+      const input = document.getElementById('new-location-input');
+      const newLoc = input.value.trim();
+      if (!newLoc) return alert('場所名を入力してください');
+
+      if (!currentCircle.locations) currentCircle.locations = [];
+      if (currentCircle.locations.includes(newLoc)) return alert('既に登録されている場所です');
+
+      currentCircle.locations.push(newLoc);
+      
+      const { error } = await db.from('circles')
+        .update({ locations: currentCircle.locations })
+        .eq('id', currentCircle.id);
+
+      if (error) return alert(`更新失敗: ${error.message}`);
+
+      localStorage.setItem('active_circle', JSON.stringify(currentCircle));
+      input.value = '';
+      renderLocationManageList();
+      updateLocationOptions();
+      alert('新しい場所を追加しました！');
+    }
+
+    async function removeLocation(index) {
+      if (!confirm('この場所をリストから削除しますか？')) return;
+      currentCircle.locations.splice(index, 1);
+
+      const { error } = await db.from('circles')
+        .update({ locations: currentCircle.locations })
+        .eq('id', currentCircle.id);
+
+      if (error) return alert(`削除失敗: ${error.message}`);
+
+      localStorage.setItem('active_circle', JSON.stringify(currentCircle));
+      renderLocationManageList();
+      updateLocationOptions();
     }
 
     function initPracticeFormDateTime() {
@@ -894,8 +1004,14 @@
 
       const homeAdminActions = document.getElementById("home-admin-actions");
       if (homeAdminActions) {
-        if (isAdmin) homeAdminActions.classList.remove("hidden");
+        if (isOfficerRole()) homeAdminActions.classList.remove("hidden");
         else homeAdminActions.classList.add("hidden");
+      }
+
+      const locationManageBtn = document.getElementById("location-manage-btn");
+      if (locationManageBtn) {
+        if (isOfficerRole()) locationManageBtn.classList.remove("hidden");
+        else locationManageBtn.classList.add("hidden");
       }
 
       const memberAddBox = document.getElementById("member-add-box");
@@ -1022,10 +1138,10 @@
       fetchMembers();
     }
 
-    // 予定表・出欠一覧の取得と描画
+    // 予定表・出欠一覧の取得と描画 (近い順ソート & 過去予定の判定)
     async function fetchPractices() {
       if (!currentCircle) return;
-      const { data: practices, error } = await db.from('practices').select('*').eq('circle_id', currentCircle.id).order('id', { ascending: false });
+      const { data: practices, error } = await db.from('practices').select('*').eq('circle_id', currentCircle.id);
       const { data: attendance } = await db.from('attendance').select('*');
 
       const list = document.getElementById('practice-list');
@@ -1039,9 +1155,21 @@
         return;
       }
 
+      // 今日(00:00:00)の判定用タイムスタンプ
+      const nowToday = new Date();
+      nowToday.setHours(0, 0, 0, 0);
+
+      // 【ソート処理】日付が近い順（昇順）に並び替え
+      practices.sort((a, b) => {
+        return parseScheduleDate(a.date) - parseScheduleDate(b.date);
+      });
+
       let html = '';
 
       practices.forEach(p => {
+        const pDateObj = parseScheduleDate(p.date);
+        const isPast = pDateObj < nowToday; // 過去の予定かどうか判定
+
         const attFilter = (attendance || []).filter(a => a.practice_id === p.id);
         const attMap = { '参加': [], '不参加': [], '未定': [] };
         attFilter.forEach(a => { if (attMap[a.status]) attMap[a.status].push(a.member_name); });
@@ -1063,11 +1191,18 @@
           displayMemo = memoText.replace(/\[イベント:\s*.*?\]/, '').replace('[イベント]', '').trim();
         }
 
-        const badgeColor = isEvent ? 'bg-pickle-pink text-white' : 'bg-pickle-lime text-slate-900';
-        const typeLabel = isEvent ? '🎉 イベント' : '🏓 練習日程';
+        const badgeColor = isPast 
+          ? 'bg-slate-400 text-white' 
+          : (isEvent ? 'bg-pickle-pink text-white' : 'bg-pickle-lime text-slate-900');
+        const typeLabel = isPast 
+          ? '🏁 終了' 
+          : (isEvent ? '🎉 イベント' : '🏓 練習日程');
+
+        // 過去の予定の場合はグレーアウト用クラスを適用
+        const cardBgClass = isPast ? 'bg-slate-100 dark:bg-slate-800/40 opacity-60 grayscale' : 'bg-white dark:bg-slate-700/50';
 
         html += `
-          <div id="practice-card-${p.id}" class="rounded-2xl p-3.5 bg-white dark:bg-slate-700/50 pop-border pop-shadow space-y-2 transition-all">
+          <div id="practice-card-${p.id}" class="rounded-2xl p-3.5 ${cardBgClass} pop-border pop-shadow space-y-2 transition-all">
             <div class="flex justify-between items-start">
               <div>
                 <div class="flex items-center gap-1.5 mb-1">
@@ -1086,12 +1221,14 @@
             </div>
 
             <div class="border-t-2 border-slate-800 dark:border-slate-600 pt-2 mt-2">
-              <p class="font-black text-slate-600 dark:text-slate-300 mb-1">出欠投票 (${currentUser ? escapeHTML(currentUser.name) : '未ログイン'})</p>
+              <p class="font-black text-slate-600 dark:text-slate-300 mb-1">
+                ${isPast ? '出欠結果 (受付終了)' : `出欠投票 (${currentUser ? escapeHTML(currentUser.name) : '未ログイン'})`}
+              </p>
               
               <div class="flex gap-1.5 mb-2 font-black">
-                <button onclick="voteAttendance(${p.id}, '参加')" class="flex-1 bg-pickle-lime text-slate-900 py-1.5 rounded-xl pop-border pop-shadow-sm transition active:translate-y-0.5">参加 🏓</button>
-                <button onclick="voteAttendance(${p.id}, '不参加')" class="flex-1 bg-pickle-pink text-white py-1.5 rounded-xl pop-border pop-shadow-sm transition active:translate-y-0.5">不参加</button>
-                <button onclick="voteAttendance(${p.id}, '未定')" class="flex-1 bg-pickle-yellow text-slate-900 py-1.5 rounded-xl pop-border pop-shadow-sm transition active:translate-y-0.5">未定</button>
+                <button onclick="voteAttendance(${p.id}, '参加')" ${isPast ? 'disabled' : ''} class="flex-1 bg-pickle-lime text-slate-900 py-1.5 rounded-xl pop-border pop-shadow-sm transition active:translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed">参加 🏓</button>
+                <button onclick="voteAttendance(${p.id}, '不参加')" ${isPast ? 'disabled' : ''} class="flex-1 bg-pickle-pink text-white py-1.5 rounded-xl pop-border pop-shadow-sm transition active:translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed">不参加</button>
+                <button onclick="voteAttendance(${p.id}, '未定')" ${isPast ? 'disabled' : ''} class="flex-1 bg-pickle-yellow text-slate-900 py-1.5 rounded-xl pop-border pop-shadow-sm transition active:translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed">未定</button>
               </div>
 
               <div class="text-[11px] bg-slate-50 dark:bg-slate-800/80 p-2 rounded-xl pop-border space-y-0.5 font-bold">
@@ -1107,11 +1244,14 @@
       list.innerHTML = html;
       document.getElementById('weekly-count-badge').innerText = `${practices.length}件`;
 
-      // ホーム画面の直近の予定
+      // ホーム画面の直近の予定（近い順）
       weeklyList.innerHTML = practices.map(p => {
+        const pDateObj = parseScheduleDate(p.date);
+        const isPast = pDateObj < nowToday;
+
         const memoText = p.memo || '';
         const isEvent = memoText.includes('[イベント');
-        const icon = isEvent ? '🎉' : '🏓';
+        const icon = isPast ? '🏁' : (isEvent ? '🎉' : '🏓');
 
         let displayTitle = "定期練習";
         if (isEvent) {
@@ -1119,10 +1259,12 @@
           displayTitle = (match && match[1]) ? match[1] : "イベント";
         }
 
+        const opacityClass = isPast ? 'opacity-50 bg-slate-200/50 dark:bg-slate-800/30' : 'bg-slate-50 dark:bg-slate-700/50 hover:bg-pickle-yellow/20';
+
         return `
-          <div onclick="jumpToSchedule(${p.id})" class="p-2.5 bg-slate-50 dark:bg-slate-700/50 hover:bg-pickle-yellow/20 rounded-xl border-2 border-slate-800 cursor-pointer transition flex justify-between items-center font-bold">
+          <div onclick="jumpToSchedule(${p.id})" class="p-2.5 ${opacityClass} rounded-xl border-2 border-slate-800 cursor-pointer transition flex justify-between items-center font-bold">
             <div>
-              <span class="font-black text-slate-800 dark:text-slate-100">${icon} ${escapeHTML(displayTitle)}</span>
+              <span class="font-black text-slate-800 dark:text-slate-100">${icon} ${escapeHTML(displayTitle)} ${isPast ? '<span class="text-[10px] text-slate-400">(終了)</span>' : ''}</span>
               <div class="text-[10px] text-slate-500 dark:text-slate-300">${escapeHTML(p.date)} @ ${escapeHTML(p.location)}</div>
             </div>
             <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400"></i>
