@@ -46,7 +46,7 @@
     .pop-shadow-sm { box-shadow: 0 2px 0 0 #000; }
     .pop-border { border: 2px solid #000; }
     
-    input[type="date"], input[type="time"], select, input[type="text"], input[type="password"] {
+    input[type="date"], input[type="time"], select, input[type="text"], input[type="password"], textarea {
       -webkit-appearance: none;
       -moz-appearance: none;
       appearance: none;
@@ -172,6 +172,36 @@
       <div class="flex gap-2 pt-2 text-xs font-black">
         <button onclick="closeEventModal()" class="w-1/2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 py-2.5 rounded-xl pop-border">キャンセル</button>
         <button onclick="submitNewEvent()" class="w-1/2 bg-pickle-pink text-white py-2.5 rounded-xl pop-border pop-shadow-sm">作成する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- お知らせ新規投稿モーダル -->
+  <div id="create-announcement-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] hidden flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-3xl p-5 pop-border pop-shadow space-y-3 text-slate-800 dark:text-slate-100">
+      <h3 class="font-extrabold text-sm flex items-center gap-1.5 text-pickle-yellow">
+        <i data-lucide="megaphone" class="w-4 h-4 text-slate-900"></i> お知らせ・連絡の投稿 📢
+      </h3>
+      <div class="space-y-2 text-xs font-bold">
+        <div>
+          <label class="block text-slate-500 dark:text-slate-400 mb-1">件名・タイトル</label>
+          <input type="text" id="announcement-title" placeholder="例: 【重要】来週のコート変更について" class="w-full border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-2.5">
+        </div>
+        <div>
+          <label class="block text-slate-500 dark:text-slate-400 mb-1">本文・詳細</label>
+          <textarea id="announcement-content" rows="3" placeholder="お知らせの詳細を入力してください..." class="w-full border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-2.5"></textarea>
+        </div>
+        <div>
+          <label class="block text-slate-500 dark:text-slate-400 mb-1">重要度</label>
+          <select id="announcement-type" class="w-full border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-2.5">
+            <option value="normal">通常連絡 📢</option>
+            <option value="important">重要なお知らせ 🔥</option>
+          </select>
+        </div>
+      </div>
+      <div class="flex gap-2 pt-2 text-xs font-black">
+        <button onclick="closeAnnouncementModal()" class="w-1/2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 py-2.5 rounded-xl pop-border">キャンセル</button>
+        <button onclick="submitNewAnnouncement()" class="w-1/2 bg-pickle-yellow text-slate-900 py-2.5 rounded-xl pop-border pop-shadow-sm">投稿する</button>
       </div>
     </div>
   </div>
@@ -318,14 +348,17 @@
     <!-- Tab 1: Home / AI / Announcements -->
     <div id="tab-home" class="tab-content space-y-4">
       
-      <!-- 役職者メニュー -->
+      <!-- 役職者メニュー (イベント作成 & お知らせ投稿) -->
       <div id="home-admin-actions" class="hidden bg-white dark:bg-slate-800 p-4 rounded-3xl pop-border pop-shadow space-y-2">
         <div class="flex items-center gap-1.5 text-xs font-black text-pickle-pink">
           <i data-lucide="sparkles" class="w-4 h-4"></i> 役職者メニュー
         </div>
-        <div>
+        <div class="grid grid-cols-2 gap-2">
           <button onclick="openEventModal()" class="w-full bg-pickle-pink text-white py-2.5 px-2 rounded-2xl pop-border pop-shadow-sm hover:opacity-90 transition flex items-center justify-center gap-1 text-xs font-black">
             <i data-lucide="party-popper" class="w-4 h-4"></i> イベント作成
+          </button>
+          <button onclick="openAnnouncementModal()" class="w-full bg-pickle-yellow text-slate-900 py-2.5 px-2 rounded-2xl pop-border pop-shadow-sm hover:opacity-90 transition flex items-center justify-center gap-1 text-xs font-black">
+            <i data-lucide="megaphone" class="w-4 h-4"></i> お知らせ作成
           </button>
         </div>
       </div>
@@ -359,6 +392,18 @@
         </div>
       </div>
 
+      <!-- お知らせ掲示板 (ピン留め対応) -->
+      <div class="bg-white dark:bg-slate-800 p-4 rounded-3xl pop-border pop-shadow space-y-3">
+        <div class="flex justify-between items-center">
+          <h2 class="font-black text-slate-800 dark:text-slate-100 flex items-center gap-2 text-sm">
+            <span class="p-1 bg-pickle-yellow rounded-xl pop-border"><i data-lucide="megaphone" class="w-4 h-4 text-slate-900"></i></span> お知らせ・連絡
+          </h2>
+        </div>
+        <div id="announcement-list" class="space-y-2 text-xs divide-y-2 divide-slate-100 dark:divide-slate-700">
+          <p class="text-slate-400 py-1 font-bold">お知らせはありません。</p>
+        </div>
+      </div>
+
       <!-- ② サークルアクティビティ & My実績カード -->
       <div class="bg-white dark:bg-slate-800 p-4 rounded-3xl pop-border pop-shadow space-y-3">
         <h2 class="font-black text-slate-800 dark:text-slate-100 text-sm flex items-center gap-2">
@@ -377,18 +422,6 @@
             <p class="text-[10px] font-bold text-slate-400">今週のサークル参加者</p>
             <p id="stat-weekly-total" class="text-lg font-black text-pickle-pink">0名</p>
           </div>
-        </div>
-      </div>
-
-      <!-- お知らせ掲示板 -->
-      <div class="bg-white dark:bg-slate-800 p-4 rounded-3xl pop-border pop-shadow space-y-3">
-        <div class="flex justify-between items-center">
-          <h2 class="font-black text-slate-800 dark:text-slate-100 flex items-center gap-2 text-sm">
-            <span class="p-1 bg-pickle-yellow rounded-xl pop-border"><i data-lucide="megaphone" class="w-4 h-4 text-slate-900"></i></span> お知らせ・連絡
-          </h2>
-        </div>
-        <div id="announcement-list" class="space-y-2 text-xs divide-y-2 divide-slate-100 dark:divide-slate-700">
-          <p class="text-slate-400 py-1">お知らせはありません。</p>
         </div>
       </div>
 
@@ -607,7 +640,8 @@
     let currentRole = "部員";
     let currentUser = null;
     let cachedMembers = [];
-    let nextUpcomingPracticeId = null; // 次回予定のID保持用
+    let cachedAnnouncements = [];
+    let nextUpcomingPracticeId = null;
 
     function generate6DigitCode() {
       return Math.floor(100000 + Math.random() * 900000).toString();
@@ -723,6 +757,7 @@
       fetchMembers();
       initPracticeFormDateTime();
       fetchPractices();
+      fetchAnnouncements();
       fetchFeedbacks();
     }
 
@@ -1044,6 +1079,179 @@
       alert('イベントを作成し、出欠予定表に追加しました！🎉');
     }
 
+    // お知らせ作成モーダル操作
+    function openAnnouncementModal() {
+      document.getElementById('announcement-title').value = '';
+      document.getElementById('announcement-content').value = '';
+      document.getElementById('announcement-type').value = 'normal';
+      document.getElementById('create-announcement-modal').classList.remove('hidden');
+    }
+
+    function closeAnnouncementModal() {
+      document.getElementById('create-announcement-modal').classList.add('hidden');
+    }
+
+    async function submitNewAnnouncement() {
+      const title = document.getElementById('announcement-title').value.trim();
+      const content = document.getElementById('announcement-content').value.trim();
+      const type = document.getElementById('announcement-type').value;
+
+      if (!title || !content) return alert('件名と本文を入力してください。');
+
+      const { error } = await db.from('announcements').insert([{
+        circle_id: currentCircle.id,
+        title,
+        content,
+        type,
+        created_at: new Date().toISOString()
+      }]);
+
+      if (error) {
+        // DB未作成時のローカルフォールバック保存
+        const localData = JSON.parse(localStorage.getItem(`announcements_${currentCircle.id}`) || "[]");
+        localData.unshift({
+          id: Date.now(),
+          circle_id: currentCircle.id,
+          title,
+          content,
+          type,
+          created_at: new Date().toISOString()
+        });
+        localStorage.setItem(`announcements_${currentCircle.id}`, JSON.stringify(localData));
+      }
+
+      closeAnnouncementModal();
+      await fetchAnnouncements();
+      alert('お知らせを投稿しました！📢');
+    }
+
+    // お知らせの取得 & 描画（ピン留めアイテム含む）
+    async function fetchAnnouncements() {
+      if (!currentCircle) return;
+
+      let announcements = [];
+      const { data, error } = await db.from('announcements')
+        .select('*')
+        .eq('circle_id', currentCircle.id)
+        .order('created_at', { ascending: false });
+
+      if (!error && data) {
+        announcements = data;
+      } else {
+        announcements = JSON.parse(localStorage.getItem(`announcements_${currentCircle.id}`) || "[]");
+      }
+
+      cachedAnnouncements = announcements;
+      renderAnnouncements();
+    }
+
+    function renderAnnouncements() {
+      const list = document.getElementById('announcement-list');
+      const isOfficer = isOfficerRole();
+
+      // ローカル保存されているピン留めスケジュール
+      const pinnedPractices = JSON.parse(localStorage.getItem(`pinned_practices_${currentCircle.id}`) || "[]");
+
+      if (cachedAnnouncements.length === 0 && pinnedPractices.length === 0) {
+        list.innerHTML = '<p class="text-slate-400 py-1 font-bold">お知らせはありません。</p>';
+        return;
+      }
+
+      let html = '';
+
+      // ① ピン留めされた練習・イベントを表示
+      pinnedPractices.forEach(p => {
+        let displayTitle = "定期練習";
+        if (p.memo && p.memo.includes('[イベント')) {
+          const match = p.memo.match(/\[イベント:\s*(.*?)\]/);
+          displayTitle = (match && match[1]) ? match[1] : "イベント";
+        }
+
+        html += `
+          <div class="py-2.5 first:pt-0 last:pb-0 space-y-1">
+            <div class="flex items-center justify-between">
+              <span class="bg-pickle-pink text-white text-[10px] font-black px-2 py-0.5 rounded-full pop-border flex items-center gap-1">
+                📌 ピン留め予定
+              </span>
+              ${isOfficer ? `
+                <button onclick="unpinPractice(${p.id})" class="text-[10px] text-slate-400 underline font-bold">
+                  ピン留め解除
+                </button>
+              ` : ''}
+            </div>
+            <div onclick="jumpToSchedule(${p.id})" class="cursor-pointer bg-amber-50 dark:bg-slate-700/60 p-2.5 rounded-2xl border-2 border-slate-800 space-y-0.5">
+              <p class="font-black text-slate-800 dark:text-slate-100 text-xs">🏓 ${escapeHTML(displayTitle)}</p>
+              <p class="text-[11px] font-bold text-slate-600 dark:text-slate-300">📅 ${escapeHTML(p.date)} @ ${escapeHTML(p.location)}</p>
+            </div>
+          </div>
+        `;
+      });
+
+      // ② 通常投稿されたお知らせを表示
+      cachedAnnouncements.forEach(a => {
+        const isImportant = a.type === 'important';
+        const badgeColor = isImportant ? 'bg-pickle-pink text-white' : 'bg-pickle-yellow text-slate-900';
+        const badgeLabel = isImportant ? '🔥 重要' : '📢 お知らせ';
+
+        html += `
+          <div class="py-2.5 first:pt-0 last:pb-0 space-y-1">
+            <div class="flex items-center justify-between">
+              <span class="${badgeColor} text-[10px] font-black px-2 py-0.5 rounded-full pop-border">
+                ${badgeLabel}
+              </span>
+              ${isOfficer ? `
+                <button onclick="deleteAnnouncement(${a.id})" class="text-[10px] bg-pickle-pink text-white px-2 py-0.5 rounded-lg pop-border font-black">
+                  削除
+                </button>
+              ` : ''}
+            </div>
+            <h4 class="font-black text-slate-800 dark:text-slate-100 text-xs">${escapeHTML(a.title)}</h4>
+            <p class="text-slate-600 dark:text-slate-300 text-[11px] font-bold whitespace-pre-wrap">${escapeHTML(a.content)}</p>
+          </div>
+        `;
+      });
+
+      list.innerHTML = html;
+    }
+
+    async function deleteAnnouncement(id) {
+      if (!confirm('このお知らせを削除しますか？')) return;
+
+      const { error } = await db.from('announcements').delete().eq('id', id);
+      if (error) {
+        let localData = JSON.parse(localStorage.getItem(`announcements_${currentCircle.id}`) || "[]");
+        localData = localData.filter(a => a.id !== id);
+        localStorage.setItem(`announcements_${currentCircle.id}`, JSON.stringify(localData));
+      }
+
+      fetchAnnouncements();
+    }
+
+    // スケジュールを「お知らせ」にピン留めする機能
+    function pinPracticeToAnnouncement(practiceId, date, location, memo) {
+      if (!isOfficerRole()) return alert("ピン留め権限がありません。");
+
+      let pinned = JSON.parse(localStorage.getItem(`pinned_practices_${currentCircle.id}`) || "[]");
+      if (pinned.some(p => p.id === practiceId)) {
+        return alert("この予定は既にピン留めされています📌");
+      }
+
+      pinned.push({ id: practiceId, date, location, memo });
+      localStorage.setItem(`pinned_practices_${currentCircle.id}`, JSON.stringify(pinned));
+
+      renderAnnouncements();
+      alert("お知らせの先頭にピン留めしました！📌");
+    }
+
+    function unpinPractice(practiceId) {
+      let pinned = JSON.parse(localStorage.getItem(`pinned_practices_${currentCircle.id}`) || "[]");
+      pinned = pinned.filter(p => p.id !== practiceId);
+      localStorage.setItem(`pinned_practices_${currentCircle.id}`, JSON.stringify(pinned));
+
+      renderAnnouncements();
+      alert("ピン留めを解除しました！");
+    }
+
     function jumpToSchedule(id) {
       switchTab('gym');
       setTimeout(() => {
@@ -1061,6 +1269,7 @@
       updateRoleVisibility();
       fetchPractices();
       fetchMembers();
+      fetchAnnouncements();
       fetchFeedbacks();
     }
 
@@ -1260,12 +1469,13 @@
       const list = document.getElementById('practice-list');
       const weeklyList = document.getElementById('weekly-practice-list');
       const canDelete = hasAdminAccess() || currentRole === "コート取り";
+      const isOfficer = isOfficerRole();
 
       if (error || !practices || practices.length === 0) {
         list.innerHTML = '<p class="text-slate-400 py-2">予定はありません。</p>';
         weeklyList.innerHTML = '<p class="text-slate-400 py-1">直近1週間の予定はありません。</p>';
         document.getElementById('weekly-count-badge').innerText = '0件';
-        updateCountdownAndStats([], []);
+        updateCountdownAndStats([], [], []);
         return;
       }
 
@@ -1327,11 +1537,19 @@
                 <div class="text-pickle-blue font-black text-xs">📍 ${escapeHTML(p.location)}</div>
                 ${displayMemo ? `<div class="text-slate-500 text-[11px] mt-0.5">メモ: ${escapeHTML(displayMemo)}</div>` : ''}
               </div>
-              ${canDelete ? `
-                <button onclick="deletePractice(${p.id})" class="text-xs bg-pickle-pink text-white px-2 py-0.5 rounded-lg pop-border">
-                  削除
-                </button>
-              ` : ''}
+              
+              <div class="flex flex-col gap-1 items-end">
+                ${isOfficer && !isPast ? `
+                  <button onclick="pinPracticeToAnnouncement(${p.id}, '${escapeHTML(p.date)}', '${escapeHTML(p.location)}', '${escapeHTML(displayMemo)}')" class="text-[10px] bg-pickle-yellow text-slate-900 font-black px-2 py-0.5 rounded-lg pop-border flex items-center gap-0.5">
+                    📌 ピン留め
+                  </button>
+                ` : ''}
+                ${canDelete ? `
+                  <button onclick="deletePractice(${p.id})" class="text-xs bg-pickle-pink text-white px-2 py-0.5 rounded-lg pop-border">
+                    削除
+                  </button>
+                ` : ''}
+              </div>
             </div>
 
             <div class="border-t-2 border-slate-800 dark:border-slate-600 pt-2 mt-2">
@@ -1390,13 +1608,11 @@
         }).join('');
       }
 
-      // カウントダウンと統計データの更新実行
       updateCountdownAndStats(futurePractices, practices, attendance || []);
 
       lucide.createIcons();
     }
 
-    // ① カウントダウン & ② 統計の更新計算ロジック
     function updateCountdownAndStats(futurePractices, allPractices, attendanceList) {
       const detailsContainer = document.getElementById('next-practice-details');
       const badge = document.getElementById('next-countdown-badge');
@@ -1410,7 +1626,7 @@
         voteActions.classList.add('hidden');
         nextUpcomingPracticeId = null;
       } else {
-        const nextP = futurePractices[0]; // 直近の未来予定
+        const nextP = futurePractices[0];
         nextUpcomingPracticeId = nextP.id;
 
         const today = new Date();
@@ -1458,7 +1674,6 @@
         }
       }
 
-      // ② 統計データの算出
       if (!currentUser) {
         document.getElementById('stat-my-count').innerText = "0回";
         document.getElementById('stat-my-rate').innerText = "0%";
@@ -1470,13 +1685,11 @@
       const currentYear = now.getFullYear();
       const currentMonth = now.getMonth();
 
-      // 今月開催された/開催予定の練習
       const thisMonthPractices = allPractices.filter(p => {
         const d = parseScheduleDate(p.date);
         return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
       });
 
-      // 今月自分が「参加」と回答した回数
       let myMonthJoinCount = 0;
       thisMonthPractices.forEach(p => {
         const joined = attendanceList.some(a => a.practice_id === p.id && a.member_name === currentUser.name && a.status === '参加');
@@ -1487,7 +1700,6 @@
         ? Math.round((myMonthJoinCount / thisMonthPractices.length) * 100) 
         : 0;
 
-      // 今週参加予定の全サークル部員の合計数
       const nowToday = new Date();
       nowToday.setHours(0,0,0,0);
       const nextWeekDate = new Date(nowToday.getTime() + 7 * 24 * 60 * 60 * 1000);
@@ -1506,7 +1718,6 @@
       document.getElementById('stat-weekly-total').innerText = `${weeklyJoinTotal}名`;
     }
 
-    // ホームからのクイック出欠投票
     async function quickVote(status) {
       if (!nextUpcomingPracticeId) return alert('投票対象の次回予定がありません');
       await voteAttendance(nextUpcomingPracticeId, status);
@@ -1610,7 +1821,7 @@
 
     function fetchFeedbacks() {
       const list = document.getElementById('feedback-list');
-      list.innerHTML = '<p class="text-slate-400 py-2">現在、届いている意見はありません。</p>';
+      list.innerHTML = '<p class="text-slate-400 py-2 font-bold">現在、届いている意見はありません。</p>';
     }
   </script>
 </body>
