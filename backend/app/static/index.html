@@ -58,7 +58,7 @@
 <body class="bg-pickle-bg dark:bg-slate-900 text-slate-800 dark:text-slate-100 pb-24 transition-colors duration-200">
 
   <script>
-    // Supabase 設定 (先頭を小文字 eyJ に修正済み)
+    // Supabase 設定 (先頭小文字 eyJ)
     const SUPABASE_URL = 'https://awafhqvdfqiizftulefk.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF3YWZocXZkZnFpaXpmdHVsZWZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYzNjQ5MDEsImV4cCI6MjEwMTk0MDkwMX0.qRfFi2IhNActhSMsIazA6RQNJFXXEuQArsuJ7dtwXzI';
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -141,6 +141,37 @@
         <button onclick="resetCircleSelection()" class="w-full text-slate-400 underline text-[10px] text-center block pt-1">
           別のサークルに切り替える
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- イベント作成専用モーダル -->
+  <div id="create-event-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] hidden flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-3xl p-5 pop-border pop-shadow space-y-3 text-slate-800 dark:text-slate-100">
+      <h3 class="font-extrabold text-sm flex items-center gap-1.5 text-pickle-pink">
+        <i data-lucide="party-popper" class="w-4 h-4"></i> 新規イベント作成 🎉
+      </h3>
+      <div class="space-y-2 text-xs font-bold">
+        <div>
+          <label class="block text-slate-500 dark:text-slate-400 mb-1">イベント名</label>
+          <input type="text" id="event-title" placeholder="例: 新歓BBQ / 合宿 / 送別会" class="w-full border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-2.5">
+        </div>
+        <div>
+          <label class="block text-slate-500 dark:text-slate-400 mb-1">開催日</label>
+          <input type="date" id="event-date" class="w-full border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-2.5">
+        </div>
+        <div>
+          <label class="block text-slate-500 dark:text-slate-400 mb-1">開催場所</label>
+          <input type="text" id="event-location" placeholder="例: 池袋公園 / 熱海温泉" class="w-full border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-2.5">
+        </div>
+        <div>
+          <label class="block text-slate-500 dark:text-slate-400 mb-1">概要・詳細メモ</label>
+          <input type="text" id="event-memo" placeholder="例: 会費3000円 / 現地集合" class="w-full border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-2.5">
+        </div>
+      </div>
+      <div class="flex gap-2 pt-2 text-xs font-black">
+        <button onclick="closeEventModal()" class="w-1/2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 py-2.5 rounded-xl pop-border">キャンセル</button>
+        <button onclick="submitNewEvent()" class="w-1/2 bg-pickle-pink text-white py-2.5 rounded-xl pop-border pop-shadow-sm">作成する</button>
       </div>
     </div>
   </div>
@@ -263,18 +294,14 @@
     <!-- Tab 1: Home / AI / Announcements -->
     <div id="tab-home" class="tab-content space-y-4">
       
+      <!-- 代表専用のアクション -->
       <div id="home-admin-actions" class="hidden bg-white dark:bg-slate-800 p-4 rounded-3xl pop-border pop-shadow space-y-2">
         <div class="flex items-center gap-1.5 text-xs font-black text-pickle-pink">
-          <i data-lucide="sparkles" class="w-4 h-4"></i> 全権限（代表・副代表）メニュー
+          <i data-lucide="sparkles" class="w-4 h-4"></i> 代表・副代表メニュー
         </div>
-        <div class="grid grid-cols-2 gap-2 text-xs font-black">
-          <button onclick="openCreateModal('event')" class="bg-pickle-pink text-white py-2.5 px-3 rounded-2xl pop-border pop-shadow-sm hover:opacity-90 transition flex items-center justify-center gap-1">
-            <i data-lucide="party-popper" class="w-4 h-4"></i> 新規イベント作成
-          </button>
-          <button onclick="openCreateModal('practice')" class="bg-pickle-lime text-slate-900 py-2.5 px-3 rounded-2xl pop-border pop-shadow-sm hover:opacity-90 transition flex items-center justify-center gap-1">
-            <i data-lucide="calendar-plus" class="w-4 h-4"></i> 練習日程の作成
-          </button>
-        </div>
+        <button onclick="openEventModal()" class="w-full bg-pickle-pink text-white py-2.5 px-3 rounded-2xl pop-border pop-shadow-sm hover:opacity-90 transition flex items-center justify-center gap-1.5 text-xs font-black">
+          <i data-lucide="party-popper" class="w-4 h-4"></i> 新規イベント作成 (専用フォーム)
+        </button>
       </div>
 
       <!-- お知らせ掲示板 -->
@@ -289,11 +316,11 @@
         </div>
       </div>
 
-      <!-- 直近1週間の予定 -->
+      <!-- 直近の予定 -->
       <div class="bg-white dark:bg-slate-800 p-4 rounded-3xl pop-border pop-shadow space-y-3">
         <h2 class="font-black text-slate-800 dark:text-slate-100 text-sm flex items-center justify-between">
           <span class="flex items-center gap-2">
-            <span class="p-1 bg-pickle-lime rounded-xl pop-border"><i data-lucide="calendar-days" class="w-4 h-4 text-slate-900"></i></span> 直近の予定 (クリックでジャンプ)
+            <span class="p-1 bg-pickle-lime rounded-xl pop-border"><i data-lucide="calendar-days" class="w-4 h-4 text-slate-900"></i></span> 直近の予定 (押すと出欠に飛ぶ)
           </span>
           <span id="weekly-count-badge" class="text-[10px] bg-pickle-lime text-slate-900 font-black px-2 py-0.5 rounded-full pop-border">0件</span>
         </h2>
@@ -372,17 +399,11 @@
       </div>
     </div>
 
-    <!-- Tab 3: Schedule & Attendance -->
+    <!-- Tab 3: Schedule & Attendance (以前通りのシンプルな練習日程作成) -->
     <div id="tab-gym" class="tab-content hidden space-y-4">
-      <div id="practice-create-box" class="bg-white dark:bg-slate-800 p-4 rounded-3xl pop-border pop-shadow relative hidden">
-        <input type="hidden" id="practice-type-mode" value="practice">
-        <span id="form-type-badge" class="absolute top-3 right-3 text-[10px] bg-pickle-lime text-slate-900 font-black px-2 py-0.5 rounded-full pop-border">練習作成</span>
-        <h2 id="form-type-title" class="font-black text-slate-800 dark:text-slate-100 mb-3 text-sm">練習日程作成 🏓</h2>
+      <div id="practice-create-box" class="bg-white dark:bg-slate-800 p-4 rounded-3xl pop-border pop-shadow hidden">
+        <h2 class="font-black text-slate-800 dark:text-slate-100 mb-3 text-sm">練習日程作成 🏓</h2>
         <div class="space-y-3 text-xs font-bold">
-          <div>
-            <label class="block text-slate-500 dark:text-slate-400 mb-1" id="label-event-name">タイトル / 名称</label>
-            <input type="text" id="practice-title" placeholder="例: 定期練習 / 新歓BBQ" class="w-full border-2 border-slate-800 dark:border-slate-600 rounded-xl p-2.5 dark:bg-slate-700 bg-white">
-          </div>
           <div>
             <label class="block text-slate-500 dark:text-slate-400 mb-1">開催日</label>
             <input type="date" id="practice-date" class="w-full border-2 border-slate-800 dark:border-slate-600 rounded-xl p-2.5 dark:bg-slate-700 bg-white">
@@ -399,7 +420,7 @@
           </div>
           <div class="grid grid-cols-2 gap-2">
             <div>
-              <label class="block text-slate-500 dark:text-slate-400 mb-1">場所 / 種別</label>
+              <label class="block text-slate-500 dark:text-slate-400 mb-1">場所</label>
               <select id="practice-location" onchange="handleLocationChange()" class="w-full border-2 border-slate-800 dark:border-slate-600 rounded-xl p-2.5 dark:bg-slate-700 bg-white">
               </select>
             </div>
@@ -414,9 +435,9 @@
           </div>
           <div>
             <label class="block text-slate-500 dark:text-slate-400 mb-1">メモ・詳細</label>
-            <input type="text" id="practice-memo" placeholder="例: マイパドル持参 / 会費1000円" class="w-full border-2 border-slate-800 dark:border-slate-600 rounded-xl p-2.5 dark:bg-slate-700 bg-white">
+            <input type="text" id="practice-memo" placeholder="例: マイパドル持参 / 会費500円" class="w-full border-2 border-slate-800 dark:border-slate-600 rounded-xl p-2.5 dark:bg-slate-700 bg-white">
           </div>
-          <button onclick="createPractice()" id="submit-schedule-btn" class="w-full bg-pickle-lime text-slate-900 font-black py-3 rounded-xl pop-border pop-shadow-sm flex items-center justify-center gap-1 text-sm">
+          <button onclick="createPractice()" class="w-full bg-pickle-lime text-slate-900 font-black py-3 rounded-xl pop-border pop-shadow-sm flex items-center justify-center gap-1 text-sm">
             <i data-lucide="plus-circle" class="w-4 h-4"></i> スケジュールを追加する
           </button>
         </div>
@@ -538,7 +559,7 @@
 
       if (!univ || !name || !id) return alert('必須項目を入力してください。');
 
-      const { data, error } = await db.from('circles').insert([{ id, name, university: univ, locations: locs }]);
+      const { error } = await db.from('circles').insert([{ id, name, university: univ, locations: locs }]);
       if (error) return alert(`エラー: ${error.message}`);
 
       await db.from('members').insert([{
@@ -804,39 +825,44 @@
       activeBtn.classList.add("text-pickle-lime", "font-black");
     }
 
-    // イベント／練習日程で作成フォームを明確に分離
-    function openCreateModal(mode) {
-      switchTab('gym');
-      const badge = document.getElementById('form-type-badge');
-      const title = document.getElementById('form-type-title');
-      const locSelect = document.getElementById('practice-location');
-      const modeInput = document.getElementById('practice-type-mode');
-      const submitBtn = document.getElementById('submit-schedule-btn');
-
-      modeInput.value = mode;
-
-      if (mode === 'event') {
-        badge.innerText = "イベント作成";
-        badge.className = "absolute top-3 right-3 text-[10px] bg-pickle-pink text-white font-black px-2 py-0.5 rounded-full pop-border";
-        title.innerText = "🎉 新規イベント作成";
-        document.getElementById('practice-title').placeholder = "例: 新歓BBQ / 合宿 / 送別会";
-        submitBtn.className = "w-full bg-pickle-pink text-white font-black py-3 rounded-xl pop-border pop-shadow-sm flex items-center justify-center gap-1 text-sm";
-        submitBtn.innerHTML = '<i data-lucide="party-popper" class="w-4 h-4"></i> イベントを追加する';
-        locSelect.value = "その他";
-      } else {
-        badge.innerText = "練習作成";
-        badge.className = "absolute top-3 right-3 text-[10px] bg-pickle-lime text-slate-900 font-black px-2 py-0.5 rounded-full pop-border";
-        title.innerText = "🏓 練習日程作成";
-        document.getElementById('practice-title').placeholder = "例: 定期練習 / 自由練習";
-        submitBtn.className = "w-full bg-pickle-lime text-slate-900 font-black py-3 rounded-xl pop-border pop-shadow-sm flex items-center justify-center gap-1 text-sm";
-        submitBtn.innerHTML = '<i data-lucide="plus-circle" class="w-4 h-4"></i> 練習日程を追加する';
-        if (locSelect.options.length > 0) locSelect.selectedIndex = 0;
-      }
-      handleLocationChange();
-      lucide.createIcons();
+    // イベント作成用モーダルの開閉
+    function openEventModal() {
+      document.getElementById('event-title').value = '';
+      document.getElementById('event-date').value = getTodayString();
+      document.getElementById('event-location').value = '';
+      document.getElementById('event-memo').value = '';
+      document.getElementById('create-event-modal').classList.remove('hidden');
     }
 
-    // 直近の予定から出欠カードへスムーズにジャンプする関数
+    function closeEventModal() {
+      document.getElementById('create-event-modal').classList.add('hidden');
+    }
+
+    // イベントを専用モーダルから新規作成・予定表へ反映
+    async function submitNewEvent() {
+      const title = document.getElementById('event-title').value.trim() || "サークルイベント";
+      const dateVal = document.getElementById('event-date').value;
+      const location = document.getElementById('event-location').value.trim() || "未定";
+      const memo = document.getElementById('event-memo').value.trim();
+
+      if (!dateVal) return alert('開催日を選択してください');
+
+      const { error } = await db.from('practices').insert([{
+        circle_id: currentCircle.id,
+        title: title,
+        date: dateVal,
+        location: location,
+        memo: memo ? `[イベント] ${memo}` : '[イベント]'
+      }]);
+
+      if (error) return alert(`エラー: ${error.message}`);
+
+      closeEventModal();
+      await fetchPractices();
+      alert('イベントを作成し、出欠予定表に追加しました！🎉');
+    }
+
+    // 直近の予定から出欠カードへジャンプ
     function jumpToSchedule(id) {
       switchTab('gym');
       setTimeout(() => {
@@ -995,16 +1021,17 @@
       fetchMembers();
     }
 
+    // 予定表・出欠一覧・直近予定の取得と表示
     async function fetchPractices() {
       if (!currentCircle) return;
-      const { data: practices } = await db.from('practices').select('*').eq('circle_id', currentCircle.id);
+      const { data: practices, error } = await db.from('practices').select('*').eq('circle_id', currentCircle.id).order('id', { ascending: false });
       const { data: attendance } = await db.from('attendance').select('*');
 
       const list = document.getElementById('practice-list');
       const weeklyList = document.getElementById('weekly-practice-list');
       const canDelete = hasAdminAccess() || currentRole === "コート取り";
 
-      if (!practices || practices.length === 0) {
+      if (error || !practices || practices.length === 0) {
         list.innerHTML = '<p class="text-slate-400 py-2">予定はありません。</p>';
         weeklyList.innerHTML = '<p class="text-slate-400 py-1">直近の予定はありません。</p>';
         document.getElementById('weekly-count-badge').innerText = '0件';
@@ -1018,9 +1045,10 @@
         const attMap = { '参加': [], '不参加': [], '未定': [] };
         attFilter.forEach(a => { if (attMap[a.status]) attMap[a.status].push(a.member_name); });
 
-        const isEvent = (p.type === 'event' || p.memo?.includes('[イベント]'));
+        const isEvent = p.memo && p.memo.includes('[イベント]');
         const badgeColor = isEvent ? 'bg-pickle-pink text-white' : 'bg-pickle-lime text-slate-900';
         const typeLabel = isEvent ? '🎉 イベント' : '🏓 練習日程';
+        const displayTitle = p.title ? p.title : (isEvent ? 'イベント' : '定期練習');
 
         html += `
           <div id="practice-card-${p.id}" class="rounded-2xl p-3.5 bg-white dark:bg-slate-700/50 pop-border pop-shadow space-y-2 transition-all">
@@ -1028,11 +1056,11 @@
               <div>
                 <div class="flex items-center gap-1.5 mb-1">
                   <span class="text-[10px] ${badgeColor} font-black px-2 py-0.5 rounded-full pop-border">${typeLabel}</span>
-                  <span class="font-black text-sm text-slate-800 dark:text-slate-100">${escapeHTML(p.title || '予定')}</span>
+                  <span class="font-black text-sm text-slate-800 dark:text-slate-100">${escapeHTML(displayTitle)}</span>
                 </div>
                 <div class="font-black text-xs text-slate-600 dark:text-slate-300">📅 ${escapeHTML(p.date)}</div>
                 <div class="text-pickle-blue font-black text-xs">📍 ${escapeHTML(p.location)}</div>
-                ${p.memo ? `<div class="text-slate-500 text-[11px] mt-0.5">メモ: ${escapeHTML(p.memo)}</div>` : ''}
+                ${p.memo ? `<div class="text-slate-500 text-[11px] mt-0.5">メモ: ${escapeHTML(p.memo.replace('[イベント]', '').trim())}</div>` : ''}
               </div>
               ${canDelete ? `
                 <button onclick="deletePractice(${p.id})" class="text-xs bg-pickle-pink text-white px-2 py-0.5 rounded-lg pop-border">
@@ -1063,14 +1091,15 @@
       list.innerHTML = html;
       document.getElementById('weekly-count-badge').innerText = `${practices.length}件`;
 
-      // ホーム画面の「直近の予定」にクリック可能なカードを表示
+      // ホーム画面の「直近の予定」
       weeklyList.innerHTML = practices.map(p => {
-        const isEvent = (p.type === 'event' || p.memo?.includes('[イベント]'));
-        const icon = isEvent ? '🎉' : '📅';
+        const isEvent = p.memo && p.memo.includes('[イベント]');
+        const icon = isEvent ? '🎉' : '🏓';
+        const displayTitle = p.title ? p.title : (isEvent ? 'イベント' : '定期練習');
         return `
           <div onclick="jumpToSchedule(${p.id})" class="p-2.5 bg-slate-50 dark:bg-slate-700/50 hover:bg-pickle-yellow/20 rounded-xl border-2 border-slate-800 cursor-pointer transition flex justify-between items-center font-bold">
             <div>
-              <span class="font-black text-slate-800 dark:text-slate-100">${icon} ${escapeHTML(p.title || '予定')}</span>
+              <span class="font-black text-slate-800 dark:text-slate-100">${icon} ${escapeHTML(displayTitle)}</span>
               <div class="text-[10px] text-slate-500 dark:text-slate-300">${escapeHTML(p.date)} @ ${escapeHTML(p.location)}</div>
             </div>
             <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400"></i>
@@ -1080,9 +1109,8 @@
       lucide.createIcons();
     }
 
+    // 以前のままのシンプルな練習日程追加処理
     async function createPractice() {
-      const mode = document.getElementById('practice-type-mode').value;
-      const title = document.getElementById('practice-title').value.trim() || (mode === 'event' ? 'イベント' : '定期練習');
       const dateVal = document.getElementById('practice-date').value;
       const startTime = document.getElementById('practice-start-time').value || "18:00";
       const endTime = document.getElementById('practice-end-time').value || "21:00";
@@ -1098,20 +1126,20 @@
       }
 
       const fullDateStr = `${dateVal} (${startTime}〜${endTime})`;
-      await db.from('practices').insert([{
+      const { error } = await db.from('practices').insert([{
         circle_id: currentCircle.id,
-        title: title,
-        type: mode,
+        title: "定期練習",
         date: fullDateStr,
         location: finalLocation,
-        memo: mode === 'event' ? `[イベント] ${memo}` : memo
+        memo: memo
       }]);
 
-      document.getElementById('practice-title').value = '';
+      if (error) return alert(`エラー: ${error.message}`);
+
       document.getElementById('practice-memo').value = '';
       initPracticeFormDateTime();
-      fetchPractices();
-      alert(`${mode === 'event' ? 'イベント' : '練習日程'}を追加しました！🎉`);
+      await fetchPractices();
+      alert('練習日程を追加しました！🏓');
     }
 
     async function deletePractice(id) {
@@ -1144,16 +1172,15 @@
 
       if (!practices || practices.length === 0) return alert('データがありません。');
 
-      let csvContent = "data:text/csv;charset=utf-8,\uFEFF種別,タイトル,日時,場所,部員名,出欠ステータス\n";
+      let csvContent = "data:text/csv;charset=utf-8,\uFEFFタイトル,日時,場所,部員名,出欠ステータス\n";
       practices.forEach(p => {
         const atts = (attendance || []).filter(a => a.practice_id === p.id);
-        const typeStr = p.type === 'event' ? 'イベント' : '練習日程';
-        const titleStr = p.title || '予定';
+        const titleStr = p.title || '定期練習';
         if (atts.length === 0) {
-          csvContent += `"${typeStr}","${titleStr}","${p.date}","${p.location}","回答なし","-"\n`;
+          csvContent += `"${titleStr}","${p.date}","${p.location}","回答なし","-"\n`;
         } else {
           atts.forEach(a => {
-            csvContent += `"${typeStr}","${titleStr}","${p.date}","${p.location}","${a.member_name}","${a.status}"\n`;
+            csvContent += `"${titleStr}","${p.date}","${p.location}","${a.member_name}","${a.status}"\n`;
           });
         }
       });
@@ -1169,7 +1196,6 @@
 
     async function submitFeedback() {
       const inputSender = document.getElementById('feedback-sender').value.trim();
-      const sender_name = inputSender || '匿名部員';
       const content = document.getElementById('feedback-content').value.trim();
 
       if (!content) return alert('ご意見・メッセージを入力してください。');
