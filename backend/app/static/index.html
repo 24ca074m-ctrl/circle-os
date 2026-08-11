@@ -58,7 +58,7 @@
 <body class="bg-pickle-bg dark:bg-slate-900 text-slate-800 dark:text-slate-100 pb-24 transition-colors duration-200">
 
   <script>
-    // Supabase 正式設定（正しい anon Key を反映）
+    // Supabase 設定 (先頭を小文字 eyJ に修正済み)
     const SUPABASE_URL = 'https://awafhqvdfqiizftulefk.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF3YWZocXZkZnFpaXpmdHVsZWZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYzNjQ5MDEsImV4cCI6MjEwMTk0MDkwMX0.qRfFi2IhNActhSMsIazA6RQNJFXXEuQArsuJ7dtwXzI';
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -293,7 +293,7 @@
       <div class="bg-white dark:bg-slate-800 p-4 rounded-3xl pop-border pop-shadow space-y-3">
         <h2 class="font-black text-slate-800 dark:text-slate-100 text-sm flex items-center justify-between">
           <span class="flex items-center gap-2">
-            <span class="p-1 bg-pickle-lime rounded-xl pop-border"><i data-lucide="calendar-days" class="w-4 h-4 text-slate-900"></i></span> 直近の予定
+            <span class="p-1 bg-pickle-lime rounded-xl pop-border"><i data-lucide="calendar-days" class="w-4 h-4 text-slate-900"></i></span> 直近の予定 (クリックでジャンプ)
           </span>
           <span id="weekly-count-badge" class="text-[10px] bg-pickle-lime text-slate-900 font-black px-2 py-0.5 rounded-full pop-border">0件</span>
         </h2>
@@ -375,9 +375,14 @@
     <!-- Tab 3: Schedule & Attendance -->
     <div id="tab-gym" class="tab-content hidden space-y-4">
       <div id="practice-create-box" class="bg-white dark:bg-slate-800 p-4 rounded-3xl pop-border pop-shadow relative hidden">
+        <input type="hidden" id="practice-type-mode" value="practice">
         <span id="form-type-badge" class="absolute top-3 right-3 text-[10px] bg-pickle-lime text-slate-900 font-black px-2 py-0.5 rounded-full pop-border">練習作成</span>
         <h2 id="form-type-title" class="font-black text-slate-800 dark:text-slate-100 mb-3 text-sm">練習日程作成 🏓</h2>
         <div class="space-y-3 text-xs font-bold">
+          <div>
+            <label class="block text-slate-500 dark:text-slate-400 mb-1" id="label-event-name">タイトル / 名称</label>
+            <input type="text" id="practice-title" placeholder="例: 定期練習 / 新歓BBQ" class="w-full border-2 border-slate-800 dark:border-slate-600 rounded-xl p-2.5 dark:bg-slate-700 bg-white">
+          </div>
           <div>
             <label class="block text-slate-500 dark:text-slate-400 mb-1">開催日</label>
             <input type="date" id="practice-date" class="w-full border-2 border-slate-800 dark:border-slate-600 rounded-xl p-2.5 dark:bg-slate-700 bg-white">
@@ -411,7 +416,7 @@
             <label class="block text-slate-500 dark:text-slate-400 mb-1">メモ・詳細</label>
             <input type="text" id="practice-memo" placeholder="例: マイパドル持参 / 会費1000円" class="w-full border-2 border-slate-800 dark:border-slate-600 rounded-xl p-2.5 dark:bg-slate-700 bg-white">
           </div>
-          <button onclick="createPractice()" class="w-full bg-pickle-lime text-slate-900 font-black py-3 rounded-xl pop-border pop-shadow-sm flex items-center justify-center gap-1 text-sm">
+          <button onclick="createPractice()" id="submit-schedule-btn" class="w-full bg-pickle-lime text-slate-900 font-black py-3 rounded-xl pop-border pop-shadow-sm flex items-center justify-center gap-1 text-sm">
             <i data-lucide="plus-circle" class="w-4 h-4"></i> スケジュールを追加する
           </button>
         </div>
@@ -536,7 +541,6 @@
       const { data, error } = await db.from('circles').insert([{ id, name, university: univ, locations: locs }]);
       if (error) return alert(`エラー: ${error.message}`);
 
-      // 初期管理者アカウントをSupabaseに挿入
       await db.from('members').insert([{
         circle_id: id,
         student_id: ADMIN_USER.student_id,
@@ -800,24 +804,49 @@
       activeBtn.classList.add("text-pickle-lime", "font-black");
     }
 
+    // イベント／練習日程で作成フォームを明確に分離
     function openCreateModal(mode) {
       switchTab('gym');
       const badge = document.getElementById('form-type-badge');
       const title = document.getElementById('form-type-title');
       const locSelect = document.getElementById('practice-location');
+      const modeInput = document.getElementById('practice-type-mode');
+      const submitBtn = document.getElementById('submit-schedule-btn');
+
+      modeInput.value = mode;
 
       if (mode === 'event') {
         badge.innerText = "イベント作成";
         badge.className = "absolute top-3 right-3 text-[10px] bg-pickle-pink text-white font-black px-2 py-0.5 rounded-full pop-border";
-        title.innerText = "新規イベント作成 🏓";
+        title.innerText = "🎉 新規イベント作成";
+        document.getElementById('practice-title').placeholder = "例: 新歓BBQ / 合宿 / 送別会";
+        submitBtn.className = "w-full bg-pickle-pink text-white font-black py-3 rounded-xl pop-border pop-shadow-sm flex items-center justify-center gap-1 text-sm";
+        submitBtn.innerHTML = '<i data-lucide="party-popper" class="w-4 h-4"></i> イベントを追加する';
         locSelect.value = "その他";
       } else {
         badge.innerText = "練習作成";
         badge.className = "absolute top-3 right-3 text-[10px] bg-pickle-lime text-slate-900 font-black px-2 py-0.5 rounded-full pop-border";
-        title.innerText = "練習日程作成 🏓";
+        title.innerText = "🏓 練習日程作成";
+        document.getElementById('practice-title').placeholder = "例: 定期練習 / 自由練習";
+        submitBtn.className = "w-full bg-pickle-lime text-slate-900 font-black py-3 rounded-xl pop-border pop-shadow-sm flex items-center justify-center gap-1 text-sm";
+        submitBtn.innerHTML = '<i data-lucide="plus-circle" class="w-4 h-4"></i> 練習日程を追加する';
         if (locSelect.options.length > 0) locSelect.selectedIndex = 0;
       }
       handleLocationChange();
+      lucide.createIcons();
+    }
+
+    // 直近の予定から出欠カードへスムーズにジャンプする関数
+    function jumpToSchedule(id) {
+      switchTab('gym');
+      setTimeout(() => {
+        const card = document.getElementById(`practice-card-${id}`);
+        if (card) {
+          card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          card.classList.add('ring-4', 'ring-pickle-yellow');
+          setTimeout(() => card.classList.remove('ring-4', 'ring-pickle-yellow'), 2000);
+        }
+      }, 100);
     }
 
     function changeRole(role) {
@@ -983,18 +1012,25 @@
       }
 
       let html = '';
-      let weeklyHtml = '';
 
       practices.forEach(p => {
         const attFilter = (attendance || []).filter(a => a.practice_id === p.id);
         const attMap = { '参加': [], '不参加': [], '未定': [] };
         attFilter.forEach(a => { if (attMap[a.status]) attMap[a.status].push(a.member_name); });
 
+        const isEvent = (p.type === 'event' || p.memo?.includes('[イベント]'));
+        const badgeColor = isEvent ? 'bg-pickle-pink text-white' : 'bg-pickle-lime text-slate-900';
+        const typeLabel = isEvent ? '🎉 イベント' : '🏓 練習日程';
+
         html += `
           <div id="practice-card-${p.id}" class="rounded-2xl p-3.5 bg-white dark:bg-slate-700/50 pop-border pop-shadow space-y-2 transition-all">
             <div class="flex justify-between items-start">
               <div>
-                <div class="font-black text-sm text-slate-800 dark:text-slate-100">${escapeHTML(p.date)}</div>
+                <div class="flex items-center gap-1.5 mb-1">
+                  <span class="text-[10px] ${badgeColor} font-black px-2 py-0.5 rounded-full pop-border">${typeLabel}</span>
+                  <span class="font-black text-sm text-slate-800 dark:text-slate-100">${escapeHTML(p.title || '予定')}</span>
+                </div>
+                <div class="font-black text-xs text-slate-600 dark:text-slate-300">📅 ${escapeHTML(p.date)}</div>
                 <div class="text-pickle-blue font-black text-xs">📍 ${escapeHTML(p.location)}</div>
                 ${p.memo ? `<div class="text-slate-500 text-[11px] mt-0.5">メモ: ${escapeHTML(p.memo)}</div>` : ''}
               </div>
@@ -1026,11 +1062,27 @@
 
       list.innerHTML = html;
       document.getElementById('weekly-count-badge').innerText = `${practices.length}件`;
-      weeklyList.innerHTML = practices.map(p => `<div class="p-2 bg-slate-50 dark:bg-slate-700/50 rounded-xl border border-slate-300 font-bold">📅 ${p.date} @ ${p.location}</div>`).join('');
+
+      // ホーム画面の「直近の予定」にクリック可能なカードを表示
+      weeklyList.innerHTML = practices.map(p => {
+        const isEvent = (p.type === 'event' || p.memo?.includes('[イベント]'));
+        const icon = isEvent ? '🎉' : '📅';
+        return `
+          <div onclick="jumpToSchedule(${p.id})" class="p-2.5 bg-slate-50 dark:bg-slate-700/50 hover:bg-pickle-yellow/20 rounded-xl border-2 border-slate-800 cursor-pointer transition flex justify-between items-center font-bold">
+            <div>
+              <span class="font-black text-slate-800 dark:text-slate-100">${icon} ${escapeHTML(p.title || '予定')}</span>
+              <div class="text-[10px] text-slate-500 dark:text-slate-300">${escapeHTML(p.date)} @ ${escapeHTML(p.location)}</div>
+            </div>
+            <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400"></i>
+          </div>
+        `;
+      }).join('');
       lucide.createIcons();
     }
 
     async function createPractice() {
+      const mode = document.getElementById('practice-type-mode').value;
+      const title = document.getElementById('practice-title').value.trim() || (mode === 'event' ? 'イベント' : '定期練習');
       const dateVal = document.getElementById('practice-date').value;
       const startTime = document.getElementById('practice-start-time').value || "18:00";
       const endTime = document.getElementById('practice-end-time').value || "21:00";
@@ -1047,13 +1099,19 @@
 
       const fullDateStr = `${dateVal} (${startTime}〜${endTime})`;
       await db.from('practices').insert([{
-        circle_id: currentCircle.id, date: fullDateStr, location: finalLocation, memo
+        circle_id: currentCircle.id,
+        title: title,
+        type: mode,
+        date: fullDateStr,
+        location: finalLocation,
+        memo: mode === 'event' ? `[イベント] ${memo}` : memo
       }]);
 
+      document.getElementById('practice-title').value = '';
       document.getElementById('practice-memo').value = '';
       initPracticeFormDateTime();
       fetchPractices();
-      alert('スケジュールを追加しました！🏓');
+      alert(`${mode === 'event' ? 'イベント' : '練習日程'}を追加しました！🎉`);
     }
 
     async function deletePractice(id) {
@@ -1086,14 +1144,16 @@
 
       if (!practices || practices.length === 0) return alert('データがありません。');
 
-      let csvContent = "data:text/csv;charset=utf-8,\uFEFF日時,場所,部員名,出欠ステータス\n";
+      let csvContent = "data:text/csv;charset=utf-8,\uFEFF種別,タイトル,日時,場所,部員名,出欠ステータス\n";
       practices.forEach(p => {
         const atts = (attendance || []).filter(a => a.practice_id === p.id);
+        const typeStr = p.type === 'event' ? 'イベント' : '練習日程';
+        const titleStr = p.title || '予定';
         if (atts.length === 0) {
-          csvContent += `"${p.date}","${p.location}","回答なし","-"\n`;
+          csvContent += `"${typeStr}","${titleStr}","${p.date}","${p.location}","回答なし","-"\n`;
         } else {
           atts.forEach(a => {
-            csvContent += `"${p.date}","${p.location}","${a.member_name}","${a.status}"\n`;
+            csvContent += `"${typeStr}","${titleStr}","${p.date}","${p.location}","${a.member_name}","${a.status}"\n`;
           });
         }
       });
