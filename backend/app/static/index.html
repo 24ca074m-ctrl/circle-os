@@ -318,17 +318,14 @@
     <!-- Tab 1: Home / AI / Announcements -->
     <div id="tab-home" class="tab-content space-y-4">
       
-      <!-- 役職者メニュー -->
+      <!-- 役職者メニュー (場所・拠点管理ボタン削除) -->
       <div id="home-admin-actions" class="hidden bg-white dark:bg-slate-800 p-4 rounded-3xl pop-border pop-shadow space-y-2">
         <div class="flex items-center gap-1.5 text-xs font-black text-pickle-pink">
           <i data-lucide="sparkles" class="w-4 h-4"></i> 役職者メニュー
         </div>
-        <div class="grid grid-cols-2 gap-2">
-          <button onclick="openEventModal()" class="bg-pickle-pink text-white py-2.5 px-2 rounded-2xl pop-border pop-shadow-sm hover:opacity-90 transition flex items-center justify-center gap-1 text-xs font-black">
+        <div>
+          <button onclick="openEventModal()" class="w-full bg-pickle-pink text-white py-2.5 px-2 rounded-2xl pop-border pop-shadow-sm hover:opacity-90 transition flex items-center justify-center gap-1 text-xs font-black">
             <i data-lucide="party-popper" class="w-4 h-4"></i> イベント作成
-          </button>
-          <button onclick="openManageLocationsModal()" class="bg-pickle-blue text-white py-2.5 px-2 rounded-2xl pop-border pop-shadow-sm hover:opacity-90 transition flex items-center justify-center gap-1 text-xs font-black">
-            <i data-lucide="map-pin" class="w-4 h-4"></i> 場所・拠点管理
           </button>
         </div>
       </div>
@@ -356,14 +353,26 @@
         <div id="weekly-practice-list" class="space-y-2 text-xs font-bold"></div>
       </div>
 
-      <!-- AI アシスタント -->
-      <div class="bg-white dark:bg-slate-800 p-4 rounded-3xl pop-border pop-shadow">
-        <h2 class="font-black text-slate-800 dark:text-slate-100 flex items-center gap-2 mb-2 text-sm">
-          <span class="p-1 bg-pickle-blue rounded-xl pop-border text-white"><i data-lucide="bot" class="w-4 h-4"></i></span> AIアシスタント
+      <!-- AI アシスタント (役職者限定 & 相談チャット搭載) -->
+      <div id="ai-assistant-section" class="bg-white dark:bg-slate-800 p-4 rounded-3xl pop-border pop-shadow hidden space-y-3">
+        <h2 class="font-black text-slate-800 dark:text-slate-100 flex items-center gap-2 text-sm">
+          <span class="p-1 bg-pickle-blue rounded-xl pop-border text-white"><i data-lucide="bot" class="w-4 h-4"></i></span> 運営AI相談アシスタント
         </h2>
+        
         <div id="ai-advice" class="text-xs font-bold text-slate-700 dark:text-slate-200 bg-cyan-50 dark:bg-slate-700/50 p-3 rounded-2xl border-2 border-slate-800 space-y-1">
           <p>• 今週の練習予想参加率: <span class="font-black text-pickle-lime">88%</span> 🏓</p>
           <p>• 体育館のコート確保予約期限を確認しましょう！</p>
+        </div>
+
+        <!-- AI相談フォーム -->
+        <div class="space-y-2 pt-1">
+          <div id="ai-chat-history" class="space-y-2 text-xs max-h-40 overflow-y-auto pr-1 hidden"></div>
+          <div class="flex gap-2">
+            <input type="text" id="ai-prompt-input" placeholder="運営の悩みをAIに相談 (例: 新歓イベント企画)" class="flex-1 border-2 border-slate-800 dark:border-slate-600 rounded-xl p-2.5 text-xs font-bold dark:bg-slate-700">
+            <button onclick="askAIAssistant()" class="bg-pickle-blue text-white px-3 py-2.5 rounded-xl font-black text-xs pop-border pop-shadow-sm flex items-center gap-1">
+              <i data-lucide="send" class="w-3.5 h-3.5"></i> 相談
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -563,7 +572,6 @@
       return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
     }
 
-    // 【修正】ローカルタイムゾーンに基づいた今日の日付（YYYY-MM-DD）を取得
     function getTodayString() { 
       const now = new Date();
       const year = now.getFullYear();
@@ -572,7 +580,6 @@
       return `${year}-${month}-${day}`;
     }
 
-    // 現在の時刻（HH:MM）を取得
     function formatTime(date) {
       const hours = String(date.getHours()).padStart(2, '0');
       const minutes = String(date.getMinutes()).padStart(2, '0');
@@ -748,7 +755,6 @@
       updateLocationOptions();
     }
 
-    // 【修正】現在の日付・時間帯をフォームに自動セットする処理（ローカルタイム保証）
     function initPracticeFormDateTime() {
       const dateInput = document.getElementById("practice-date");
       const startTimeInput = document.getElementById("practice-start-time");
@@ -1028,6 +1034,13 @@
         else locationManageBtn.classList.add("hidden");
       }
 
+      // AI アシスタント表示制御（役職者のみ表示）
+      const aiSection = document.getElementById("ai-assistant-section");
+      if (aiSection) {
+        if (isOfficerRole()) aiSection.classList.remove("hidden");
+        else aiSection.classList.add("hidden");
+      }
+
       const memberAddBox = document.getElementById("member-add-box");
       if (memberAddBox) {
         if (isRepresentative) memberAddBox.classList.remove("hidden");
@@ -1050,6 +1063,47 @@
         feedbackFormSection.classList.remove("hidden");
         feedbackListSection.classList.add("hidden");
       }
+    }
+
+    // AI相談アシスタント機能
+    function askAIAssistant() {
+      const input = document.getElementById('ai-prompt-input');
+      const text = input.value.trim();
+      if (!text) return alert('相談内容を入力してください');
+
+      const historyContainer = document.getElementById('ai-chat-history');
+      historyContainer.classList.remove('hidden');
+
+      // ユーザー発言
+      historyContainer.innerHTML += `
+        <div class="bg-slate-200 dark:bg-slate-700 p-2 rounded-xl text-right font-bold text-slate-800 dark:text-slate-100">
+          🗣️ ${escapeHTML(text)}
+        </div>
+      `;
+
+      input.value = '';
+
+      // AI応答生成（運営用アドバイスロジック）
+      setTimeout(() => {
+        let aiReply = "ご相談ありがとうございます！役職者の皆様のサークル運営をサポートします。";
+        if (text.includes("新歓") || text.includes("イベント")) {
+          aiReply = "💡 新歓イベントのご相談ですね！体験会の開催時間を12:00〜14:00に設定すると参加率が上がりやすい傾向があります。パドル貸出の準備もお忘れなく！";
+        } else if (text.includes("体育館") || text.includes("コート")) {
+          aiReply = "💡 コート確保についてですね。月頭の抽選申し込み締め切り日にリマインド通知を設定することをお勧めします！";
+        } else if (text.includes("会計") || text.includes("お金") || text.includes("会費")) {
+          aiReply = "💡 予算管理ですね。出欠データをCSV出力して、参加人数×会費の計算を行うとスムーズに会計報告を作成できます！";
+        } else {
+          aiReply = `💡 「${escapeHTML(text)}」について承りました！次回日程の調整やリマインド連絡の作成など、サポート可能です！`;
+        }
+
+        historyContainer.innerHTML += `
+          <div class="bg-cyan-100 dark:bg-slate-800 p-2.5 rounded-xl border-2 border-slate-800 font-bold text-slate-800 dark:text-slate-100 space-y-1">
+            <span class="text-pickle-blue font-black flex items-center gap-1">🤖 AIアドバイス:</span>
+            <p>${aiReply}</p>
+          </div>
+        `;
+        historyContainer.scrollTop = historyContainer.scrollHeight;
+      }, 500);
     }
 
     async function fetchMembers() {
@@ -1152,7 +1206,6 @@
       fetchMembers();
     }
 
-    // 予定表・出欠一覧の取得と描画
     async function fetchPractices() {
       if (!currentCircle) return;
       const { data: practices, error } = await db.from('practices').select('*').eq('circle_id', currentCircle.id);
@@ -1169,7 +1222,6 @@
         return;
       }
 
-      // 基準日時（今日00:00:00 〜 7日後の23:59:59）の作成
       const nowToday = new Date();
       nowToday.setHours(0, 0, 0, 0);
 
@@ -1177,16 +1229,12 @@
       nextWeekDate.setDate(nextWeekDate.getDate() + 7);
       nextWeekDate.setHours(23, 59, 59, 999);
 
-      // 【修正】スケジュールの2段階ソート
-      // 1. 未来の予定（今日以降）：日付が近い順（昇順: 近い未来 → 遠い未来）
       const futurePractices = practices.filter(p => parseScheduleDate(p.date) >= nowToday)
         .sort((a, b) => parseScheduleDate(a.date) - parseScheduleDate(b.date));
 
-      // 2. 終わった予定（今日より前）：日付が今日に近い順（降順: 直近の過去 → 古い過去）
       const pastPractices = practices.filter(p => parseScheduleDate(p.date) < nowToday)
         .sort((a, b) => parseScheduleDate(b.date) - parseScheduleDate(a.date));
 
-      // 結合（未来の予定が上、終わった予定が下）
       const sortedPractices = [...futurePractices, ...pastPractices];
 
       let html = '';
@@ -1262,7 +1310,6 @@
 
       list.innerHTML = html;
 
-      // ホーム画面用: 直近1週間（本日〜7日以内）の予定のみ抽出
       const oneWeekPractices = futurePractices.filter(p => {
         const pDate = parseScheduleDate(p.date);
         return pDate >= nowToday && pDate <= nextWeekDate;
