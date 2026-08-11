@@ -563,8 +563,14 @@
       return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
     }
 
-    // 現在の日付（YYYY-MM-DD）を取得
-    function getTodayString() { return new Date().toISOString().split('T')[0]; }
+    // 【修正】ローカルタイムゾーンに基づいた今日の日付（YYYY-MM-DD）を取得
+    function getTodayString() { 
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
 
     // 現在の時刻（HH:MM）を取得
     function formatTime(date) {
@@ -742,7 +748,7 @@
       updateLocationOptions();
     }
 
-    // 現在の日付・時間帯をフォームに自動セットする処理
+    // 【修正】現在の日付・時間帯をフォームに自動セットする処理（ローカルタイム保証）
     function initPracticeFormDateTime() {
       const dateInput = document.getElementById("practice-date");
       const startTimeInput = document.getElementById("practice-start-time");
@@ -757,7 +763,6 @@
 
       if (startTimeInput) startTimeInput.value = formatTime(now);
       if (endTimeInput) {
-        // デフォルトで2時間後を初期表示
         const end = new Date(now.getTime() + 2 * 60 * 60 * 1000);
         endTimeInput.value = formatTime(end);
       }
@@ -1172,12 +1177,21 @@
       nextWeekDate.setDate(nextWeekDate.getDate() + 7);
       nextWeekDate.setHours(23, 59, 59, 999);
 
-      // 【ソート処理】日付が近い順（昇順）に並び替え
-      practices.sort((a, b) => parseScheduleDate(a.date) - parseScheduleDate(b.date));
+      // 【修正】スケジュールの2段階ソート
+      // 1. 未来の予定（今日以降）：日付が近い順（昇順: 近い未来 → 遠い未来）
+      const futurePractices = practices.filter(p => parseScheduleDate(p.date) >= nowToday)
+        .sort((a, b) => parseScheduleDate(a.date) - parseScheduleDate(b.date));
+
+      // 2. 終わった予定（今日より前）：日付が今日に近い順（降順: 直近の過去 → 古い過去）
+      const pastPractices = practices.filter(p => parseScheduleDate(p.date) < nowToday)
+        .sort((a, b) => parseScheduleDate(b.date) - parseScheduleDate(a.date));
+
+      // 結合（未来の予定が上、終わった予定が下）
+      const sortedPractices = [...futurePractices, ...pastPractices];
 
       let html = '';
 
-      practices.forEach(p => {
+      sortedPractices.forEach(p => {
         const pDateObj = parseScheduleDate(p.date);
         const isPast = pDateObj < nowToday;
 
@@ -1248,8 +1262,8 @@
 
       list.innerHTML = html;
 
-      // 【修正箇所】ホーム画面用: 直近1週間（本日〜7日以内）の予定のみ抽出
-      const oneWeekPractices = practices.filter(p => {
+      // ホーム画面用: 直近1週間（本日〜7日以内）の予定のみ抽出
+      const oneWeekPractices = futurePractices.filter(p => {
         const pDate = parseScheduleDate(p.date);
         return pDate >= nowToday && pDate <= nextWeekDate;
       });
