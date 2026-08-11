@@ -176,7 +176,7 @@
     </div>
   </div>
 
-  <!-- 【新機能】場所・拠点管理モーダル（権限所有者専用） -->
+  <!-- 場所・拠点管理モーダル -->
   <div id="manage-locations-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] hidden flex items-center justify-center p-4">
     <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-3xl p-5 pop-border pop-shadow space-y-3 text-slate-800 dark:text-slate-100">
       <h3 class="font-extrabold text-sm flex items-center gap-1.5 text-pickle-blue">
@@ -318,7 +318,7 @@
     <!-- Tab 1: Home / AI / Announcements -->
     <div id="tab-home" class="tab-content space-y-4">
       
-      <!-- 代表専用のアクション -->
+      <!-- 役職者メニュー -->
       <div id="home-admin-actions" class="hidden bg-white dark:bg-slate-800 p-4 rounded-3xl pop-border pop-shadow space-y-2">
         <div class="flex items-center gap-1.5 text-xs font-black text-pickle-pink">
           <i data-lucide="sparkles" class="w-4 h-4"></i> 役職者メニュー
@@ -345,11 +345,11 @@
         </div>
       </div>
 
-      <!-- 直近の予定 (開催順) -->
+      <!-- 直近1週間の予定 -->
       <div class="bg-white dark:bg-slate-800 p-4 rounded-3xl pop-border pop-shadow space-y-3">
         <h2 class="font-black text-slate-800 dark:text-slate-100 text-sm flex items-center justify-between">
           <span class="flex items-center gap-2">
-            <span class="p-1 bg-pickle-lime rounded-xl pop-border"><i data-lucide="calendar-days" class="w-4 h-4 text-slate-900"></i></span> 近い予定順 (押すと出欠に飛ぶ)
+            <span class="p-1 bg-pickle-lime rounded-xl pop-border"><i data-lucide="calendar-days" class="w-4 h-4 text-slate-900"></i></span> 直近1週間の予定 📅
           </span>
           <span id="weekly-count-badge" class="text-[10px] bg-pickle-lime text-slate-900 font-black px-2 py-0.5 rounded-full pop-border">0件</span>
         </h2>
@@ -428,7 +428,7 @@
       </div>
     </div>
 
-    <!-- Tab 3: Schedule & Attendance (シンプルな練習日程作成) -->
+    <!-- Tab 3: Schedule & Attendance -->
     <div id="tab-gym" class="tab-content hidden space-y-4">
       <div id="practice-create-box" class="bg-white dark:bg-slate-800 p-4 rounded-3xl pop-border pop-shadow hidden">
         <div class="flex items-center justify-between mb-3">
@@ -563,15 +563,16 @@
       return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
     }
 
+    // 現在の日付（YYYY-MM-DD）を取得
     function getTodayString() { return new Date().toISOString().split('T')[0]; }
 
+    // 現在の時刻（HH:MM）を取得
     function formatTime(date) {
       const hours = String(date.getHours()).padStart(2, '0');
       const minutes = String(date.getMinutes()).padStart(2, '0');
       return `${hours}:${minutes}`;
     }
 
-    // 日付文字列 (例: "2026-08-15 (18:00〜21:00)" または "2026-08-15") から Dateオブジェクトを取得
     function parseScheduleDate(dateStr) {
       if (!dateStr) return new Date(0);
       const match = dateStr.match(/\d{4}-\d{2}-\d{2}/);
@@ -676,7 +677,6 @@
       handleLocationChange();
     }
 
-    // 【新機能】場所管理モーダルの制御
     function openManageLocationsModal() {
       if (!isOfficerRole()) return alert("場所の変更権限がありません。");
       renderLocationManageList();
@@ -742,14 +742,22 @@
       updateLocationOptions();
     }
 
+    // 現在の日付・時間帯をフォームに自動セットする処理
     function initPracticeFormDateTime() {
       const dateInput = document.getElementById("practice-date");
       const startTimeInput = document.getElementById("practice-start-time");
       const endTimeInput = document.getElementById("practice-end-time");
+      const eventDateInput = document.getElementById("event-date");
+
       const now = new Date();
-      if (dateInput) dateInput.value = getTodayString();
+      const todayStr = getTodayString();
+
+      if (dateInput) dateInput.value = todayStr;
+      if (eventDateInput) eventDateInput.value = todayStr;
+
       if (startTimeInput) startTimeInput.value = formatTime(now);
       if (endTimeInput) {
+        // デフォルトで2時間後を初期表示
         const end = new Date(now.getTime() + 2 * 60 * 60 * 1000);
         endTimeInput.value = formatTime(end);
       }
@@ -933,9 +941,12 @@
       const activeBtn = document.getElementById(`nav-${tabName}`);
       activeBtn.classList.remove("text-slate-400");
       activeBtn.classList.add("text-pickle-lime", "font-black");
+
+      if (tabName === 'gym') {
+        initPracticeFormDateTime();
+      }
     }
 
-    // イベント作成モーダルの開閉
     function openEventModal() {
       document.getElementById('event-title').value = '';
       document.getElementById('event-date').value = getTodayString();
@@ -948,7 +959,6 @@
       document.getElementById('create-event-modal').classList.add('hidden');
     }
 
-    // イベント作成処理 (DBのtitleカラムに依存せずmemoに情報を格納)
     async function submitNewEvent() {
       const eventName = document.getElementById('event-title').value.trim() || "イベント";
       const dateVal = document.getElementById('event-date').value;
@@ -973,7 +983,6 @@
       alert('イベントを作成し、出欠予定表に追加しました！🎉');
     }
 
-    // 直近の予定から出欠カードへジャンプ
     function jumpToSchedule(id) {
       switchTab('gym');
       setTimeout(() => {
@@ -1138,7 +1147,7 @@
       fetchMembers();
     }
 
-    // 予定表・出欠一覧の取得と描画 (近い順ソート & 過去予定の判定)
+    // 予定表・出欠一覧の取得と描画
     async function fetchPractices() {
       if (!currentCircle) return;
       const { data: practices, error } = await db.from('practices').select('*').eq('circle_id', currentCircle.id);
@@ -1150,31 +1159,32 @@
 
       if (error || !practices || practices.length === 0) {
         list.innerHTML = '<p class="text-slate-400 py-2">予定はありません。</p>';
-        weeklyList.innerHTML = '<p class="text-slate-400 py-1">直近の予定はありません。</p>';
+        weeklyList.innerHTML = '<p class="text-slate-400 py-1">直近1週間の予定はありません。</p>';
         document.getElementById('weekly-count-badge').innerText = '0件';
         return;
       }
 
-      // 今日(00:00:00)の判定用タイムスタンプ
+      // 基準日時（今日00:00:00 〜 7日後の23:59:59）の作成
       const nowToday = new Date();
       nowToday.setHours(0, 0, 0, 0);
 
+      const nextWeekDate = new Date(nowToday.getTime());
+      nextWeekDate.setDate(nextWeekDate.getDate() + 7);
+      nextWeekDate.setHours(23, 59, 59, 999);
+
       // 【ソート処理】日付が近い順（昇順）に並び替え
-      practices.sort((a, b) => {
-        return parseScheduleDate(a.date) - parseScheduleDate(b.date);
-      });
+      practices.sort((a, b) => parseScheduleDate(a.date) - parseScheduleDate(b.date));
 
       let html = '';
 
       practices.forEach(p => {
         const pDateObj = parseScheduleDate(p.date);
-        const isPast = pDateObj < nowToday; // 過去の予定かどうか判定
+        const isPast = pDateObj < nowToday;
 
         const attFilter = (attendance || []).filter(a => a.practice_id === p.id);
         const attMap = { '参加': [], '不参加': [], '未定': [] };
         attFilter.forEach(a => { if (attMap[a.status]) attMap[a.status].push(a.member_name); });
 
-        // イベント判定とタイトルの抽出
         const memoText = p.memo || '';
         const isEvent = memoText.includes('[イベント');
         
@@ -1183,11 +1193,7 @@
 
         if (isEvent) {
           const match = memoText.match(/\[イベント:\s*(.*?)\]/);
-          if (match && match[1]) {
-            displayTitle = match[1];
-          } else {
-            displayTitle = "イベント";
-          }
+          displayTitle = (match && match[1]) ? match[1] : "イベント";
           displayMemo = memoText.replace(/\[イベント:\s*.*?\]/, '').replace('[イベント]', '').trim();
         }
 
@@ -1198,7 +1204,6 @@
           ? '🏁 終了' 
           : (isEvent ? '🎉 イベント' : '🏓 練習日程');
 
-        // 過去の予定の場合はグレーアウト用クラスを適用
         const cardBgClass = isPast ? 'bg-slate-100 dark:bg-slate-800/40 opacity-60 grayscale' : 'bg-white dark:bg-slate-700/50';
 
         html += `
@@ -1242,43 +1247,48 @@
       });
 
       list.innerHTML = html;
-      document.getElementById('weekly-count-badge').innerText = `${practices.length}件`;
 
-      // ホーム画面の直近の予定（近い順）
-      weeklyList.innerHTML = practices.map(p => {
-        const pDateObj = parseScheduleDate(p.date);
-        const isPast = pDateObj < nowToday;
+      // 【修正箇所】ホーム画面用: 直近1週間（本日〜7日以内）の予定のみ抽出
+      const oneWeekPractices = practices.filter(p => {
+        const pDate = parseScheduleDate(p.date);
+        return pDate >= nowToday && pDate <= nextWeekDate;
+      });
 
-        const memoText = p.memo || '';
-        const isEvent = memoText.includes('[イベント');
-        const icon = isPast ? '🏁' : (isEvent ? '🎉' : '🏓');
+      document.getElementById('weekly-count-badge').innerText = `${oneWeekPractices.length}件`;
 
-        let displayTitle = "定期練習";
-        if (isEvent) {
-          const match = memoText.match(/\[イベント:\s*(.*?)\]/);
-          displayTitle = (match && match[1]) ? match[1] : "イベント";
-        }
+      if (oneWeekPractices.length === 0) {
+        weeklyList.innerHTML = '<p class="text-slate-400 py-1 text-center font-bold">直近1週間以内の予定はありません。</p>';
+      } else {
+        weeklyList.innerHTML = oneWeekPractices.map(p => {
+          const memoText = p.memo || '';
+          const isEvent = memoText.includes('[イベント');
+          const icon = isEvent ? '🎉' : '🏓';
 
-        const opacityClass = isPast ? 'opacity-50 bg-slate-200/50 dark:bg-slate-800/30' : 'bg-slate-50 dark:bg-slate-700/50 hover:bg-pickle-yellow/20';
+          let displayTitle = "定期練習";
+          if (isEvent) {
+            const match = memoText.match(/\[イベント:\s*(.*?)\]/);
+            displayTitle = (match && match[1]) ? match[1] : "イベント";
+          }
 
-        return `
-          <div onclick="jumpToSchedule(${p.id})" class="p-2.5 ${opacityClass} rounded-xl border-2 border-slate-800 cursor-pointer transition flex justify-between items-center font-bold">
-            <div>
-              <span class="font-black text-slate-800 dark:text-slate-100">${icon} ${escapeHTML(displayTitle)} ${isPast ? '<span class="text-[10px] text-slate-400">(終了)</span>' : ''}</span>
-              <div class="text-[10px] text-slate-500 dark:text-slate-300">${escapeHTML(p.date)} @ ${escapeHTML(p.location)}</div>
+          return `
+            <div onclick="jumpToSchedule(${p.id})" class="p-2.5 bg-slate-50 dark:bg-slate-700/50 hover:bg-pickle-yellow/20 rounded-xl border-2 border-slate-800 cursor-pointer transition flex justify-between items-center font-bold">
+              <div>
+                <span class="font-black text-slate-800 dark:text-slate-100">${icon} ${escapeHTML(displayTitle)}</span>
+                <div class="text-[10px] text-slate-500 dark:text-slate-300">${escapeHTML(p.date)} @ ${escapeHTML(p.location)}</div>
+              </div>
+              <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400"></i>
             </div>
-            <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400"></i>
-          </div>
-        `;
-      }).join('');
+          `;
+        }).join('');
+      }
+
       lucide.createIcons();
     }
 
-    // 練習日程追加処理
     async function createPractice() {
       const dateVal = document.getElementById('practice-date').value;
-      const startTime = document.getElementById('practice-start-time').value || "18:00";
-      const endTime = document.getElementById('practice-end-time').value || "21:00";
+      const startTime = document.getElementById('practice-start-time').value || formatTime(new Date());
+      const endTime = document.getElementById('practice-end-time').value || formatTime(new Date(Date.now() + 2*60*60*1000));
       const selectLoc = document.getElementById('practice-location').value;
       const memo = document.getElementById('practice-memo').value.trim();
 
