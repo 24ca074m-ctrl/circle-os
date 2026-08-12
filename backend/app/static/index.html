@@ -9,6 +9,11 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Circle OS">
   
+  <!-- PWA & Web App 設定 -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#84cc16">
+  <link rel="apple-touch-icon" href="icon-192.png">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap" rel="stylesheet">
@@ -1735,18 +1740,65 @@
       document.body.removeChild(link);
     }
 
+    // 意見箱の送信処理（Supabaseへ保存）
     async function submitFeedback() {
+      const sender = document.getElementById('feedback-sender').value.trim();
       const content = document.getElementById('feedback-content').value.trim();
-      if (!content) return alert('ご意見・メッセージを入力してください。');
 
-      alert('メッセージを送信しました！');
+      if (!content) return alert('ご意見・メッセージを入力してください。');
+      if (!currentCircle) return alert('サークル情報が読み込めていません。');
+
+      const { error } = await db.from('feedbacks').insert([{
+        circle_id: currentCircle.id,
+        sender_name: sender || '匿名',
+        content: content,
+        created_at: new Date().toISOString()
+      }]);
+
+      if (error) {
+        alert(`送信に失敗しました: ${error.message}`);
+        return;
+      }
+
+      alert('ご意見を受け付けました！ありがとうございます！🎉');
       document.getElementById('feedback-content').value = '';
       document.getElementById('feedback-sender').value = '';
+
+      // 役職者画面であれば即座に再読み込み
+      if (isOfficerRole()) {
+        fetchFeedbacks();
+      }
     }
 
-    function fetchFeedbacks() {
+    // 意見箱の一覧取得（役職者のみ取得・表示）
+    async function fetchFeedbacks() {
       const list = document.getElementById('feedback-list');
-      list.innerHTML = '<p class="text-slate-400 py-2 font-bold">現在、届いている意見はありません。</p>';
+      if (!currentCircle || !isOfficerRole()) return;
+
+      const { data: feedbacks, error } = await db.from('feedbacks')
+        .select('*')
+        .eq('circle_id', currentCircle.id)
+        .order('created_at', { ascending: false });
+
+      if (error || !feedbacks || feedbacks.length === 0) {
+        list.innerHTML = '<p class="text-slate-400 py-2 font-bold">現在、届いている意見はありません。</p>';
+        return;
+      }
+
+      list.innerHTML = feedbacks.map(f => {
+        const date = new Date(f.created_at).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        return `
+          <div class="py-2.5 first:pt-0 last:pb-0 space-y-1">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-black px-2 py-0.5 rounded-full pop-border">
+                👤 ${escapeHTML(f.sender_name || '匿名')}
+              </span>
+              <span class="text-[10px] text-slate-400 font-bold">${date}</span>
+            </div>
+            <p class="text-xs text-slate-800 dark:text-slate-100 font-bold whitespace-pre-wrap">${escapeHTML(f.content)}</p>
+          </div>
+        `;
+      }).join('');
     }
   </script>
 </body>
