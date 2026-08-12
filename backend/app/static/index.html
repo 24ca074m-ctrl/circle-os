@@ -654,6 +654,20 @@
     let isActivityHidden = true;
     let rawStatValues = { count: '0回', rate: '0%', total: '0名' };
 
+    // --- Helper & Storage Utilities ---
+    const storage = {
+      getJson: (key, fallback) => {
+        try {
+          const item = localStorage.getItem(key);
+          return item ? JSON.parse(item) : fallback;
+        } catch {
+          return fallback;
+        }
+      },
+      setJson: (key, val) => localStorage.setItem(key, JSON.stringify(val)),
+      remove: (key) => localStorage.removeItem(key)
+    };
+
     function generate6DigitCode() {
       return Math.floor(100000 + Math.random() * 900000).toString();
     }
@@ -669,39 +683,34 @@
 
     function getTodayString() { 
       const now = new Date();
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const day = String(now.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
+      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     }
 
     function formatTime(date) {
-      const hours = String(date.getHours()).padStart(2, '0');
-      const minutes = String(date.getMinutes()).padStart(2, '0');
-      return `${hours}:${minutes}`;
+      return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
     }
 
     function parseScheduleDate(dateStr) {
       if (!dateStr) return new Date(0);
       const match = dateStr.match(/\d{4}-\d{2}-\d{2}/);
-      if (match) {
-        return new Date(match[0] + "T23:59:59");
-      }
-      return new Date(dateStr);
+      return match ? new Date(match[0] + "T23:59:59") : new Date(dateStr);
     }
 
+    function parseEventTitle(memo) {
+      if (!memo || !memo.includes('[イベント')) return { isEvent: false, title: '定期練習', memo: memo || '' };
+      const match = memo.match(/\[イベント:\s*(.*?)\]/);
+      const title = (match && match[1]) ? match[1] : 'イベント';
+      const cleanMemo = memo.replace(/\[イベント:\s*.*?\]/, '').replace('[イベント]', '').trim();
+      return { isEvent: true, title, memo: cleanMemo };
+    }
+
+    // --- Core Operations ---
     function switchSetupTab(mode) {
-      if (mode === 'join') {
-        document.getElementById('setup-form-join').classList.remove('hidden');
-        document.getElementById('setup-form-create').classList.add('hidden');
-        document.getElementById('tab-btn-join').className = "w-1/2 py-2 bg-pickle-yellow text-slate-900";
-        document.getElementById('tab-btn-create').className = "w-1/2 py-2 bg-slate-100 dark:bg-slate-700 text-slate-500";
-      } else {
-        document.getElementById('setup-form-join').classList.add('hidden');
-        document.getElementById('setup-form-create').classList.remove('hidden');
-        document.getElementById('tab-btn-join').className = "w-1/2 py-2 bg-slate-100 dark:bg-slate-700 text-slate-500";
-        document.getElementById('tab-btn-create').className = "w-1/2 py-2 bg-pickle-blue text-white";
-      }
+      const isJoin = mode === 'join';
+      document.getElementById('setup-form-join').classList.toggle('hidden', !isJoin);
+      document.getElementById('setup-form-create').classList.toggle('hidden', isJoin);
+      document.getElementById('tab-btn-join').className = `w-1/2 py-2 ${isJoin ? 'bg-pickle-yellow text-slate-900' : 'bg-slate-100 dark:bg-slate-700 text-slate-500'}`;
+      document.getElementById('tab-btn-create').className = `w-1/2 py-2 ${!isJoin ? 'bg-pickle-blue text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-500'}`;
     }
 
     async function createNewCircle() {
@@ -725,7 +734,7 @@
       }]);
 
       currentCircle = { id, name, university: univ, locations: locs };
-      localStorage.setItem('active_circle', JSON.stringify(currentCircle));
+      storage.setJson('active_circle', currentCircle);
       alert(`サークルを新設しました！🎉\n\n初期管理者学籍番号: ${ADMIN_USER.student_id}\n初期パスワード: ${ADMIN_USER.password}`);
       initAppUI();
     }
@@ -738,23 +747,23 @@
       if (error || !data || data.length === 0) return alert('該当するサークルIDが見つかりません。');
 
       currentCircle = data[0];
-      localStorage.setItem('active_circle', JSON.stringify(currentCircle));
+      storage.setJson('active_circle', currentCircle);
       initAppUI();
     }
 
     function resetCircleSelection() {
-      localStorage.removeItem('active_circle');
-      localStorage.removeItem('circle_user');
+      storage.remove('active_circle');
+      storage.remove('circle_user');
       location.reload();
     }
 
     function initAppUI() {
-      const saved = localStorage.getItem('active_circle');
+      const saved = storage.getJson('active_circle', null);
       if (!saved) {
         document.getElementById('circle-setup-modal').classList.remove('hidden');
         return;
       }
-      currentCircle = JSON.parse(saved);
+      currentCircle = saved;
       document.getElementById('circle-setup-modal').classList.add('hidden');
       
       document.getElementById('app-circle-title').innerText = currentCircle.name;
@@ -762,7 +771,6 @@
       document.getElementById('header-circle-name').innerText = currentCircle.name;
       document.getElementById('header-univ-name').innerText = currentCircle.university;
 
-      // アクティビティ表示プライバシー初期化
       const savedPrivacy = localStorage.getItem('privacy_activity_hidden');
       isActivityHidden = savedPrivacy !== null ? (savedPrivacy === 'true') : true;
 
@@ -776,7 +784,6 @@
       fetchFeedbacks();
     }
 
-    // アクティビティの表示/非表示切り替え機能
     function toggleActivityPrivacy() {
       isActivityHidden = !isActivityHidden;
       localStorage.setItem('privacy_activity_hidden', isActivityHidden);
@@ -786,31 +793,23 @@
     function renderActivityStats() {
       const btnIcon = document.getElementById('privacy-toggle-icon');
       
-      if (isActivityHidden) {
-        document.getElementById('stat-my-count').innerText = "***";
-        document.getElementById('stat-my-rate').innerText = "***";
-        document.getElementById('stat-weekly-total').innerText = "***";
-        if (btnIcon) btnIcon.setAttribute('data-lucide', 'eye-off');
-      } else {
-        document.getElementById('stat-my-count').innerText = rawStatValues.count;
-        document.getElementById('stat-my-rate').innerText = rawStatValues.rate;
-        document.getElementById('stat-weekly-total').innerText = rawStatValues.total;
-        if (btnIcon) btnIcon.setAttribute('data-lucide', 'eye');
-      }
+      document.getElementById('stat-my-count').innerText = isActivityHidden ? '***' : rawStatValues.count;
+      document.getElementById('stat-my-rate').innerText = isActivityHidden ? '***' : rawStatValues.rate;
+      document.getElementById('stat-weekly-total').innerText = isActivityHidden ? '***' : rawStatValues.total;
+      
+      if (btnIcon) btnIcon.setAttribute('data-lucide', isActivityHidden ? 'eye-off' : 'eye');
       lucide.createIcons();
     }
 
     function updateLocationOptions() {
       const locSelect = document.getElementById('practice-location');
-      locSelect.innerHTML = '';
       const locs = (currentCircle.locations && currentCircle.locations.length > 0) 
         ? currentCircle.locations 
         : ["メイン体育館"];
 
-      locs.forEach(loc => {
-        locSelect.innerHTML += `<option value="${escapeHTML(loc)}">${escapeHTML(loc)}</option>`;
-      });
-      locSelect.innerHTML += `<option value="その他">その他</option>`;
+      const options = locs.map(loc => `<option value="${escapeHTML(loc)}">${escapeHTML(loc)}</option>`);
+      options.push('<option value="その他">その他</option>');
+      locSelect.innerHTML = options.join('');
       handleLocationChange();
     }
 
@@ -857,7 +856,7 @@
 
       if (error) return alert(`更新失敗: ${error.message}`);
 
-      localStorage.setItem('active_circle', JSON.stringify(currentCircle));
+      storage.setJson('active_circle', currentCircle);
       input.value = '';
       renderLocationManageList();
       updateLocationOptions();
@@ -874,7 +873,7 @@
 
       if (error) return alert(`削除失敗: ${error.message}`);
 
-      localStorage.setItem('active_circle', JSON.stringify(currentCircle));
+      storage.setJson('active_circle', currentCircle);
       renderLocationManageList();
       updateLocationOptions();
     }
@@ -916,55 +915,34 @@
 
     function initTheme() {
       const isDark = localStorage.getItem('theme') === 'dark';
-      if (isDark) {
-        document.documentElement.classList.add('dark');
-        document.getElementById('theme-icon').setAttribute('data-lucide', 'sun');
-      } else {
-        document.documentElement.classList.remove('dark');
-        document.getElementById('theme-icon').setAttribute('data-lucide', 'moon');
-      }
+      document.documentElement.classList.toggle('dark', isDark);
+      document.getElementById('theme-icon').setAttribute('data-lucide', isDark ? 'sun' : 'moon');
       lucide.createIcons();
     }
 
     function toggleDarkMode() {
-      const isDark = document.documentElement.classList.contains('dark');
-      if (isDark) {
-        document.documentElement.classList.remove('dark');
-        localStorage.setItem('theme', 'light');
-        document.getElementById('theme-icon').setAttribute('data-lucide', 'moon');
-      } else {
-        document.documentElement.classList.add('dark');
-        localStorage.setItem('theme', 'dark');
-        document.getElementById('theme-icon').setAttribute('data-lucide', 'sun');
-      }
+      const isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      document.getElementById('theme-icon').setAttribute('data-lucide', isDark ? 'sun' : 'moon');
       lucide.createIcons();
     }
 
     function handleLocationChange() {
       const loc = document.getElementById('practice-location').value;
       const courtContainer = document.getElementById('court-side-container');
-      if (loc && loc.includes('体育館')) {
-        courtContainer.classList.remove('hidden');
-      } else {
-        courtContainer.classList.add('hidden');
-      }
+      courtContainer.classList.toggle('hidden', !(loc && loc.includes('体育館')));
     }
 
     function checkAuth() {
-      let savedUser = localStorage.getItem('circle_user');
-      if (savedUser) {
-        currentUser = JSON.parse(savedUser);
-        document.getElementById('login-modal').classList.add('hidden');
-        document.getElementById('user-display-name').innerText = currentUser.name;
-        document.getElementById('logout-btn').classList.remove('hidden');
-        document.getElementById('pwd-change-btn').classList.remove('hidden');
-        updateRoleOptions();
-      } else {
-        document.getElementById('login-modal').classList.remove('hidden');
-        document.getElementById('logout-btn').classList.add('hidden');
-        document.getElementById('pwd-change-btn').classList.add('hidden');
-        updateRoleOptions();
-      }
+      currentUser = storage.getJson('circle_user', null);
+      const isLoggedIn = !!currentUser;
+      
+      document.getElementById('login-modal').classList.toggle('hidden', isLoggedIn);
+      document.getElementById('logout-btn').classList.toggle('hidden', !isLoggedIn);
+      document.getElementById('pwd-change-btn').classList.toggle('hidden', !isLoggedIn);
+      document.getElementById('user-display-name').innerText = isLoggedIn ? currentUser.name : '未ログイン';
+
+      updateRoleOptions();
     }
 
     async function handleLogin() {
@@ -983,7 +961,7 @@
       if (password !== member.password) return alert('パスワードが正しくありません。');
 
       currentUser = { id: member.id, name: member.name, student_id: member.student_id, role: member.role };
-      localStorage.setItem('circle_user', JSON.stringify(currentUser));
+      storage.setJson('circle_user', currentUser);
       document.getElementById('login-modal').classList.add('hidden');
       document.getElementById('login-password').value = '';
       document.getElementById('user-display-name').innerText = currentUser.name;
@@ -996,7 +974,7 @@
 
     function handleLogout() {
       if (!confirm('ログアウトしますか？')) return;
-      localStorage.removeItem('circle_user');
+      storage.remove('circle_user');
       currentUser = null;
       document.getElementById('user-display-name').innerText = '未ログイン';
       document.getElementById('logout-btn').classList.add('hidden');
@@ -1035,7 +1013,6 @@
 
     function updateRoleOptions() {
       const selector = document.getElementById('role-selector');
-      selector.innerHTML = '';
 
       if (!currentUser) {
         selector.innerHTML = '<option value="部員">一般部員</option>';
@@ -1053,15 +1030,13 @@
           <option value="会計">会計</option>
           <option value="部員">一般部員</option>
         `;
-        selector.value = userRole;
       } else if (userRole !== "部員") {
         selector.innerHTML = `<option value="${userRole}">${userRole}</option><option value="部員">一般部員</option>`;
-        selector.value = userRole;
       } else {
         selector.innerHTML = '<option value="部員">一般部員</option>';
-        selector.value = "部員";
       }
 
+      selector.value = userRole;
       changeRole(selector.value);
     }
 
@@ -1145,7 +1120,7 @@
       }]);
 
       if (error) {
-        const localData = JSON.parse(localStorage.getItem(`announcements_${currentCircle.id}`) || "[]");
+        const localData = storage.getJson(`announcements_${currentCircle.id}`, []);
         localData.unshift({
           id: Date.now(),
           circle_id: currentCircle.id,
@@ -1154,7 +1129,7 @@
           type,
           created_at: new Date().toISOString()
         });
-        localStorage.setItem(`announcements_${currentCircle.id}`, JSON.stringify(localData));
+        storage.setJson(`announcements_${currentCircle.id}`, localData);
       }
 
       closeAnnouncementModal();
@@ -1165,27 +1140,19 @@
     async function fetchAnnouncements() {
       if (!currentCircle) return;
 
-      let announcements = [];
       const { data, error } = await db.from('announcements')
         .select('*')
         .eq('circle_id', currentCircle.id)
         .order('created_at', { ascending: false });
 
-      if (!error && data) {
-        announcements = data;
-      } else {
-        announcements = JSON.parse(localStorage.getItem(`announcements_${currentCircle.id}`) || "[]");
-      }
-
-      cachedAnnouncements = announcements;
+      cachedAnnouncements = (!error && data) ? data : storage.getJson(`announcements_${currentCircle.id}`, []);
       renderAnnouncements();
     }
 
     function renderAnnouncements() {
       const list = document.getElementById('announcement-list');
       const isOfficer = isOfficerRole();
-
-      const pinnedPractices = JSON.parse(localStorage.getItem(`pinned_practices_${currentCircle.id}`) || "[]");
+      const pinnedPractices = storage.getJson(`pinned_practices_${currentCircle.id}`, []);
 
       if (cachedAnnouncements.length === 0 && pinnedPractices.length === 0) {
         list.innerHTML = '<p class="text-slate-400 py-1 font-bold">お知らせはありません。</p>';
@@ -1195,23 +1162,14 @@
       let html = '';
 
       pinnedPractices.forEach(p => {
-        let displayTitle = "定期練習";
-        if (p.memo && p.memo.includes('[イベント')) {
-          const match = p.memo.match(/\[イベント:\s*(.*?)\]/);
-          displayTitle = (match && match[1]) ? match[1] : "イベント";
-        }
-
+        const { title: displayTitle } = parseEventTitle(p.memo);
         html += `
           <div class="py-2.5 first:pt-0 last:pb-0 space-y-1">
             <div class="flex items-center justify-between">
               <span class="bg-pickle-pink text-white text-[10px] font-black px-2 py-0.5 rounded-full pop-border flex items-center gap-1">
                 📌 ピン留め予定
               </span>
-              ${isOfficer ? `
-                <button onclick="unpinPractice(${p.id})" class="text-[10px] text-slate-400 underline font-bold">
-                  ピン留め解除
-                </button>
-              ` : ''}
+              ${isOfficer ? `<button onclick="unpinPractice(${p.id})" class="text-[10px] text-slate-400 underline font-bold">ピン留め解除</button>` : ''}
             </div>
             <div onclick="jumpToSchedule(${p.id})" class="cursor-pointer bg-amber-50 dark:bg-slate-700/60 p-2.5 rounded-2xl border-2 border-slate-800 space-y-0.5">
               <p class="font-black text-slate-800 dark:text-slate-100 text-xs">🏓 ${escapeHTML(displayTitle)}</p>
@@ -1229,14 +1187,8 @@
         html += `
           <div class="py-2.5 first:pt-0 last:pb-0 space-y-1">
             <div class="flex items-center justify-between">
-              <span class="${badgeColor} text-[10px] font-black px-2 py-0.5 rounded-full pop-border">
-                ${badgeLabel}
-              </span>
-              ${isOfficer ? `
-                <button onclick="deleteAnnouncement(${a.id})" class="text-[10px] bg-pickle-pink text-white px-2 py-0.5 rounded-lg pop-border font-black">
-                  削除
-                </button>
-              ` : ''}
+              <span class="${badgeColor} text-[10px] font-black px-2 py-0.5 rounded-full pop-border">${badgeLabel}</span>
+              ${isOfficer ? `<button onclick="deleteAnnouncement(${a.id})" class="text-[10px] bg-pickle-pink text-white px-2 py-0.5 rounded-lg pop-border font-black">削除</button>` : ''}
             </div>
             <h4 class="font-black text-slate-800 dark:text-slate-100 text-xs">${escapeHTML(a.title)}</h4>
             <p class="text-slate-600 dark:text-slate-300 text-[11px] font-bold whitespace-pre-wrap">${escapeHTML(a.content)}</p>
@@ -1252,9 +1204,9 @@
 
       const { error } = await db.from('announcements').delete().eq('id', id);
       if (error) {
-        let localData = JSON.parse(localStorage.getItem(`announcements_${currentCircle.id}`) || "[]");
+        let localData = storage.getJson(`announcements_${currentCircle.id}`, []);
         localData = localData.filter(a => a.id !== id);
-        localStorage.setItem(`announcements_${currentCircle.id}`, JSON.stringify(localData));
+        storage.setJson(`announcements_${currentCircle.id}`, localData);
       }
 
       fetchAnnouncements();
@@ -1263,22 +1215,22 @@
     function pinPracticeToAnnouncement(practiceId, date, location, memo) {
       if (!isOfficerRole()) return alert("ピン留め権限がありません。");
 
-      let pinned = JSON.parse(localStorage.getItem(`pinned_practices_${currentCircle.id}`) || "[]");
+      let pinned = storage.getJson(`pinned_practices_${currentCircle.id}`, []);
       if (pinned.some(p => p.id === practiceId)) {
         return alert("この予定は既にピン留めされています📌");
       }
 
       pinned.push({ id: practiceId, date, location, memo });
-      localStorage.setItem(`pinned_practices_${currentCircle.id}`, JSON.stringify(pinned));
+      storage.setJson(`pinned_practices_${currentCircle.id}`, pinned);
 
       renderAnnouncements();
       alert("お知らせの先頭にピン留めしました！📌");
     }
 
     function unpinPractice(practiceId) {
-      let pinned = JSON.parse(localStorage.getItem(`pinned_practices_${currentCircle.id}`) || "[]");
+      let pinned = storage.getJson(`pinned_practices_${currentCircle.id}`, []);
       pinned = pinned.filter(p => p.id !== practiceId);
-      localStorage.setItem(`pinned_practices_${currentCircle.id}`, JSON.stringify(pinned));
+      storage.setJson(`pinned_practices_${currentCircle.id}`, pinned);
 
       renderAnnouncements();
       alert("ピン留めを解除しました！");
@@ -1312,47 +1264,20 @@
       const isRepresentative = currentRole === "代表";
       const isAdmin = hasAdminAccess();
       const isCourtOfficer = currentRole === "コート取り";
+      const isOfficer = isOfficerRole();
 
-      const homeAdminActions = document.getElementById("home-admin-actions");
-      if (homeAdminActions) {
-        if (isOfficerRole()) homeAdminActions.classList.remove("hidden");
-        else homeAdminActions.classList.add("hidden");
-      }
+      const toggle = (id, condition) => {
+        const el = document.getElementById(id);
+        if (el) el.classList.toggle("hidden", !condition);
+      };
 
-      const locationManageBtn = document.getElementById("location-manage-btn");
-      if (locationManageBtn) {
-        if (isOfficerRole()) locationManageBtn.classList.remove("hidden");
-        else locationManageBtn.classList.add("hidden");
-      }
-
-      const aiSection = document.getElementById("ai-assistant-section");
-      if (aiSection) {
-        if (isOfficerRole()) aiSection.classList.remove("hidden");
-        else aiSection.classList.add("hidden");
-      }
-
-      const memberAddBox = document.getElementById("member-add-box");
-      if (memberAddBox) {
-        if (isRepresentative) memberAddBox.classList.remove("hidden");
-        else memberAddBox.classList.add("hidden");
-      }
-
-      const practiceCreateBox = document.getElementById("practice-create-box");
-      if (practiceCreateBox) {
-        if (isAdmin || isCourtOfficer) practiceCreateBox.classList.remove("hidden");
-        else practiceCreateBox.classList.add("hidden");
-      }
-
-      const feedbackFormSection = document.getElementById("feedback-form-section");
-      const feedbackListSection = document.getElementById("feedback-list-section");
-
-      if (isOfficerRole()) {
-        feedbackFormSection.classList.add("hidden");
-        feedbackListSection.classList.remove("hidden");
-      } else {
-        feedbackFormSection.classList.remove("hidden");
-        feedbackListSection.classList.add("hidden");
-      }
+      toggle("home-admin-actions", isOfficer);
+      toggle("location-manage-btn", isOfficer);
+      toggle("ai-assistant-section", isOfficer);
+      toggle("member-add-box", isRepresentative);
+      toggle("practice-create-box", isAdmin || isCourtOfficer);
+      toggle("feedback-form-section", !isOfficer);
+      toggle("feedback-list-section", isOfficer);
     }
 
     function askAIAssistant() {
@@ -1395,7 +1320,7 @@
 
     async function fetchMembers() {
       if (!currentCircle) return;
-      const { data: members, error } = await db.from('members').select('*').eq('circle_id', currentCircle.id);
+      const { data: members } = await db.from('members').select('*').eq('circle_id', currentCircle.id);
       cachedMembers = members || [];
       const list = document.getElementById('member-list');
       const isAdmin = hasAdminAccess();
@@ -1416,14 +1341,8 @@
           </div>
           ${isAdmin ? `
             <div class="flex gap-1">
-              <button onclick="openEditModal(${m.id})" class="text-xs text-slate-900 bg-pickle-blue text-white px-2 py-0.5 rounded-lg pop-border">
-                編集
-              </button>
-              ${isRepresentative ? `
-                <button onclick="deleteMember(${m.id})" class="text-xs bg-pickle-pink text-white px-2 py-0.5 rounded-lg pop-border">
-                  削除
-                </button>
-              ` : ''}
+              <button onclick="openEditModal(${m.id})" class="text-xs text-slate-900 bg-pickle-blue text-white px-2 py-0.5 rounded-lg pop-border">編集</button>
+              ${isRepresentative ? `<button onclick="deleteMember(${m.id})" class="text-xs bg-pickle-pink text-white px-2 py-0.5 rounded-lg pop-border">削除</button>` : ''}
             </div>
           ` : ''}
         </div>
@@ -1536,17 +1455,7 @@
         const attMap = { '参加': [], '不参加': [], '未定': [] };
         attFilter.forEach(a => { if (attMap[a.status]) attMap[a.status].push(a.member_name); });
 
-        const memoText = p.memo || '';
-        const isEvent = memoText.includes('[イベント');
-        
-        let displayTitle = "定期練習";
-        let displayMemo = memoText;
-
-        if (isEvent) {
-          const match = memoText.match(/\[イベント:\s*(.*?)\]/);
-          displayTitle = (match && match[1]) ? match[1] : "イベント";
-          displayMemo = memoText.replace(/\[イベント:\s*.*?\]/, '').replace('[イベント]', '').trim();
-        }
+        const { isEvent, title: displayTitle, memo: displayMemo } = parseEventTitle(p.memo);
 
         const badgeColor = isPast 
           ? 'bg-slate-400 text-white' 
@@ -1576,11 +1485,7 @@
                     📌 ピン留め
                   </button>
                 ` : ''}
-                ${canDelete ? `
-                  <button onclick="deletePractice(${p.id})" class="text-xs bg-pickle-pink text-white px-2 py-0.5 rounded-lg pop-border">
-                    削除
-                  </button>
-                ` : ''}
+                ${canDelete ? `<button onclick="deletePractice(${p.id})" class="text-xs bg-pickle-pink text-white px-2 py-0.5 rounded-lg pop-border">削除</button>` : ''}
               </div>
             </div>
 
@@ -1618,15 +1523,8 @@
         weeklyList.innerHTML = '<p class="text-slate-400 py-1 text-center font-bold">直近1週間以内の予定はありません。</p>';
       } else {
         weeklyList.innerHTML = oneWeekPractices.map(p => {
-          const memoText = p.memo || '';
-          const isEvent = memoText.includes('[イベント');
+          const { isEvent, title: displayTitle } = parseEventTitle(p.memo);
           const icon = isEvent ? '🎉' : '🏓';
-
-          let displayTitle = "定期練習";
-          if (isEvent) {
-            const match = memoText.match(/\[イベント:\s*(.*?)\]/);
-            displayTitle = (match && match[1]) ? match[1] : "イベント";
-          }
 
           return `
             <div onclick="jumpToSchedule(${p.id})" class="p-2.5 bg-slate-50 dark:bg-slate-700/50 hover:bg-pickle-yellow/20 rounded-xl border-2 border-slate-800 cursor-pointer transition flex justify-between items-center font-bold">
@@ -1641,7 +1539,6 @@
       }
 
       updateCountdownAndStats(futurePractices, practices, attendance || []);
-
       lucide.createIcons();
     }
 
@@ -1666,8 +1563,7 @@
         const pDate = parseScheduleDate(nextP.date);
         pDate.setHours(0,0,0,0);
 
-        const diffTime = pDate - today;
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const diffDays = Math.ceil((pDate - today) / (1000 * 60 * 60 * 24));
 
         if (diffDays === 0) {
           badge.innerText = '🔥 本日開催！';
@@ -1677,11 +1573,7 @@
           badge.className = "text-xs font-black text-slate-900 bg-pickle-yellow px-2 py-0.5 rounded-full pop-border";
         }
 
-        let title = "定期練習";
-        if (nextP.memo && nextP.memo.includes('[イベント')) {
-          const match = nextP.memo.match(/\[イベント:\s*(.*?)\]/);
-          title = (match && match[1]) ? match[1] : "イベント";
-        }
+        const { title } = parseEventTitle(nextP.memo);
 
         detailsContainer.innerHTML = `
           <h3 class="font-black text-base text-slate-800 dark:text-white flex items-center gap-1.5">
@@ -1822,7 +1714,7 @@
       let csvContent = "data:text/csv;charset=utf-8,\uFEFF種別,日時,場所,部員名,出欠ステータス\n";
       practices.forEach(p => {
         const atts = (attendance || []).filter(a => a.practice_id === p.id);
-        const isEvent = p.memo && p.memo.includes('[イベント');
+        const { isEvent } = parseEventTitle(p.memo);
         const typeStr = isEvent ? 'イベント' : '練習日程';
 
         if (atts.length === 0) {
@@ -1844,9 +1736,7 @@
     }
 
     async function submitFeedback() {
-      const inputSender = document.getElementById('feedback-sender').value.trim();
       const content = document.getElementById('feedback-content').value.trim();
-
       if (!content) return alert('ご意見・メッセージを入力してください。');
 
       alert('メッセージを送信しました！');
