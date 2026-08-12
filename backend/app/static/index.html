@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Circle OS - RUB Picklers</title>
+  <title>Circle OS</title>
   
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -88,7 +88,7 @@
       <div id="setup-form-join" class="space-y-3 text-xs">
         <div>
           <label class="block font-extrabold text-slate-700 dark:text-slate-300 mb-1">サークルID</label>
-          <input type="text" id="input-circle-id" placeholder="例: RUB-PICKLE" class="w-full border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 p-2.5 rounded-xl font-bold uppercase">
+          <input type="text" id="input-circle-id" placeholder="例: 〇〇サークル" class="w-full border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 p-2.5 rounded-xl font-bold uppercase">
         </div>
         <button onclick="joinCircle()" class="w-full bg-pickle-lime text-slate-900 font-black py-3 rounded-xl text-sm pop-border pop-shadow-sm transition active:translate-y-0.5">
           サークルに入る 🚀
@@ -102,7 +102,7 @@
         </div>
         <div>
           <label class="block font-extrabold text-slate-700 dark:text-slate-300 mb-1">サークル名</label>
-          <input type="text" id="create-circle-name" placeholder="例: RUB Picklers" class="w-full border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 p-2 rounded-xl font-bold">
+          <input type="text" id="create-circle-name" placeholder="例: 〇〇サークル" class="w-full border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 p-2 rounded-xl font-bold">
         </div>
         <div>
           <label class="block font-extrabold text-slate-700 dark:text-slate-300 mb-1">希望サークルID (半角英数字)</label>
@@ -167,7 +167,7 @@
         </div>
         <div>
           <label class="block text-slate-500 dark:text-slate-400 mb-1">開催場所</label>
-          <input type="text" id="event-location" placeholder="例: 池袋公園 / 熱海温泉" class="w-full border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-2.5">
+          <input type="text" id="event-location" placeholder="例: 〇〇公園" class="w-full border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-2.5">
         </div>
         <div>
           <label class="block text-slate-500 dark:text-slate-400 mb-1">概要・詳細メモ</label>
@@ -221,7 +221,7 @@
       
       <div class="space-y-2 text-xs font-bold">
         <div class="flex gap-2">
-          <input type="text" id="new-location-input" placeholder="例: 池袋スポーツセンター" class="flex-1 border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-2">
+          <input type="text" id="new-location-input" placeholder="例: 〇〇スポーツセンター" class="flex-1 border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-2">
           <button onclick="addNewLocation()" class="bg-pickle-blue text-white px-3 rounded-xl font-black pop-border whitespace-nowrap">追加</button>
         </div>
         <div class="mt-3">
@@ -481,11 +481,11 @@
           <div class="grid grid-cols-2 gap-2">
             <div>
               <label class="block text-slate-500 dark:text-slate-400 mb-1">氏名</label>
-              <input type="text" id="new-member-name" placeholder="例: 立教 太郎" class="w-full border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-2">
+              <input type="text" id="new-member-name" placeholder="例: 山田 太郎" class="w-full border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-2">
             </div>
             <div>
               <label class="block text-slate-500 dark:text-slate-400 mb-1">学籍番号</label>
-              <input type="text" id="new-member-student-id" placeholder="例: 24CA074M" class="w-full border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-2 uppercase">
+              <input type="text" id="new-member-student-id" placeholder="例: 〇〇AA〇〇〇A" class="w-full border-2 border-slate-800 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-2 uppercase">
             </div>
           </div>
           <div>
@@ -605,7 +605,7 @@
           </div>
           <div>
             <label class="block text-slate-500 dark:text-slate-400 mb-1">ご意見・メッセージ</label>
-            <textarea id="feedback-content" rows="4" placeholder="例: パドル増やしてほしいです！" class="w-full border-2 border-slate-800 dark:border-slate-600 rounded-xl p-2.5 dark:bg-slate-700 bg-white"></textarea>
+            <textarea id="feedback-content" rows="4" placeholder="例: 備品増やしてほしいです！" class="w-full border-2 border-slate-800 dark:border-slate-600 rounded-xl p-2.5 dark:bg-slate-700 bg-white"></textarea>
           </div>
           <button onclick="submitFeedback()" class="w-full bg-pickle-blue text-white font-black py-2.5 rounded-xl pop-border pop-shadow-sm flex items-center justify-center gap-1">
             <i data-lucide="send" class="w-4 h-4"></i> メッセージを送る
