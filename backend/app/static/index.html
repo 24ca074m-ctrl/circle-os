@@ -1045,6 +1045,27 @@
       changeRole(selector.value);
     }
 
+    function isOfficerRole() {
+      return ["代表", "副代表", "会計", "コート取り"].includes(currentRole);
+    }
+
+    function changeRole(role) {
+      currentRole = role;
+      const isOfficer = isOfficerRole();
+      const isRep = (role === "代表" || role === "副代表");
+
+      document.getElementById('home-admin-actions').classList.toggle('hidden', !isOfficer);
+      document.getElementById('ai-assistant-section').classList.toggle('hidden', !isOfficer);
+      document.getElementById('member-add-box').classList.toggle('hidden', !isRep);
+      document.getElementById('practice-create-box').classList.toggle('hidden', !isOfficer);
+      document.getElementById('location-manage-btn').classList.toggle('hidden', !isOfficer);
+      document.getElementById('feedback-list-section').classList.toggle('hidden', !isOfficer);
+
+      renderAnnouncements();
+      fetchPractices();
+      fetchMembers();
+    }
+
     function switchTab(tabName) {
       document.querySelectorAll(".tab-content").forEach(el => el.classList.add("hidden"));
       document.getElementById(`tab-${tabName}`).classList.remove("hidden");
@@ -1253,552 +1274,541 @@
       }, 100);
     }
 
-    function changeRole(role) {
-      currentRole = role;
-      updateRoleVisibility();
-      fetchPractices();
-      fetchMembers();
-      fetchAnnouncements();
+    // --- Members Operations ---
+    async function fetchMembers() {
+      if (!currentCircle) return;
+      const { data, error } = await db.from('members')
+        .select('*')
+        .eq('circle_id', currentCircle.id)
+        .order('role', { ascending: true });
+
+      cachedMembers = error ? [] : (data || []);
+      renderMemberList();
+    }
+
+    function renderMemberList() {
+      const list = document.getElementById('member-list');
+      if (cachedMembers.length === 0) {
+        list.innerHTML = '<p class="text-slate-400 py-2 font-bold">部員が登録されていません。</p>';
+        return;
+      }
+
+      const isRep = (currentRole === "代表" || currentRole === "副代表");
+
+      list.innerHTML = cachedMembers.map(m => {
+        const isSelf = currentUser && currentUser.id === m.id;
+        const roleBadge = m.role !== '部員' ? `<span class="bg-pickle-yellow text-slate-900 text-[10px] px-2 py-0.5 rounded-full pop-border font-black">${escapeHTML(m.role)}</span>` : '';
+        
+        return `
+          <div class="py-2.5 flex items-center justify-between">
+            <div class="space-y-0.5">
+              <div class="flex items-center gap-1.5">
+                <span class="font-extrabold text-slate-800 dark:text-slate-100 text-xs">${escapeHTML(m.name)}</span>
+                ${roleBadge}
+                ${isSelf ? '<span class="text-[9px] bg-pickle-lime text-slate-900 px-1.5 py-0.2 rounded font-black">自分</span>' : ''}
+              </div>
+              <p class="text-[10px] text-slate-400 font-bold">${escapeHTML(m.student_id)} • ${escapeHTML(m.grade || '未設定')}</p>
+            </div>
+            ${isRep ? `
+              <div class="flex gap-1">
+                <button onclick="openEditModal(${m.id})" class="text-[10px] bg-pickle-blue text-white px-2 py-1 rounded-xl pop-border">編集</button>
+                <button onclick="deleteMember(${m.id})" class="text-[10px] bg-pickle-pink text-white px-2 py-1 rounded-xl pop-border">削除</button>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function addMember() {
+      const name = document.getElementById('new-member-name').value.trim();
+      const student_id = document.getElementById('new-member-student-id').value.trim().toUpperCase();
+      const password = document.getElementById('new-member-password').value.trim();
+      const grade = document.getElementById('new-member-grade').value;
+      const role = document.getElementById('new-member-role').value;
+
+      if (!name || !student_id || !password) return alert('必須項目を入力してください');
+
+      const { error } = await db.from('members').insert([{
+        circle_id: currentCircle.id,
+        name,
+        student_id,
+        password,
+        grade,
+        role
+      }]);
+
+      if (error) return alert(`登録エラー: ${error.message}`);
+
+      document.getElementById('new-member-name').value = '';
+      document.getElementById('new-member-student-id').value = '';
+      renewNewMemberPassword();
+
+      await fetchMembers();
+      alert(`${name} さんを新規登録しました！`);
+    }
+
+    function openEditModal(memberId) {
+      const member = cachedMembers.find(m => m.id === memberId);
+      if (!member) return;
+
+      document.getElementById('edit-member-id').value = member.id;
+      document.getElementById('edit-member-name').value = member.name;
+      document.getElementById('edit-member-student-id').value = member.student_id;
+      document.getElementById('edit-member-password').value = '';
+      document.getElementById('edit-member-grade').value = member.grade || '1年';
+      document.getElementById('edit-member-role').value = member.role || '部員';
+
+      document.getElementById('edit-member-modal').classList.remove('hidden');
+    }
+
+    function closeEditModal() {
+      document.getElementById('edit-member-modal').classList.add('hidden');
+    }
+
+    async function saveMemberEdit() {
+      const id = document.getElementById('edit-member-id').value;
+      const name = document.getElementById('edit-member-name').value.trim();
+      const student_id = document.getElementById('edit-member-student-id').value.trim().toUpperCase();
+      const password = document.getElementById('edit-member-password').value.trim();
+      const grade = document.getElementById('edit-member-grade').value;
+      const role = document.getElementById('edit-member-role').value;
+
+      if (!name || !student_id) return alert('氏名と学籍番号は必須です');
+
+      const updates = { name, student_id, grade, role };
+      if (password) updates.password = password;
+
+      const { error } = await db.from('members').update(updates).eq('id', id);
+      if (error) return alert(`更新エラー: ${error.message}`);
+
+      closeEditModal();
+      await fetchMembers();
+      alert('部員情報を更新しました！');
+    }
+
+    async function deleteMember(id) {
+      if (!confirm('この部員を削除してもよろしいですか？')) return;
+      const { error } = await db.from('members').delete().eq('id', id);
+      if (error) return alert(`削除エラー: ${error.message}`);
+      await fetchMembers();
+    }
+
+    // --- Schedule & Attendance Operations ---
+    async function createPractice() {
+      const date = document.getElementById('practice-date').value;
+      const startTime = document.getElementById('practice-start-time').value;
+      const endTime = document.getElementById('practice-end-time').value;
+      const location = document.getElementById('practice-location').value;
+      const courtSide = document.getElementById('practice-court-side').value;
+      const memo = document.getElementById('practice-memo').value.trim();
+
+      if (!date) return alert('開催日を選択してください');
+
+      let fullLocation = location;
+      if (location.includes('体育館') && courtSide) {
+        fullLocation += ` (${courtSide})`;
+      }
+
+      let fullMemo = memo;
+      if (startTime && endTime) {
+        fullMemo = `[時間: ${startTime}〜${endTime}] ${memo}`.trim();
+      }
+
+      const { error } = await db.from('practices').insert([{
+        circle_id: currentCircle.id,
+        date,
+        location: fullLocation,
+        memo: fullMemo
+      }]);
+
+      if (error) return alert(`追加エラー: ${error.message}`);
+
+      document.getElementById('practice-memo').value = '';
+      await fetchPractices();
+      alert('新しい日程を追加しました！');
+    }
+
+    async function fetchPractices() {
+      if (!currentCircle) return;
+
+      const { data: practices, error } = await db.from('practices')
+        .select('*')
+        .eq('circle_id', currentCircle.id)
+        .order('date', { ascending: true });
+
+      if (error || !practices) {
+        renderPractices([]);
+        return;
+      }
+
+      const practiceIds = practices.map(p => p.id);
+      let attendances = [];
+
+      if (practiceIds.length > 0) {
+        const { data: attData } = await db.from('attendances')
+          .select('*')
+          .in('practice_id', practiceIds);
+        attendances = attData || [];
+      }
+
+      renderPractices(practices, attendances);
+      calculateActivityStats(practices, attendances);
+    }
+
+    function calculateActivityStats(practices, attendances) {
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+
+      // 今月の自分の参加回数
+      let myMonthCount = 0;
+      let totalMonthPractices = 0;
+
+      practices.forEach(p => {
+        const pDate = parseScheduleDate(p.date);
+        if (pDate.getFullYear() === currentYear && pDate.getMonth() === currentMonth) {
+          totalMonthPractices++;
+          if (currentUser) {
+            const myAtt = attendances.find(a => a.practice_id === p.id && a.member_id === currentUser.id);
+            if (myAtt && myAtt.status === '参加') myMonthCount++;
+          }
+        }
+      });
+
+      const myRate = totalMonthPractices > 0 ? Math.round((myMonthCount / totalMonthPractices) * 100) : 0;
+
+      // 今週の参加者総数
+      const oneWeekLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+      let weeklyTotal = 0;
+
+      practices.forEach(p => {
+        const pDate = parseScheduleDate(p.date);
+        if (pDate >= now && pDate <= oneWeekLater) {
+          const joinAtts = attendances.filter(a => a.practice_id === p.id && a.status === '参加');
+          weeklyTotal += joinAtts.length;
+        }
+      });
+
+      rawStatValues = {
+        count: `${myMonthCount}回`,
+        rate: `${myRate}%`,
+        total: `${weeklyTotal}名`
+      };
+
+      renderActivityStats();
+    }
+
+    function renderPractices(practices, attendances = []) {
+      const practiceList = document.getElementById('practice-list');
+      const weeklyList = document.getElementById('weekly-practice-list');
+      const weeklyBadge = document.getElementById('weekly-count-badge');
+      const isOfficer = isOfficerRole();
+
+      if (practices.length === 0) {
+        practiceList.innerHTML = '<p class="text-slate-400 py-2 font-bold">予定されている練習はありません。</p>';
+        weeklyList.innerHTML = '<p class="text-slate-400 py-1 font-bold">直近1週間の予定はありません。</p>';
+        weeklyBadge.innerText = '0件';
+        updateNextPracticeCard(null, []);
+        return;
+      }
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const futurePractices = practices.filter(p => parseScheduleDate(p.date) >= today);
+      const nextUpcoming = futurePractices.length > 0 ? futurePractices[0] : null;
+
+      updateNextPracticeCard(nextUpcoming, attendances);
+
+      // 直近1週間（7日以内）の予定フィルタ
+      const sevenDaysLater = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+      const weeklyPractices = practices.filter(p => {
+        const d = parseScheduleDate(p.date);
+        return d >= today && d <= sevenDaysLater;
+      });
+
+      weeklyBadge.innerText = `${weeklyPractices.length}件`;
+
+      if (weeklyPractices.length === 0) {
+        weeklyList.innerHTML = '<p class="text-slate-400 py-1 font-bold">直近1週間の予定はありません。</p>';
+      } else {
+        weeklyList.innerHTML = weeklyPractices.map(p => {
+          const { isEvent, title: displayTitle } = parseEventTitle(p.memo);
+          const pAtts = attendances.filter(a => a.practice_id === p.id && a.status === '参加');
+          
+          return `
+            <div onclick="jumpToSchedule(${p.id})" class="cursor-pointer bg-lime-50 dark:bg-slate-700/60 p-2.5 rounded-2xl border-2 border-slate-800 flex justify-between items-center">
+              <div>
+                <p class="text-xs font-black text-slate-800 dark:text-slate-100">${isEvent ? '🎉' : '🏓'} ${escapeHTML(displayTitle)}</p>
+                <p class="text-[10px] text-slate-500 dark:text-slate-400">${escapeHTML(p.date)} @ ${escapeHTML(p.location)}</p>
+              </div>
+              <span class="text-[10px] bg-pickle-lime text-slate-900 font-black px-2 py-0.5 rounded-full pop-border">
+                参加: ${pAtts.length}名
+              </span>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // 全予定カード作成
+      practiceList.innerHTML = practices.map(p => {
+        const { isEvent, title: displayTitle, memo: cleanMemo } = parseEventTitle(p.memo);
+        const pAtts = attendances.filter(a => a.practice_id === p.id);
+        const joins = pAtts.filter(a => a.status === '参加');
+        const declines = pAtts.filter(a => a.status === '不参加');
+        const pendings = pAtts.filter(a => a.status === '未定');
+
+        const myAtt = currentUser ? pAtts.find(a => a.member_id === currentUser.id) : null;
+        const myStatus = myAtt ? myAtt.status : '未回答';
+
+        return `
+          <div id="practice-card-${p.id}" class="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-2xl border-2 border-slate-800 space-y-2 transition-all">
+            <div class="flex justify-between items-start">
+              <div>
+                <div class="flex items-center gap-1.5">
+                  <span class="font-black text-sm text-slate-800 dark:text-slate-100">${isEvent ? '🎉 ' + escapeHTML(displayTitle) : '🏓 定期練習'}</span>
+                  ${isEvent ? '<span class="bg-pickle-pink text-white text-[9px] font-black px-1.5 py-0.2 rounded pop-border">イベント</span>' : ''}
+                </div>
+                <p class="text-xs font-bold text-slate-600 dark:text-slate-300">📅 ${escapeHTML(p.date)} @ ${escapeHTML(p.location)}</p>
+                ${cleanMemo ? `<p class="text-[11px] text-slate-400 font-bold mt-0.5">${escapeHTML(cleanMemo)}</p>` : ''}
+              </div>
+              ${isOfficer ? `
+                <div class="flex gap-1">
+                  <button onclick="pinPracticeToAnnouncement(${p.id}, '${escapeHTML(p.date)}', '${escapeHTML(p.location)}', '${escapeHTML(p.memo)}')" class="text-[10px] bg-pickle-yellow text-slate-900 px-2 py-1 rounded-xl pop-border font-black">📌 ピン</button>
+                  <button onclick="deletePractice(${p.id})" class="text-[10px] bg-pickle-pink text-white px-2 py-1 rounded-xl pop-border font-black">削除</button>
+                </div>
+              ` : ''}
+            </div>
+
+            <!-- 出欠ボタン -->
+            <div class="flex gap-1.5 pt-1">
+              <button onclick="voteAttendance(${p.id}, '参加')" class="flex-1 py-1.5 rounded-xl text-xs font-black pop-border ${myStatus === '参加' ? 'bg-pickle-lime text-slate-900 pop-shadow-sm' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300'}">
+                参加 (${joins.length})
+              </button>
+              <button onclick="voteAttendance(${p.id}, '不参加')" class="flex-1 py-1.5 rounded-xl text-xs font-black pop-border ${myStatus === '不参加' ? 'bg-pickle-pink text-white pop-shadow-sm' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300'}">
+                不参加 (${declines.length})
+              </button>
+              <button onclick="voteAttendance(${p.id}, '未定')" class="flex-1 py-1.5 rounded-xl text-xs font-black pop-border ${myStatus === '未定' ? 'bg-pickle-yellow text-slate-900 pop-shadow-sm' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300'}">
+                未定 (${pendings.length})
+              </button>
+            </div>
+
+            <!-- 参加メンバー名リスト -->
+            ${joins.length > 0 ? `
+              <div class="text-[10px] font-bold text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-200 dark:border-slate-600">
+                参加者: ${joins.map(a => escapeHTML(a.member_name)).join(', ')}
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function updateNextPracticeCard(nextPractice, attendances) {
+      const detailsContainer = document.getElementById('next-practice-details');
+      const badge = document.getElementById('next-countdown-badge');
+      const voteActions = document.getElementById('next-vote-actions');
+      const statusBadge = document.getElementById('my-current-status-badge');
+
+      if (!nextPractice) {
+        nextUpcomingPracticeId = null;
+        badge.innerText = '予定なし';
+        detailsContainer.innerHTML = '<p class="text-slate-500 text-xs font-bold">次回予定されている練習はありません。</p>';
+        voteActions.classList.add('hidden');
+        return;
+      }
+
+      nextUpcomingPracticeId = nextPractice.id;
+
+      const { isEvent, title: displayTitle, memo: cleanMemo } = parseEventTitle(nextPractice.memo);
+      const targetDate = parseScheduleDate(nextPractice.date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const diffTime = targetDate - today;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      if (diffDays === 0) badge.innerText = '🔥 本日開催！';
+      else if (diffDays === 1) badge.innerText = '⚡ 明日開催！';
+      else badge.innerText = `あと ${diffDays} 日`;
+
+      detailsContainer.innerHTML = `
+        <p class="text-base font-black text-slate-800 dark:text-slate-100">${isEvent ? '🎉 ' + escapeHTML(displayTitle) : '🏓 定期練習'}</p>
+        <p class="text-xs font-bold text-slate-700 dark:text-slate-300">📅 ${escapeHTML(nextPractice.date)} @ ${escapeHTML(nextPractice.location)}</p>
+        ${cleanMemo ? `<p class="text-[11px] text-slate-500 dark:text-slate-400 font-bold">${escapeHTML(cleanMemo)}</p>` : ''}
+      `;
+
+      if (currentUser) {
+        voteActions.classList.remove('hidden');
+        const pAtts = attendances.filter(a => a.practice_id === nextPractice.id);
+        const myAtt = pAtts.find(a => a.member_id === currentUser.id);
+        const status = myAtt ? myAtt.status : '未回答';
+
+        statusBadge.innerText = status;
+        statusBadge.className = `text-[10px] font-black px-2 py-0.5 rounded-full pop-border ${
+          status === '参加' ? 'bg-pickle-lime text-slate-900' :
+          status === '不参加' ? 'bg-pickle-pink text-white' :
+          status === '未定' ? 'bg-pickle-yellow text-slate-900' : 'bg-slate-200 dark:bg-slate-600'
+        }`;
+      } else {
+        voteActions.classList.add('hidden');
+      }
+    }
+
+    async function quickVote(status) {
+      if (!nextUpcomingPracticeId) return;
+      await voteAttendance(nextUpcomingPracticeId, status);
+    }
+
+    async function voteAttendance(practiceId, status) {
+      if (!currentUser) return alert('出欠回答にはログインが必要です');
+
+      const { data: existing } = await db.from('attendances')
+        .select('*')
+        .eq('practice_id', practiceId)
+        .eq('member_id', currentUser.id)
+        .single();
+
+      if (existing) {
+        await db.from('attendances')
+          .update({ status, updated_at: new Date().toISOString() })
+          .eq('id', existing.id);
+      } else {
+        await db.from('attendances').insert([{
+          practice_id: practiceId,
+          member_id: currentUser.id,
+          member_name: currentUser.name,
+          status,
+          created_at: new Date().toISOString()
+        }]);
+      }
+
+      await fetchPractices();
+    }
+
+    async function deletePractice(id) {
+      if (!confirm('この練習日程を削除しますか？')) return;
+      const { error } = await db.from('practices').delete().eq('id', id);
+      if (error) return alert(`削除エラー: ${error.message}`);
+      await fetchPractices();
+    }
+
+    async function exportAttendanceCSV() {
+      const { data: practices } = await db.from('practices').select('*').eq('circle_id', currentCircle.id);
+      if (!practices || practices.length === 0) return alert('出力するデータがありません');
+
+      const practiceIds = practices.map(p => p.id);
+      const { data: attendances } = await db.from('attendances').select('*').in('practice_id', practiceIds);
+
+      let csv = '日付,場所,メモ,氏名,ステータス\n';
+
+      practices.forEach(p => {
+        const pAtts = (attendances || []).filter(a => a.practice_id === p.id);
+        if (pAtts.length === 0) {
+          csv += `"${p.date}","${p.location}","${p.memo || ''}","未回答","-"\n`;
+        } else {
+          pAtts.forEach(a => {
+            csv += `"${p.date}","${p.location}","${p.memo || ''}","${a.member_name}","${a.status}"\n`;
+          });
+        }
+      });
+
+      const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `出欠一覧_${currentCircle.id}_${getTodayString()}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // --- Feedback Operations ---
+    async function submitFeedback() {
+      const sender = document.getElementById('feedback-sender').value.trim() || '匿名部員';
+      const content = document.getElementById('feedback-content').value.trim();
+
+      if (!content) return alert('ご意見内容を入力してください');
+
+      const { error } = await db.from('feedbacks').insert([{
+        circle_id: currentCircle.id,
+        sender,
+        content,
+        created_at: new Date().toISOString()
+      }]);
+
+      if (error) {
+        let localData = storage.getJson(`feedbacks_${currentCircle.id}`, []);
+        localData.unshift({
+          id: Date.now(),
+          circle_id: currentCircle.id,
+          sender,
+          content,
+          created_at: new Date().toISOString()
+        });
+        storage.setJson(`feedbacks_${currentCircle.id}`, localData);
+      }
+
+      document.getElementById('feedback-content').value = '';
+      document.getElementById('feedback-sender').value = '';
+      alert('ご意見を送信しました！ありがとうございます。');
       fetchFeedbacks();
     }
 
-    function hasAdminAccess() { return currentRole === "代表" || currentRole === "副代表"; }
-    function isOfficerRole() { return hasAdminAccess() || currentRole === "コート取り" || currentRole === "会計"; }
+    async function fetchFeedbacks() {
+      if (!currentCircle) return;
 
-    function updateRoleVisibility() {
-      const isRepresentative = currentRole === "代表";
-      const isAdmin = hasAdminAccess();
-      const isCourtOfficer = currentRole === "コート取り";
-      const isOfficer = isOfficerRole();
+      const { data, error } = await db.from('feedbacks')
+        .select('*')
+        .eq('circle_id', currentCircle.id)
+        .order('created_at', { ascending: false });
 
-      const toggle = (id, condition) => {
-        const el = document.getElementById(id);
-        if (el) el.classList.toggle("hidden", !condition);
-      };
+      const list = document.getElementById('feedback-list');
+      const feedbacks = (!error && data) ? data : storage.getJson(`feedbacks_${currentCircle.id}`, []);
 
-      toggle("home-admin-actions", isOfficer);
-      toggle("location-manage-btn", isOfficer);
-      toggle("ai-assistant-section", isOfficer);
-      toggle("member-add-box", isRepresentative);
-      toggle("practice-create-box", isAdmin || isCourtOfficer);
-      toggle("feedback-form-section", !isOfficer);
-      toggle("feedback-list-section", isOfficer);
+      if (feedbacks.length === 0) {
+        list.innerHTML = '<p class="text-slate-400 py-2 font-bold">まだ届いたご意見はありません。</p>';
+        return;
+      }
+
+      list.innerHTML = feedbacks.map(f => `
+        <div class="py-2.5 first:pt-0 space-y-1">
+          <div class="flex justify-between items-center text-[10px] text-slate-400">
+            <span class="font-black text-slate-700 dark:text-slate-300">👤 ${escapeHTML(f.sender)}</span>
+            <span>${new Date(f.created_at).toLocaleDateString()}</span>
+          </div>
+          <p class="text-xs font-bold text-slate-800 dark:text-slate-100 whitespace-pre-wrap">${escapeHTML(f.content)}</p>
+        </div>
+      `).join('');
     }
 
-    function askAIAssistant() {
+    // --- AI Assistant Operations ---
+    async function askAIAssistant() {
       const input = document.getElementById('ai-prompt-input');
-      const text = input.value.trim();
-      if (!text) return alert('相談内容を入力してください');
+      const prompt = input.value.trim();
+      if (!prompt) return alert('相談内容を入力してください');
 
-      const historyContainer = document.getElementById('ai-chat-history');
-      historyContainer.classList.remove('hidden');
+      const history = document.getElementById('ai-chat-history');
+      history.classList.remove('hidden');
 
-      historyContainer.innerHTML += `
-        <div class="bg-slate-200 dark:bg-slate-700 p-2 rounded-xl text-right font-bold text-slate-800 dark:text-slate-100">
-          🗣️ ${escapeHTML(text)}
+      history.innerHTML += `
+        <div class="bg-slate-100 dark:bg-slate-700 p-2 rounded-xl border border-slate-800 text-right">
+          <span class="font-black text-slate-800 dark:text-slate-100">You: ${escapeHTML(prompt)}</span>
         </div>
       `;
 
       input.value = '';
 
       setTimeout(() => {
-        let aiReply = "ご相談ありがとうございます！役職者の皆様のサークル運営をサポートします。";
-        if (text.includes("新歓") || text.includes("イベント")) {
-          aiReply = "💡 新歓イベントのご相談ですね！体験会の開催時間を12:00〜14:00に設定すると参加率が上がりやすい傾向があります。パドル貸出の準備もお忘れなく！";
-        } else if (text.includes("体育館") || text.includes("コート")) {
-          aiReply = "💡 コート確保についてですね。月頭の抽選申し込み締め切り日にリマインド通知を設定することをお勧めします！";
-        } else if (text.includes("会計") || text.includes("お金") || text.includes("会費")) {
-          aiReply = "💡 予算管理ですね。出欠データをCSV出力して、参加人数×会費の計算を行うとスムーズに会計報告を作成できます！";
-        } else {
-          aiReply = `💡 「${escapeHTML(text)}」について承りました！次回日程の調整やリマインド連絡の作成など、サポート可能です！`;
-        }
-
-        historyContainer.innerHTML += `
-          <div class="bg-cyan-100 dark:bg-slate-800 p-2.5 rounded-xl border-2 border-slate-800 font-bold text-slate-800 dark:text-slate-100 space-y-1">
-            <span class="text-pickle-blue font-black flex items-center gap-1">🤖 AIアドバイス:</span>
-            <p>${aiReply}</p>
+        history.innerHTML += `
+          <div class="bg-cyan-50 dark:bg-slate-700 p-2 rounded-xl border border-slate-800 text-left">
+            <span class="font-black text-pickle-blue">AI: </span>
+            <span class="text-slate-700 dark:text-slate-200">「${escapeHTML(prompt)}」についてですね！コート追加予約の通知をLINEグループに自動送信したり、イベントのアンケートを取ることをお勧めします！🏓</span>
           </div>
         `;
-        historyContainer.scrollTop = historyContainer.scrollHeight;
-      }, 500);
-    }
-
-    async function fetchMembers() {
-      if (!currentCircle) return;
-      const { data: members } = await db.from('members').select('*').eq('circle_id', currentCircle.id);
-      cachedMembers = members || [];
-      const list = document.getElementById('member-list');
-      const isAdmin = hasAdminAccess();
-      const isRepresentative = currentRole === "代表";
-
-      if (cachedMembers.length === 0) {
-        list.innerHTML = '<p class="text-slate-400 py-2">部員が登録されていません。</p>';
-        return;
-      }
-
-      list.innerHTML = cachedMembers.map(m => `
-        <div class="py-2.5 flex items-center justify-between">
-          <div>
-            <span class="font-black text-slate-800 dark:text-slate-200">${escapeHTML(m.name)}</span>
-            <span class="ml-1 text-[10px] text-slate-400">(${escapeHTML(m.student_id)})</span>
-            <span class="ml-1 text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-1.5 py-0.5 rounded-full pop-border">${escapeHTML(m.grade)}</span>
-            <span class="ml-1 text-[10px] bg-pickle-yellow text-slate-900 px-1.5 py-0.5 rounded-full font-black pop-border">${escapeHTML(m.role)}</span>
-          </div>
-          ${isAdmin ? `
-            <div class="flex gap-1">
-              <button onclick="openEditModal(${m.id})" class="text-xs text-slate-900 bg-pickle-blue text-white px-2 py-0.5 rounded-lg pop-border">編集</button>
-              ${isRepresentative ? `<button onclick="deleteMember(${m.id})" class="text-xs bg-pickle-pink text-white px-2 py-0.5 rounded-lg pop-border">削除</button>` : ''}
-            </div>
-          ` : ''}
-        </div>
-      `).join('');
-    }
-
-    async function addMember() {
-      if (currentRole !== "代表") return alert("新規部員登録は代表のみ実行可能です。");
-
-      const name = document.getElementById('new-member-name').value.trim();
-      const student_id = document.getElementById('new-member-student-id').value.trim().toUpperCase();
-      const password = document.getElementById('new-member-password').value || generate6DigitCode();
-      const grade = document.getElementById('new-member-grade').value;
-      const role = document.getElementById('new-member-role').value;
-
-      if (!name || !student_id) return alert('氏名と学籍番号を入力してください。');
-
-      const { error } = await db.from('members').insert([{
-        circle_id: currentCircle.id, name, student_id, password, grade, role
-      }]);
-
-      if (error) return alert(`エラー: ${error.message}`);
-
-      document.getElementById('new-member-name').value = '';
-      document.getElementById('new-member-student-id').value = '';
-      renewNewMemberPassword();
-      fetchMembers();
-      alert(`部員を登録しました！\n初期パスワード: ${password}`);
-    }
-
-    function openEditModal(id) {
-      const member = cachedMembers.find(m => m.id === id);
-      if (!member) return;
-      document.getElementById('edit-member-id').value = member.id;
-      document.getElementById('edit-member-name').value = member.name;
-      document.getElementById('edit-member-student-id').value = member.student_id;
-      document.getElementById('edit-member-password').value = '';
-      document.getElementById('edit-member-grade').value = member.grade;
-      document.getElementById('edit-member-role').value = member.role;
-      document.getElementById('edit-member-role').disabled = (currentRole !== "代表");
-      document.getElementById('edit-member-modal').classList.remove('hidden');
-    }
-
-    function closeEditModal() { document.getElementById('edit-member-modal').classList.add('hidden'); }
-
-    async function saveMemberEdit() {
-      const id = document.getElementById('edit-member-id').value;
-      const name = document.getElementById('edit-member-name').value.trim();
-      const student_id = document.getElementById('edit-member-student-id').value.trim().toUpperCase();
-      const newPassword = document.getElementById('edit-member-password').value.trim();
-      const grade = document.getElementById('edit-member-grade').value;
-      const role = document.getElementById('edit-member-role').value;
-
-      const updateData = { name, student_id, grade, role };
-      if (newPassword) updateData.password = newPassword;
-
-      await db.from('members').update(updateData).eq('id', id);
-      closeEditModal();
-      fetchMembers();
-      alert('更新しました！');
-    }
-
-    async function deleteMember(id) {
-      if (currentRole !== "代表") return alert("部員削除は代表のみ実行可能です。");
-      if (!confirm('本当に削除しますか？')) return;
-      await db.from('members').delete().eq('id', id);
-      fetchMembers();
-    }
-
-    async function fetchPractices() {
-      if (!currentCircle) return;
-      const { data: practices, error } = await db.from('practices').select('*').eq('circle_id', currentCircle.id);
-      const { data: attendance } = await db.from('attendance').select('*');
-
-      const list = document.getElementById('practice-list');
-      const weeklyList = document.getElementById('weekly-practice-list');
-      const canDelete = hasAdminAccess() || currentRole === "コート取り";
-      const isOfficer = isOfficerRole();
-
-      if (error || !practices || practices.length === 0) {
-        list.innerHTML = '<p class="text-slate-400 py-2">予定はありません。</p>';
-        weeklyList.innerHTML = '<p class="text-slate-400 py-1">直近1週間の予定はありません。</p>';
-        document.getElementById('weekly-count-badge').innerText = '0件';
-        updateCountdownAndStats([], [], []);
-        return;
-      }
-
-      const nowToday = new Date();
-      nowToday.setHours(0, 0, 0, 0);
-
-      const nextWeekDate = new Date(nowToday.getTime());
-      nextWeekDate.setDate(nextWeekDate.getDate() + 7);
-      nextWeekDate.setHours(23, 59, 59, 999);
-
-      const futurePractices = practices.filter(p => parseScheduleDate(p.date) >= nowToday)
-        .sort((a, b) => parseScheduleDate(a.date) - parseScheduleDate(b.date));
-
-      const pastPractices = practices.filter(p => parseScheduleDate(p.date) < nowToday)
-        .sort((a, b) => parseScheduleDate(b.date) - parseScheduleDate(a.date));
-
-      const sortedPractices = [...futurePractices, ...pastPractices];
-
-      let html = '';
-
-      sortedPractices.forEach(p => {
-        const pDateObj = parseScheduleDate(p.date);
-        const isPast = pDateObj < nowToday;
-
-        const attFilter = (attendance || []).filter(a => a.practice_id === p.id);
-        const attMap = { '参加': [], '不参加': [], '未定': [] };
-        attFilter.forEach(a => { if (attMap[a.status]) attMap[a.status].push(a.member_name); });
-
-        const { isEvent, title: displayTitle, memo: displayMemo } = parseEventTitle(p.memo);
-
-        const badgeColor = isPast 
-          ? 'bg-slate-400 text-white' 
-          : (isEvent ? 'bg-pickle-pink text-white' : 'bg-pickle-lime text-slate-900');
-        const typeLabel = isPast 
-          ? '🏁 終了' 
-          : (isEvent ? '🎉 イベント' : '🏓 練習日程');
-
-        const cardBgClass = isPast ? 'bg-slate-100 dark:bg-slate-800/40 opacity-60 grayscale' : 'bg-white dark:bg-slate-700/50';
-
-        html += `
-          <div id="practice-card-${p.id}" class="rounded-2xl p-3.5 ${cardBgClass} pop-border pop-shadow space-y-2 transition-all">
-            <div class="flex justify-between items-start">
-              <div>
-                <div class="flex items-center gap-1.5 mb-1">
-                  <span class="text-[10px] ${badgeColor} font-black px-2 py-0.5 rounded-full pop-border">${typeLabel}</span>
-                  <span class="font-black text-sm text-slate-800 dark:text-slate-100">${escapeHTML(displayTitle)}</span>
-                </div>
-                <div class="font-black text-xs text-slate-600 dark:text-slate-300">📅 ${escapeHTML(p.date)}</div>
-                <div class="text-pickle-blue font-black text-xs">📍 ${escapeHTML(p.location)}</div>
-                ${displayMemo ? `<div class="text-slate-500 text-[11px] mt-0.5">メモ: ${escapeHTML(displayMemo)}</div>` : ''}
-              </div>
-              
-              <div class="flex flex-col gap-1 items-end">
-                ${isOfficer && !isPast ? `
-                  <button onclick="pinPracticeToAnnouncement(${p.id}, '${escapeHTML(p.date)}', '${escapeHTML(p.location)}', '${escapeHTML(displayMemo)}')" class="text-[10px] bg-pickle-yellow text-slate-900 font-black px-2 py-0.5 rounded-lg pop-border flex items-center gap-0.5">
-                    📌 ピン留め
-                  </button>
-                ` : ''}
-                ${canDelete ? `<button onclick="deletePractice(${p.id})" class="text-xs bg-pickle-pink text-white px-2 py-0.5 rounded-lg pop-border">削除</button>` : ''}
-              </div>
-            </div>
-
-            <div class="border-t-2 border-slate-800 dark:border-slate-600 pt-2 mt-2">
-              <p class="font-black text-slate-600 dark:text-slate-300 mb-1">
-                ${isPast ? '出欠結果 (受付終了)' : `出欠投票 (${currentUser ? escapeHTML(currentUser.name) : '未ログイン'})`}
-              </p>
-              
-              <div class="flex gap-1.5 mb-2 font-black">
-                <button onclick="voteAttendance(${p.id}, '参加')" ${isPast ? 'disabled' : ''} class="flex-1 bg-pickle-lime text-slate-900 py-1.5 rounded-xl pop-border pop-shadow-sm transition active:translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed">参加 🏓</button>
-                <button onclick="voteAttendance(${p.id}, '不参加')" ${isPast ? 'disabled' : ''} class="flex-1 bg-pickle-pink text-white py-1.5 rounded-xl pop-border pop-shadow-sm transition active:translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed">不参加</button>
-                <button onclick="voteAttendance(${p.id}, '未定')" ${isPast ? 'disabled' : ''} class="flex-1 bg-pickle-yellow text-slate-900 py-1.5 rounded-xl pop-border pop-shadow-sm transition active:translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed">未定</button>
-              </div>
-
-              <div class="text-[11px] bg-slate-50 dark:bg-slate-800/80 p-2 rounded-xl pop-border space-y-0.5 font-bold">
-                <div><span class="font-black text-pickle-lime">参加 (${attMap.参加.length}名):</span> ${escapeHTML(attMap.参加.join(', ')) || 'なし'}</div>
-                <div><span class="font-black text-pickle-pink">不参加 (${attMap.不参加.length}名):</span> ${escapeHTML(attMap.不参加.join(', ')) || 'なし'}</div>
-                <div><span class="font-black text-slate-500">未定 (${attMap.未定.length}名):</span> ${escapeHTML(attMap.未定.join(', ')) || 'なし'}</div>
-              </div>
-            </div>
-          </div>
-        `;
-      });
-
-      list.innerHTML = html;
-
-      const oneWeekPractices = futurePractices.filter(p => {
-        const pDate = parseScheduleDate(p.date);
-        return pDate >= nowToday && pDate <= nextWeekDate;
-      });
-
-      document.getElementById('weekly-count-badge').innerText = `${oneWeekPractices.length}件`;
-
-      if (oneWeekPractices.length === 0) {
-        weeklyList.innerHTML = '<p class="text-slate-400 py-1 text-center font-bold">直近1週間以内の予定はありません。</p>';
-      } else {
-        weeklyList.innerHTML = oneWeekPractices.map(p => {
-          const { isEvent, title: displayTitle } = parseEventTitle(p.memo);
-          const icon = isEvent ? '🎉' : '🏓';
-
-          return `
-            <div onclick="jumpToSchedule(${p.id})" class="p-2.5 bg-slate-50 dark:bg-slate-700/50 hover:bg-pickle-yellow/20 rounded-xl border-2 border-slate-800 cursor-pointer transition flex justify-between items-center font-bold">
-              <div>
-                <span class="font-black text-slate-800 dark:text-slate-100">${icon} ${escapeHTML(displayTitle)}</span>
-                <div class="text-[10px] text-slate-500 dark:text-slate-300">${escapeHTML(p.date)} @ ${escapeHTML(p.location)}</div>
-              </div>
-              <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400"></i>
-            </div>
-          `;
-        }).join('');
-      }
-
-      updateCountdownAndStats(futurePractices, practices, attendance || []);
-      lucide.createIcons();
-    }
-
-    function updateCountdownAndStats(futurePractices, allPractices, attendanceList) {
-      const detailsContainer = document.getElementById('next-practice-details');
-      const badge = document.getElementById('next-countdown-badge');
-      const voteActions = document.getElementById('next-vote-actions');
-      const statusBadge = document.getElementById('my-current-status-badge');
-
-      if (futurePractices.length === 0) {
-        detailsContainer.innerHTML = '<p class="text-slate-500 dark:text-slate-400 text-xs font-bold">現在予定されている未来の練習はありません ☕</p>';
-        badge.innerText = '予定なし';
-        badge.className = "text-xs font-black text-slate-500 bg-slate-200 px-2 py-0.5 rounded-full pop-border";
-        voteActions.classList.add('hidden');
-        nextUpcomingPracticeId = null;
-      } else {
-        const nextP = futurePractices[0];
-        nextUpcomingPracticeId = nextP.id;
-
-        const today = new Date();
-        today.setHours(0,0,0,0);
-        const pDate = parseScheduleDate(nextP.date);
-        pDate.setHours(0,0,0,0);
-
-        const diffDays = Math.ceil((pDate - today) / (1000 * 60 * 60 * 24));
-
-        if (diffDays === 0) {
-          badge.innerText = '🔥 本日開催！';
-          badge.className = "text-xs font-black text-white bg-pickle-pink px-2 py-0.5 rounded-full pop-border";
-        } else {
-          badge.innerText = `あと ${diffDays} 日`;
-          badge.className = "text-xs font-black text-slate-900 bg-pickle-yellow px-2 py-0.5 rounded-full pop-border";
-        }
-
-        const { title } = parseEventTitle(nextP.memo);
-
-        detailsContainer.innerHTML = `
-          <h3 class="font-black text-base text-slate-800 dark:text-white flex items-center gap-1.5">
-            🏓 ${escapeHTML(title)}
-          </h3>
-          <p class="text-xs font-extrabold text-slate-700 dark:text-slate-200">📅 ${escapeHTML(nextP.date)}</p>
-          <p class="text-xs font-black text-pickle-blue">📍 ${escapeHTML(nextP.location)}</p>
-        `;
-
-        if (currentUser) {
-          voteActions.classList.remove('hidden');
-          const myAtt = attendanceList.find(a => a.practice_id === nextP.id && a.member_name === currentUser.name);
-          const status = myAtt ? myAtt.status : '未回答';
-
-          statusBadge.innerText = status;
-          if (status === '参加') statusBadge.className = "text-[10px] font-black bg-pickle-lime text-slate-900 px-2.5 py-0.5 rounded-full pop-border";
-          else if (status === '不参加') statusBadge.className = "text-[10px] font-black bg-pickle-pink text-white px-2.5 py-0.5 rounded-full pop-border";
-          else if (status === '未定') statusBadge.className = "text-[10px] font-black bg-pickle-yellow text-slate-900 px-2.5 py-0.5 rounded-full pop-border";
-          else statusBadge.className = "text-[10px] font-black bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full pop-border";
-        } else {
-          voteActions.classList.add('hidden');
-        }
-      }
-
-      if (!currentUser) {
-        rawStatValues = { count: '0回', rate: '0%', total: '0名' };
-        renderActivityStats();
-        return;
-      }
-
-      const now = new Date();
-      const currentYear = now.getFullYear();
-      const currentMonth = now.getMonth();
-
-      const thisMonthPractices = allPractices.filter(p => {
-        const d = parseScheduleDate(p.date);
-        return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
-      });
-
-      let myMonthJoinCount = 0;
-      thisMonthPractices.forEach(p => {
-        const joined = attendanceList.some(a => a.practice_id === p.id && a.member_name === currentUser.name && a.status === '参加');
-        if (joined) myMonthJoinCount++;
-      });
-
-      const rate = thisMonthPractices.length > 0 
-        ? Math.round((myMonthJoinCount / thisMonthPractices.length) * 100) 
-        : 0;
-
-      const nowToday = new Date();
-      nowToday.setHours(0,0,0,0);
-      const nextWeekDate = new Date(nowToday.getTime() + 7 * 24 * 60 * 60 * 1000);
-
-      let weeklyJoinTotal = 0;
-      allPractices.forEach(p => {
-        const pDate = parseScheduleDate(p.date);
-        if (pDate >= nowToday && pDate <= nextWeekDate) {
-          const joinedList = attendanceList.filter(a => a.practice_id === p.id && a.status === '参加');
-          weeklyJoinTotal += joinedList.length;
-        }
-      });
-
-      rawStatValues = {
-        count: `${myMonthJoinCount}回`,
-        rate: `${rate}%`,
-        total: `${weeklyJoinTotal}名`
-      };
-
-      renderActivityStats();
-    }
-
-    async function quickVote(status) {
-      if (!nextUpcomingPracticeId) return alert('投票対象の次回予定がありません');
-      await voteAttendance(nextUpcomingPracticeId, status);
-    }
-
-    async function createPractice() {
-      const dateVal = document.getElementById('practice-date').value;
-      const startTime = document.getElementById('practice-start-time').value || formatTime(new Date());
-      const endTime = document.getElementById('practice-end-time').value || formatTime(new Date(Date.now() + 2*60*60*1000));
-      const selectLoc = document.getElementById('practice-location').value;
-      const memo = document.getElementById('practice-memo').value.trim();
-
-      if (!dateVal) return alert('日付を選択してください。');
-
-      let finalLocation = selectLoc;
-      if (selectLoc && selectLoc.includes('体育館')) {
-        const courtSide = document.getElementById('practice-court-side').value;
-        finalLocation = `${selectLoc}（${courtSide}）`;
-      }
-
-      const fullDateStr = `${dateVal} (${startTime}〜${endTime})`;
-      const { error } = await db.from('practices').insert([{
-        circle_id: currentCircle.id,
-        date: fullDateStr,
-        location: finalLocation,
-        memo: memo
-      }]);
-
-      if (error) return alert(`エラー: ${error.message}`);
-
-      document.getElementById('practice-memo').value = '';
-      initPracticeFormDateTime();
-      await fetchPractices();
-      alert('練習日程を追加しました！🏓');
-    }
-
-    async function deletePractice(id) {
-      if (!confirm('このスケジュールを削除しますか？')) return;
-      await db.from('practices').delete().eq('id', id);
-      fetchPractices();
-    }
-
-    async function voteAttendance(practiceId, status) {
-      if (!currentUser) return alert('ログインしてください');
-
-      const { data: existing } = await db.from('attendance')
-        .select('*')
-        .eq('practice_id', practiceId)
-        .eq('member_name', currentUser.name)
-        .single();
-
-      if (existing) {
-        await db.from('attendance').update({ status }).eq('id', existing.id);
-      } else {
-        await db.from('attendance').insert([{ practice_id: practiceId, member_name: currentUser.name, status }]);
-      }
-
-      fetchPractices();
-    }
-
-    async function exportAttendanceCSV() {
-      const { data: practices } = await db.from('practices').select('*').eq('circle_id', currentCircle.id);
-      const { data: attendance } = await db.from('attendance').select('*');
-
-      if (!practices || practices.length === 0) return alert('データがありません。');
-
-      let csvContent = "data:text/csv;charset=utf-8,\uFEFF種別,日時,場所,部員名,出欠ステータス\n";
-      practices.forEach(p => {
-        const atts = (attendance || []).filter(a => a.practice_id === p.id);
-        const { isEvent } = parseEventTitle(p.memo);
-        const typeStr = isEvent ? 'イベント' : '練習日程';
-
-        if (atts.length === 0) {
-          csvContent += `"${typeStr}","${p.date}","${p.location}","回答なし","-"\n`;
-        } else {
-          atts.forEach(a => {
-            csvContent += `"${typeStr}","${p.date}","${p.location}","${a.member_name}","${a.status}"\n`;
-          });
-        }
-      });
-
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `出欠一覧_${getTodayString()}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-
-    // 意見箱の送信処理（Supabaseへ保存）
-    async function submitFeedback() {
-      const sender = document.getElementById('feedback-sender').value.trim();
-      const content = document.getElementById('feedback-content').value.trim();
-
-      if (!content) return alert('ご意見・メッセージを入力してください。');
-      if (!currentCircle) return alert('サークル情報が読み込めていません。');
-
-      const { error } = await db.from('feedbacks').insert([{
-        circle_id: currentCircle.id,
-        sender_name: sender || '匿名',
-        content: content,
-        created_at: new Date().toISOString()
-      }]);
-
-      if (error) {
-        alert(`送信に失敗しました: ${error.message}`);
-        return;
-      }
-
-      alert('ご意見を受け付けました！ありがとうございます！🎉');
-      document.getElementById('feedback-content').value = '';
-      document.getElementById('feedback-sender').value = '';
-
-      // 役職者画面であれば即座に再読み込み
-      if (isOfficerRole()) {
-        fetchFeedbacks();
-      }
-    }
-
-    // 意見箱の一覧取得（役職者のみ取得・表示）
-    async function fetchFeedbacks() {
-      const list = document.getElementById('feedback-list');
-      if (!currentCircle || !isOfficerRole()) return;
-
-      const { data: feedbacks, error } = await db.from('feedbacks')
-        .select('*')
-        .eq('circle_id', currentCircle.id)
-        .order('created_at', { ascending: false });
-
-      if (error || !feedbacks || feedbacks.length === 0) {
-        list.innerHTML = '<p class="text-slate-400 py-2 font-bold">現在、届いている意見はありません。</p>';
-        return;
-      }
-
-      list.innerHTML = feedbacks.map(f => {
-        const date = new Date(f.created_at).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-        return `
-          <div class="py-2.5 first:pt-0 last:pb-0 space-y-1">
-            <div class="flex items-center justify-between">
-              <span class="text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-black px-2 py-0.5 rounded-full pop-border">
-                👤 ${escapeHTML(f.sender_name || '匿名')}
-              </span>
-              <span class="text-[10px] text-slate-400 font-bold">${date}</span>
-            </div>
-            <p class="text-xs text-slate-800 dark:text-slate-100 font-bold whitespace-pre-wrap">${escapeHTML(f.content)}</p>
-          </div>
-        `;
-      }).join('');
+        history.scrollTop = history.scrollHeight;
+      }, 600);
     }
   </script>
 </body>
