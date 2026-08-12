@@ -404,23 +404,30 @@
         </div>
       </div>
 
-      <!-- ② サークルアクティビティ & My実績カード -->
+      <!-- ② サークルアクティビティ & My実績カード（表示/非表示トグル対応） -->
       <div class="bg-white dark:bg-slate-800 p-4 rounded-3xl pop-border pop-shadow space-y-3">
-        <h2 class="font-black text-slate-800 dark:text-slate-100 text-sm flex items-center gap-2">
-          <span class="p-1 bg-pickle-yellow rounded-xl pop-border"><i data-lucide="trophy" class="w-4 h-4 text-slate-900"></i></span> サークルアクティビティ 📊
-        </h2>
+        <div class="flex items-center justify-between">
+          <h2 class="font-black text-slate-800 dark:text-slate-100 text-sm flex items-center gap-2">
+            <span class="p-1 bg-pickle-yellow rounded-xl pop-border"><i data-lucide="trophy" class="w-4 h-4 text-slate-900"></i></span> サークルアクティビティ 📊
+          </h2>
+          <!-- 目のアイコンボタン -->
+          <button onclick="toggleActivityPrivacy()" id="privacy-toggle-btn" class="p-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 rounded-xl pop-border transition flex items-center gap-1 text-[10px] font-black text-slate-600 dark:text-slate-200">
+            <i id="privacy-toggle-icon" data-lucide="eye-off" class="w-4 h-4 text-slate-800 dark:text-slate-100"></i>
+          </button>
+        </div>
+
         <div class="grid grid-cols-3 gap-2 text-center">
           <div class="bg-slate-50 dark:bg-slate-700/50 p-2.5 rounded-2xl pop-border space-y-0.5">
             <p class="text-[10px] font-bold text-slate-400">今月の参加数</p>
-            <p id="stat-my-count" class="text-lg font-black text-pickle-lime">0回</p>
+            <p id="stat-my-count" class="text-lg font-black text-pickle-lime">***</p>
           </div>
           <div class="bg-slate-50 dark:bg-slate-700/50 p-2.5 rounded-2xl pop-border space-y-0.5">
             <p class="text-[10px] font-bold text-slate-400">自分の参加率</p>
-            <p id="stat-my-rate" class="text-lg font-black text-pickle-blue">0%</p>
+            <p id="stat-my-rate" class="text-lg font-black text-pickle-blue">***</p>
           </div>
           <div class="bg-slate-50 dark:bg-slate-700/50 p-2.5 rounded-2xl pop-border space-y-0.5">
-            <p class="text-[10px] font-bold text-slate-400">今週のサークル参加者</p>
-            <p id="stat-weekly-total" class="text-lg font-black text-pickle-pink">0名</p>
+            <p class="text-[10px] font-bold text-slate-400">今週の参加者</p>
+            <p id="stat-weekly-total" class="text-lg font-black text-pickle-pink">***</p>
           </div>
         </div>
       </div>
@@ -643,6 +650,10 @@
     let cachedAnnouncements = [];
     let nextUpcomingPracticeId = null;
 
+    // アクティビティ数値プライバシー状態（デフォルト: 非表示 true）
+    let isActivityHidden = true;
+    let rawStatValues = { count: '0回', rate: '0%', total: '0名' };
+
     function generate6DigitCode() {
       return Math.floor(100000 + Math.random() * 900000).toString();
     }
@@ -751,6 +762,10 @@
       document.getElementById('header-circle-name').innerText = currentCircle.name;
       document.getElementById('header-univ-name').innerText = currentCircle.university;
 
+      // アクティビティ表示プライバシー初期化
+      const savedPrivacy = localStorage.getItem('privacy_activity_hidden');
+      isActivityHidden = savedPrivacy !== null ? (savedPrivacy === 'true') : true;
+
       updateLocationOptions();
       checkAuth();
       renewNewMemberPassword();
@@ -759,6 +774,30 @@
       fetchPractices();
       fetchAnnouncements();
       fetchFeedbacks();
+    }
+
+    // アクティビティの表示/非表示切り替え機能
+    function toggleActivityPrivacy() {
+      isActivityHidden = !isActivityHidden;
+      localStorage.setItem('privacy_activity_hidden', isActivityHidden);
+      renderActivityStats();
+    }
+
+    function renderActivityStats() {
+      const btnIcon = document.getElementById('privacy-toggle-icon');
+      
+      if (isActivityHidden) {
+        document.getElementById('stat-my-count').innerText = "***";
+        document.getElementById('stat-my-rate').innerText = "***";
+        document.getElementById('stat-weekly-total').innerText = "***";
+        if (btnIcon) btnIcon.setAttribute('data-lucide', 'eye-off');
+      } else {
+        document.getElementById('stat-my-count').innerText = rawStatValues.count;
+        document.getElementById('stat-my-rate').innerText = rawStatValues.rate;
+        document.getElementById('stat-weekly-total').innerText = rawStatValues.total;
+        if (btnIcon) btnIcon.setAttribute('data-lucide', 'eye');
+      }
+      lucide.createIcons();
     }
 
     function updateLocationOptions() {
@@ -1079,7 +1118,6 @@
       alert('イベントを作成し、出欠予定表に追加しました！🎉');
     }
 
-    // お知らせ作成モーダル操作
     function openAnnouncementModal() {
       document.getElementById('announcement-title').value = '';
       document.getElementById('announcement-content').value = '';
@@ -1107,7 +1145,6 @@
       }]);
 
       if (error) {
-        // DB未作成時のローカルフォールバック保存
         const localData = JSON.parse(localStorage.getItem(`announcements_${currentCircle.id}`) || "[]");
         localData.unshift({
           id: Date.now(),
@@ -1125,7 +1162,6 @@
       alert('お知らせを投稿しました！📢');
     }
 
-    // お知らせの取得 & 描画（ピン留めアイテム含む）
     async function fetchAnnouncements() {
       if (!currentCircle) return;
 
@@ -1149,7 +1185,6 @@
       const list = document.getElementById('announcement-list');
       const isOfficer = isOfficerRole();
 
-      // ローカル保存されているピン留めスケジュール
       const pinnedPractices = JSON.parse(localStorage.getItem(`pinned_practices_${currentCircle.id}`) || "[]");
 
       if (cachedAnnouncements.length === 0 && pinnedPractices.length === 0) {
@@ -1159,7 +1194,6 @@
 
       let html = '';
 
-      // ① ピン留めされた練習・イベントを表示
       pinnedPractices.forEach(p => {
         let displayTitle = "定期練習";
         if (p.memo && p.memo.includes('[イベント')) {
@@ -1187,7 +1221,6 @@
         `;
       });
 
-      // ② 通常投稿されたお知らせを表示
       cachedAnnouncements.forEach(a => {
         const isImportant = a.type === 'important';
         const badgeColor = isImportant ? 'bg-pickle-pink text-white' : 'bg-pickle-yellow text-slate-900';
@@ -1227,7 +1260,6 @@
       fetchAnnouncements();
     }
 
-    // スケジュールを「お知らせ」にピン留めする機能
     function pinPracticeToAnnouncement(practiceId, date, location, memo) {
       if (!isOfficerRole()) return alert("ピン留め権限がありません。");
 
@@ -1675,9 +1707,8 @@
       }
 
       if (!currentUser) {
-        document.getElementById('stat-my-count').innerText = "0回";
-        document.getElementById('stat-my-rate').innerText = "0%";
-        document.getElementById('stat-weekly-total').innerText = "0名";
+        rawStatValues = { count: '0回', rate: '0%', total: '0名' };
+        renderActivityStats();
         return;
       }
 
@@ -1713,9 +1744,13 @@
         }
       });
 
-      document.getElementById('stat-my-count').innerText = `${myMonthJoinCount}回`;
-      document.getElementById('stat-my-rate').innerText = `${rate}%`;
-      document.getElementById('stat-weekly-total').innerText = `${weeklyJoinTotal}名`;
+      rawStatValues = {
+        count: `${myMonthJoinCount}回`,
+        rate: `${rate}%`,
+        total: `${weeklyJoinTotal}名`
+      };
+
+      renderActivityStats();
     }
 
     async function quickVote(status) {
